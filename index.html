@@ -30,19 +30,57 @@
       outline: none;
       display: block;
     }
-    #ui-overlay {
+    /* Botão Flutuante para Abrir/Fechar o Menu Oculto */
+    #btn-toggle-menu {
       position: fixed;
       top: 14px;
       left: 14px;
+      z-index: 45;
+      background: rgba(20, 22, 26, 0.85);
+      color: #fff;
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      padding: 9px 14px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+      transition: all 0.15s;
+    }
+    #btn-toggle-menu:hover {
+      background: #ff5722;
+      border-color: #ff9e80;
+    }
+    #mini-water-pill {
+      background: rgba(0, 168, 255, 0.25);
+      border: 1px solid rgba(53, 224, 255, 0.5);
+      color: #35e0ff;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+
+    #ui-overlay {
+      position: fixed;
+      top: 56px;
+      left: 14px;
       color: #e8eaed;
-      background: rgba(20, 22, 26, 0.88);
-      backdrop-filter: blur(10px);
+      background: rgba(20, 22, 26, 0.94);
+      backdrop-filter: blur(12px);
       padding: 14px 18px;
       border-radius: 14px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.35);
-      z-index: 10;
-      border: 1px solid rgba(255,255,255,0.12);
-      max-width: 350px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.45);
+      z-index: 40;
+      border: 1px solid rgba(255,255,255,0.15);
+      max-width: 360px;
+      display: none; /* Oculto por padrão! Só aparece ao clicar no botão */
+    }
+    #ui-overlay.open {
+      display: block;
     }
     #ui-overlay h1 {
       font-size: 14px;
@@ -97,6 +135,71 @@
       color: #ffd24c;
       min-height: 15px;
     }
+    /* Mini Log de Eventos de Interação (dentro do menu oculto) */
+    #event-log-container {
+      margin-top: 10px;
+      background: rgba(10, 12, 16, 0.65);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    #event-log-container h3 {
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #9aa3ad;
+      margin-bottom: 5px;
+    }
+    #event-log-list {
+      list-style: none;
+      max-height: 115px;
+      overflow-y: auto;
+      font-size: 11px;
+      font-family: monospace;
+      color: #cfd6e0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    #event-log-list li {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 2px;
+    }
+
+    /* BALÃO DE CONVERSA INTERATIVO EM CIMA DO CARRINHO DO RAVI */
+    #car-speech-bubble {
+      position: fixed;
+      top: 0;
+      left: 0;
+      transform: translate(-50%, -100%);
+      background: #ffffff;
+      color: #1b1d22;
+      padding: 8px 15px;
+      border-radius: 16px;
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: 0.3px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.32);
+      border: 2.5px solid #ff5722;
+      pointer-events: none;
+      z-index: 35;
+      display: none;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+    }
+    #car-speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -9px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 9px 8px 0;
+      border-style: solid;
+      border-color: #ff5722 transparent;
+      display: block;
+      width: 0;
+    }
+
     .keys-row {
       display: flex;
       flex-wrap: wrap;
@@ -158,34 +261,9 @@
       to { transform: scale(1.04); }
     }
 
-    /* Badge de Interação / Status de Objeto */
+    /* Oculto na tela principal conforme solicitado (eventos vão para o mini log no menu) */
     #interaction-prompt {
-      position: fixed;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(18, 20, 24, 0.92);
-      color: #fff;
-      padding: 9px 18px;
-      border-radius: 10px;
-      font-weight: 800;
-      font-size: 12.5px;
-      letter-spacing: 0.8px;
-      display: none;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.45);
-      border: 1px solid rgba(53, 208, 186, 0.55);
-      pointer-events: none;
-      z-index: 20;
-      text-align: center;
-    }
-    #interaction-prompt span.badge {
-      background: #ff481c;
-      color: #fff;
-      padding: 3px 8px;
-      border-radius: 5px;
-      font-size: 10.5px;
+      display: none !important;
     }
 
     /* CONTROLES VIRTUAIS TOUCH / MOBILE ESMAECIDOS */
@@ -233,9 +311,32 @@
     }
     .action-pad {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 12px;
       pointer-events: auto;
+    }
+    .touch-btn-grab {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: rgba(255, 193, 7, 0.34);
+      border: 2px solid rgba(255, 213, 79, 0.45);
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 11.5px;
+      font-weight: 800;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+    .touch-btn-grab.holding {
+      background: rgba(76, 175, 80, 0.85);
+      border-color: #fff;
+      color: #fff;
     }
     .touch-btn-water {
       width: 78px;
@@ -323,9 +424,15 @@
   <script src="./three.min.js"></script>
 </head>
 <body>
+  <!-- Botão Flutuante que Abre/Fecha o Menu de Informações e Mini Log -->
+  <button id="btn-toggle-menu" aria-label="Abrir Menu de Informações">
+    <span>☰ Menu & Log</span>
+    <span id="mini-water-pill">💧 100%</span>
+  </button>
+
   <div id="ui-overlay">
     <h1>🚒 //Fire Engine// Desk World 3X</h1>
-    <p>Explore a mesa gigante, derrube o copo d'água para reabastecer, regue as plantas, quebre controles ou salve o monitor em chamas!</p>
+    <p>Segure objetos com <b>E</b> (ou botão <b>🧲</b>), desenhe a pista secreta com o lápis de cor, conecte os cabos HDMI do Notebook e PS5, regue plantas ou apague incêndios!</p>
     <div id="water-hud">
       <div class="water-header">
         <span>💧 TANQUE DE ÁGUA</span>
@@ -338,7 +445,8 @@
     </div>
     <div class="keys-row">
       <span class="keys">W A S D / Setas</span> Dirigir
-      <span class="keys">Espaço</span> Esguicho
+      <span class="keys">E</span> Segurar/Soltar
+      <span class="keys">Espaço</span> Água
       <span class="keys">Scroll</span> Zoom
     </div>
     <div id="cam-controls">
@@ -347,7 +455,17 @@
       <button class="btn-cam" id="btn-cam-gear">Close G915 & G502</button>
       <button class="btn-cam" id="btn-cam-wide">Mesa 3x Completa</button>
     </div>
+    <!-- Mini Log de Eventos de Interação -->
+    <div id="event-log-container">
+      <h3>📋 Mini Log de Eventos</h3>
+      <ul id="event-log-list">
+        <li>[Início] 🚒 Carrinho do Ravi pronto na mesa!</li>
+      </ul>
+    </div>
   </div>
+
+  <!-- Balão de Conversa Interativo em cima do Carrinho -->
+  <div id="car-speech-bubble">vrum vrumm</div>
 
   <div id="fire-alert">
     🔥 AUTODESTRUIÇÃO! MONITOR EM CHAMAS! APAGUE COM ÁGUA: <span id="fire-timer">15.0</span>s
@@ -369,6 +487,10 @@
       <button class="touch-btn" id="t-right" aria-label="Direita">►</button>
     </div>
     <div class="action-pad">
+      <button class="touch-btn-grab" id="t-grab" aria-label="Segurar ou Soltar Objeto">
+        <span style="font-size:19px;">🧲</span>
+        <span id="t-grab-label">PEGAR</span>
+      </button>
       <button class="touch-btn-water" id="t-water" aria-label="Esguicho de Água">
         <span style="font-size:22px;">💦</span>
         <span>ÁGUA</span>
@@ -1446,10 +1568,25 @@
     g502Logo.position.set(-0.26, 1.21, 0.72);
     mouseGroup.add(g502Logo);
 
+    // Lista de objetos que o carrinho pode segurar e arrastar pela mesa!
+    const grabbableItems = [];
+    let heldItem = null;
+
+    function registerGrabbable(config) {
+      // config: { id, name, group, obs, grabRadius, yOffset, onGrab, onDrag, onRelease }
+      grabbableItems.push(config);
+      return config;
+    }
+
     mouseGroup.position.set(15.6, 0.14, 4.6);
     mouseGroup.rotation.y = -0.12;
     deskWorld.add(mouseGroup);
-    obstacles.push({ x: 15.6, z: 4.6, r: 2.3, name: 'MOUSE LOGITECH G502 LIGHTSPEED' });
+    const mouseObs = { x: 15.6, z: 4.6, r: 2.3, name: 'MOUSE LOGITECH G502 LIGHTSPEED' };
+    obstacles.push(mouseObs);
+    registerGrabbable({
+      id: 'mouse', name: 'Mouse Logitech G502', group: mouseGroup, obs: mouseObs,
+      initX: 15.6, initY: 0.14, initZ: 4.6, initRotY: -0.12, grabRadius: 5.0
+    });
 
     const mugGroup = new THREE.Group();
     const coaster = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.16, 28), new THREE.MeshStandardMaterial({ color: 0x7d4e38 }));
@@ -1462,20 +1599,184 @@
     emblem.position.set(-0.4, 2.5, 1.76); emblem.rotation.y = -0.22; mugGroup.add(emblem);
     mugGroup.position.set(21.5, 0.14, -2.5);
     deskWorld.add(mugGroup);
-    obstacles.push({ x: 21.5, z: -2.5, r: 2.35, name: 'CANECA PRETA COM BASE DE CORTIÇA' });
+    const mugObs = { x: 21.5, z: -2.5, r: 2.35, name: 'CANECA PRETA COM BASE DE CORTIÇA' };
+    obstacles.push(mugObs);
+    registerGrabbable({
+      id: 'mug', name: 'Caneca Preta de Café', group: mugGroup, obs: mugObs,
+      initX: 21.5, initY: 0.14, initZ: -2.5, initRotY: 0, grabRadius: 5.2
+    });
+
+    // Registra também os controles Xbox e PS5 como seguráveis/arrastáveis
+    breakableControllers.forEach((c, idx) => {
+      registerGrabbable({
+        id: 'ctrl_' + idx, name: c.name, group: c.group, obs: c.obs,
+        initX: c.initX, initY: 0.14, initZ: c.initZ, initRotY: c.initRotY, grabRadius: 5.0
+      });
+    });
+
+    // ============================================================================
+    // PISTA DE CORRIDA OCULTA NA MESA (DESENHADA AO SEGURAR O LÁPIS DE COR!)
+    // ============================================================================
+    const TRACK_W = 168, TRACK_D = 98;
+    // Canvas fonte com a pista completa (asfalto + zebras vermelhas e brancas + faixa quadriculada de largada)
+    const hiddenTrackSourceCanvas = document.createElement('canvas');
+    hiddenTrackSourceCanvas.width = 1024;
+    hiddenTrackSourceCanvas.height = 600;
+    const hCtx = hiddenTrackSourceCanvas.getContext('2d');
+
+    function buildHiddenRaceTrackSource() {
+      hCtx.clearRect(0, 0, 1024, 600);
+      hCtx.save();
+      // Caminho fechado da pista oval/circuito ao redor da mesa
+      function traceTrackPath(ctx) {
+        ctx.beginPath();
+        ctx.roundRect(110, 75, 804, 450, 175);
+      }
+
+      // 1. Borda externa e interna da pista (Base Branca das Zebras)
+      traceTrackPath(hCtx);
+      hCtx.strokeStyle = '#ffffff';
+      hCtx.lineWidth = 86;
+      hCtx.stroke();
+
+      // 2. Listras Vermelhas Tracejadas formando as Zebras Tradicionais (Vermelho e Branco!)
+      traceTrackPath(hCtx);
+      hCtx.strokeStyle = '#e53935';
+      hCtx.lineWidth = 86;
+      hCtx.setLineDash([24, 24]);
+      hCtx.stroke();
+      hCtx.setLineDash([]);
+
+      // 3. Leito de Asfalto da Pista (no meio das duas zebras laterais!)
+      traceTrackPath(hCtx);
+      hCtx.strokeStyle = '#282c34';
+      hCtx.lineWidth = 64;
+      hCtx.stroke();
+
+      // 4. Linha tracejada central da pista
+      traceTrackPath(hCtx);
+      hCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      hCtx.lineWidth = 4;
+      hCtx.setLineDash([18, 18]);
+      hCtx.stroke();
+      hCtx.setLineDash([]);
+
+      // 5. Faixa de Início / Largada Quadriculada Preta e Branca (na reta frontal inferior)
+      const startX = 395, startY = 493;
+      const rows = 4, cols = 2;
+      const cellW = 11, cellH = 16;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          hCtx.fillStyle = (r + c) % 2 === 0 ? '#ffffff' : '#111111';
+          hCtx.fillRect(startX + c * cellW, startY + r * cellH, cellW, cellH);
+        }
+      }
+      hCtx.restore();
+    }
+    buildHiddenRaceTrackSource();
+
+    // Canvas visível na mesa (vai sendo revelado onde o Lápis de Cor passa!)
+    const raceTrackCanvas = document.createElement('canvas');
+    raceTrackCanvas.width = 1024;
+    raceTrackCanvas.height = 600;
+    const rtCtx = raceTrackCanvas.getContext('2d');
+    const raceTrackTexture = new THREE.CanvasTexture(raceTrackCanvas);
+
+    const raceTrackPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(TRACK_W, TRACK_D),
+      new THREE.MeshBasicMaterial({
+        map: raceTrackTexture,
+        transparent: true,
+         depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -2
+      })
+    );
+    raceTrackPlane.rotation.x = -Math.PI / 2;
+    raceTrackPlane.position.set(0, 0.16, 0);
+    deskWorld.add(raceTrackPlane);
+
+    function revealTrackAtWorldPos(wx, wz, pixelRadius = 56) {
+      const u = (wx + TRACK_W / 2) / TRACK_W;
+      const v = (wz + TRACK_D / 2) / TRACK_D;
+      const cx = u * 1024;
+      const cy = v * 600;
+      rtCtx.save();
+      rtCtx.beginPath();
+      rtCtx.arc(cx, cy, pixelRadius, 0, Math.PI * 2);
+      rtCtx.clip();
+      rtCtx.drawImage(hiddenTrackSourceCanvas, 0, 0);
+      rtCtx.restore();
+      raceTrackTexture.needsUpdate = true;
+    }
+
+    function resetRaceTrackCanvas() {
+      rtCtx.clearRect(0, 0, 1024, 600);
+      // Deixa um pedacinho da Faixa de Início já desenhado sob a ponta do Lápis de Cor como dica visual!
+      revealTrackAtWorldPos(-16, 36, 48);
+    }
+    resetRaceTrackCanvas();
+
+    // LÁPIS DE COR GIGANTE (Segure com o carrinho para desenhar/revelar a pista de corrida!)
+    const pencilGroup = new THREE.Group();
+    const pencilBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.42, 0.42, 7.2, 6),
+      new THREE.MeshStandardMaterial({ color: 0xe53935, roughness: 0.35, flatShading: true })
+    );
+    pencilBody.rotation.z = Math.PI / 2;
+    pencilBody.position.y = 0.45;
+    pencilBody.castShadow = true;
+
+    const pencilStripe = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.43, 0.43, 0.8, 6),
+      new THREE.MeshStandardMaterial({ color: 0xffffff })
+    );
+    pencilStripe.rotation.z = Math.PI / 2;
+    pencilStripe.position.set(-2.8, 0.45, 0);
+
+    const pencilWood = new THREE.Mesh(
+      new THREE.ConeGeometry(0.42, 1.35, 6),
+      new THREE.MeshStandardMaterial({ color: 0xe6c294, roughness: 0.6 })
+    );
+    pencilWood.rotation.z = -Math.PI / 2;
+    pencilWood.position.set(4.25, 0.45, 0);
+
+    const pencilLead = new THREE.Mesh(
+      new THREE.ConeGeometry(0.16, 0.52, 6),
+      new THREE.MeshStandardMaterial({ color: 0xe53935, roughness: 0.2 })
+    );
+    pencilLead.rotation.z = -Math.PI / 2;
+    pencilLead.position.set(4.72, 0.45, 0);
+
+    pencilGroup.add(pencilBody, pencilStripe, pencilWood, pencilLead);
+    pencilGroup.position.set(-16, 0.05, 36);
+    pencilGroup.rotation.y = 0.25;
+    deskWorld.add(pencilGroup);
+
+    const pencilObs = { x: -16, z: 36, r: 2.2, name: '✏️ LÁPIS DE COR (SEGURE COM [E] OU [🧲] PARA DESENHAR A PISTA!)' };
+    obstacles.push(pencilObs);
+    registerGrabbable({
+      id: 'colored_pencil',
+      type: 'pencil',
+      name: 'Lápis de Cor (Desenhando Pista!)',
+      group: pencilGroup,
+      obs: pencilObs,
+      initX: -16, initY: 0.05, initZ: 36, initRotY: 0.25,
+      grabRadius: 6.0
+    });
 
     // ============================================================================
     // NOVOS OBJETOS NA MESA 3X EXPANDIDA!
     // ============================================================================
 
-    // 7. TRÊS PLANTAS DIFERENTES QUE CRESCEM PARA O NÍVEL 2 AO SEREM REGADAS!
+    // 7. TRÊS PLANTAS DIFERENTES COM CRESCIMENTO GRADUAL (ENTRE 2 A 5 MINUTOS = 180s!)
     const growablePlants = [];
+    const PLANT_GROWTH_DURATION = 180.0; // 3 minutos (180 segundos) para crescer gradualmente ao Nível 2!
 
     function createGrowablePlant(type, name, x, z) {
       const pGroup = new THREE.Group();
       pGroup.position.set(x, 0, z);
 
-      // Vaso
       const potColor = type === 'cactus' ? 0xc8643b : type === 'fern' ? 0x2c353d : 0xe6dfd5;
       const pot = new THREE.Mesh(
         new THREE.CylinderGeometry(1.9, 1.4, 2.6, 12),
@@ -1484,13 +1785,12 @@
       pot.position.y = 1.3; pot.castShadow = true;
       pGroup.add(pot);
 
-      // Folhagem (escala aumenta quando regada!)
       const foliageGroup = new THREE.Group();
       foliageGroup.position.y = 2.5;
       pGroup.add(foliageGroup);
 
       const flowersGroup = new THREE.Group();
-      flowersGroup.visible = false; // Desabrocha no nível 2!
+      flowersGroup.visible = false;
       foliageGroup.add(flowersGroup);
 
       if (type === 'succulent') {
@@ -1518,7 +1818,6 @@
         fl2.position.set(-1.35, 2.8, 0);
         flowersGroup.add(fl1, fl2);
       } else {
-        // Samambaia / Costela-de-Adão
         const fernMat = new THREE.MeshStandardMaterial({ color: 0x1f7a3e, roughness: 0.35 });
         for (let i = 0; i < 10; i++) {
           const frond = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 2.6), fernMat);
@@ -1540,49 +1839,58 @@
       deskWorld.add(pGroup);
       const plantObj = {
         name,
+        group: pGroup,
+        initX: x, initZ: z,
         x, z,
         foliageGroup,
         flowersGroup,
-        waterHits: 0,
+        isWatered: false,
+        growthElapsed: 0, // Segundos acumulados de crescimento (0 a 180s)
         level: 1,
         targetScale: 1.0,
-        obs: { x, z, r: 2.3, name: `${name} (NÍVEL 1 — REGUE COM ÁGUA PARA CRESCER!)` }
+        obs: { x, z, r: 2.3, name: `${name} (NÍVEL 1)` }
       };
       obstacles.push(plantObj.obs);
       growablePlants.push(plantObj);
+      registerGrabbable({
+        id: 'plant_' + type, name, group: pGroup, obs: plantObj.obs,
+        initX: x, initY: 0, initZ: z, initRotY: 0, grabRadius: 5.2,
+        onRelease: (nx, nz) => { plantObj.x = nx; plantObj.z = nz; }
+      });
     }
 
-    createGrowablePlant('succulent', 'PLANTINHA SUCULENTA', 28, -11);
+    createGrowablePlant('succulent', 'PLANTINHA SUCULENTA', 28, -4);
     createGrowablePlant('cactus', 'CACTO DO DESERTO', -42, -22);
     createGrowablePlant('fern', 'SAMAMBAIA COSTELA-DE-ADÃO', 48, 22);
 
-    // 8. AQUÁRIO COM PEIXES ANIMADOS NADANDO! (Lado Direito Expandido)
+    // 8. AQUÁRIO COM PEIXES NA LATERAL DA MESA A ~10 CM DA BORDA!
+    // A borda direita da mesa fica em x = +90 (DESK_HALF_W).
+    // Girado em 90° (paralelo à borda lateral), a metade da largura do aquário é 5.3 unidades.
+    // Posicionado em x = 81.2, a parede externa do aquário fica em 86.5 -> exatos 3.5 unidades (~10 cm reais!) da borda lateral!
     const aquariumGroup = new THREE.Group();
-    aquariumGroup.position.set(52, 0, -16);
+    const AQ_X = DESK_HALF_W - 8.8; // 81.2 (a ~10cm da borda x=90)
+    const AQ_Z = -4.0;
+    aquariumGroup.position.set(AQ_X, 0, AQ_Z);
+    aquariumGroup.rotation.y = Math.PI / 2;
 
-    // Base preta e tampa do aquário
     const aqBase = new THREE.Mesh(new THREE.BoxGeometry(18, 0.8, 11), new THREE.MeshStandardMaterial({ color: 0x141619 }));
     aqBase.position.y = 0.4; aquariumGroup.add(aqBase);
 
-    // Cascalho colorido no fundo do aquário
     const aqSand = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.9, 10.2), new THREE.MeshStandardMaterial({ color: 0xd8b888, roughness: 0.9 }));
     aqSand.position.y = 1.1; aquariumGroup.add(aqSand);
 
-    // Água translúcida azul do aquário
     const aqWater = new THREE.Mesh(
       new THREE.BoxGeometry(17.2, 7.5, 10.2),
       new THREE.MeshStandardMaterial({ color: 0x18b4e8, transparent: true, opacity: 0.42, roughness: 0.1 })
     );
     aqWater.position.y = 5.2; aquariumGroup.add(aqWater);
 
-    // Paredes de vidro com bordas
     const aqGlass = new THREE.Mesh(
       new THREE.BoxGeometry(17.6, 8.6, 10.6),
       new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, roughness: 0.05 })
     );
     aqGlass.position.y = 5.2; aquariumGroup.add(aqGlass);
 
-    // Algas verdes dentro do aquário
     for (let i = 0; i < 6; i++) {
       const weed = new THREE.Mesh(
         new THREE.CylinderGeometry(0.18, 0.25, 3.5 + (i % 3), 8),
@@ -1592,7 +1900,6 @@
       aquariumGroup.add(weed);
     }
 
-    // Peixinhos coloridos nadando dentro do aquário!
     const fishes = [];
     const fishColors = [0xff5722, 0xffeb3b, 0xff4081, 0x00e5ff, 0xff9800];
     for (let i = 0; i < 7; i++) {
@@ -1615,12 +1922,97 @@
       });
     }
     deskWorld.add(aquariumGroup);
-    obstacles.push({ x: 52, z: -16, r: 9.8, name: 'AQUÁRIO COM PEIXES TROPICAIS NADANDO 🐠' });
+    obstacles.push({ x: AQ_X, z: AQ_Z, r: 8.5, name: 'AQUÁRIO COM PEIXES TROPICAIS (A 10CM DA BORDA LATERAL)' });
 
-    // 9. CONSOLE PLAYSTATION 5 (PS5 Vertical na Mesa Expandida!)
+    // 9. SEGUNDO MONITOR DESLIGADO (MONITOR 2 — AO LADO DO MONITOR 1, LIGA COM O CABO HDMI DO PS5!)
+    const monitor2Canvas = document.createElement('canvas');
+    monitor2Canvas.width = 512;
+    monitor2Canvas.height = 300;
+    const mon2Ctx = monitor2Canvas.getContext('2d');
+    const monitor2Texture = new THREE.CanvasTexture(monitor2Canvas);
+    let hdmi1Connected = false;
+    let hdmi2Connected = false;
+
+    function updateMonitor2Screen() {
+      if (!hdmi2Connected) {
+        // Estado Desligado / Standby
+        mon2Ctx.fillStyle = '#090a0d';
+        mon2Ctx.fillRect(0, 0, 512, 300);
+        mon2Ctx.fillStyle = '#323842';
+        mon2Ctx.font = 'bold 20px "Segoe UI", sans-serif';
+        mon2Ctx.textAlign = 'center';
+        mon2Ctx.fillText('MONITOR 2 — DESLIGADO', 256, 138);
+        mon2Ctx.font = '14px monospace';
+        mon2Ctx.fillStyle = '#ff9100';
+        mon2Ctx.fillText('[CONECTE O CABO HDMI DO PS5 AQUI]', 256, 172);
+      } else {
+        // Estado Ligado com o PS5 Conectado!
+        const g = mon2Ctx.createLinearGradient(0, 0, 512, 300);
+        g.addColorStop(0, '#001d4a');
+        g.addColorStop(0.5, '#0043a4');
+        g.addColorStop(1, '#00112b');
+        mon2Ctx.fillStyle = g;
+        mon2Ctx.fillRect(0, 0, 512, 300);
+
+        mon2Ctx.fillStyle = '#00e5ff';
+        mon2Ctx.font = 'bold 16px sans-serif';
+        mon2Ctx.textAlign = 'left';
+        mon2Ctx.fillText('⚡ HDMI 2 ATIVO — PLAYSTATION 5', 24, 36);
+
+        mon2Ctx.fillStyle = '#ffffff';
+        mon2Ctx.font = '900 30px "Segoe UI", sans-serif';
+        mon2Ctx.textAlign = 'center';
+        mon2Ctx.fillText('🚒 RAVI FIRE ENGINE PS5', 256, 135);
+
+        mon2Ctx.fillStyle = '#ffd24c';
+        mon2Ctx.font = 'bold 18px sans-serif';
+        mon2Ctx.fillText('PRESS START TO PLAY!', 256, 185);
+      }
+      monitor2Texture.needsUpdate = true;
+    }
+    updateMonitor2Screen();
+
+    const monitor2Group = new THREE.Group();
+    const MON2_X = 31.5, MON2_Z = -15.5;
+    monitor2Group.position.set(MON2_X, 0, MON2_Z);
+    monitor2Group.rotation.y = -0.34;
+
+    const mon2Base = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.3, 4.2), legMat);
+    mon2Base.position.y = 0.15; monitor2Group.add(mon2Base);
+    const mon2Neck = new THREE.Mesh(new THREE.BoxGeometry(1.4, 6.5, 0.7), legMat);
+    mon2Neck.position.set(0, 3.4, -1.0); monitor2Group.add(mon2Neck);
+
+    const mon2Frame = new THREE.Mesh(
+      new THREE.BoxGeometry(16.8, 9.8, 0.55),
+      new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: 0.4 })
+    );
+    mon2Frame.position.set(0, 8.2, -0.4);
+    mon2Frame.castShadow = true;
+    monitor2Group.add(mon2Frame);
+
+    const mon2Display = new THREE.Mesh(
+      new THREE.PlaneGeometry(16.0, 9.0),
+      new THREE.MeshBasicMaterial({ map: monitor2Texture })
+    );
+    mon2Display.position.set(0, 8.2, -0.11);
+    monitor2Group.add(mon2Display);
+
+    // LED de status do Monitor 2 (Laranja desligado -> Verde/Azul ligado)
+    const mon2PowerLed = new THREE.Mesh(
+      new THREE.BoxGeometry(0.45, 0.15, 0.1),
+      new THREE.MeshBasicMaterial({ color: 0xff6d00 })
+    );
+    mon2PowerLed.position.set(7.2, 3.45, -0.1);
+    monitor2Group.add(mon2PowerLed);
+
+    deskWorld.add(monitor2Group);
+    obstacles.push({ x: MON2_X, z: MON2_Z, r: 3.4, name: 'MONITOR 2 (CONECTE O CABO HDMI DO PS5)' });
+
+    // 10. CONSOLE PLAYSTATION 5 (PS5 Vertical ao lado do Monitor 2!)
     const ps5ConsoleGroup = new THREE.Group();
-    ps5ConsoleGroup.position.set(36, 0, -24);
-    ps5ConsoleGroup.rotation.y = -0.35;
+    const PS5_X = 47.0, PS5_Z = -21.0;
+    ps5ConsoleGroup.position.set(PS5_X, 0, PS5_Z);
+    ps5ConsoleGroup.rotation.y = -0.42;
 
     const ps5Stand = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.8, 0.45, 24), new THREE.MeshStandardMaterial({ color: 0x16181c }));
     ps5Stand.position.y = 0.22; ps5ConsoleGroup.add(ps5Stand);
@@ -1628,7 +2020,6 @@
     const ps5Core = new THREE.Mesh(new THREE.BoxGeometry(2.1, 11.5, 6.8), new THREE.MeshStandardMaterial({ color: 0x121316, roughness: 0.25 }));
     ps5Core.position.y = 6.2; ps5Core.castShadow = true; ps5ConsoleGroup.add(ps5Core);
 
-    // Tampas brancas laterais curvadas do PS5
     const plateMat = new THREE.MeshStandardMaterial({ color: 0xf4f6fa, roughness: 0.3 });
     const plateL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 12.2, 7.2), plateMat);
     plateL.position.set(-1.15, 6.3, 0); plateL.castShadow = true;
@@ -1636,12 +2027,147 @@
     plateR.position.set(1.15, 6.3, 0); plateR.castShadow = true;
     ps5ConsoleGroup.add(plateL, plateR);
 
-    // Fitas de LED Azul do PS5
     const ps5Led = new THREE.Mesh(new THREE.BoxGeometry(2.16, 10.8, 0.15), new THREE.MeshBasicMaterial({ color: 0x00a8ff }));
     ps5Led.position.set(0, 6.2, 3.38); ps5ConsoleGroup.add(ps5Led);
 
     deskWorld.add(ps5ConsoleGroup);
-    obstacles.push({ x: 36, z: -24, r: 4.5, name: 'CONSOLE PLAYSTATION 5 (PS5)' });
+    obstacles.push({ x: PS5_X, z: PS5_Z, r: 4.5, name: 'CONSOLE PLAYSTATION 5 (PS5)' });
+
+    // ============================================================================
+    // CABOS HDMI INTERATIVOS (NOTEBOOK -> MONITOR 1 & PS5 -> MONITOR 2)
+    // ============================================================================
+    const hdmiCables = [];
+
+    function createInteractiveHdmiCable(config) {
+      // config: { id, name, startPos, initPlugX, initPlugZ, targetPos, cableColor, badgeColor, onConnect }
+      const plugGroup = new THREE.Group();
+      plugGroup.position.set(config.initPlugX, 0.28, config.initPlugZ);
+
+      // Corpo do conector HDMI + Ponta Dourada
+      const plugHousing = new THREE.Mesh(
+        new THREE.BoxGeometry(1.3, 0.48, 1.8),
+        new THREE.MeshStandardMaterial({ color: config.badgeColor, roughness: 0.3 })
+      );
+      plugHousing.castShadow = true;
+      const goldTip = new THREE.Mesh(
+        new THREE.BoxGeometry(0.85, 0.26, 0.65),
+        new THREE.MeshStandardMaterial({ color: 0xffd54f, metalness: 0.85, roughness: 0.2 })
+      );
+      goldTip.position.set(0, 0, -1.1);
+      plugGroup.add(plugHousing, goldTip);
+      deskWorld.add(plugGroup);
+
+      // Fio flexível composto por 14 segmentos articulados entre startPos e plugGroup.position
+      const segCount = 14;
+      const segMeshes = [];
+      const segMat = new THREE.MeshStandardMaterial({ color: config.cableColor, roughness: 0.5 });
+      for (let i = 0; i < segCount; i++) {
+        const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1, 8), segMat);
+        seg.castShadow = true;
+        deskWorld.add(seg);
+        segMeshes.push(seg);
+      }
+
+      const cableObj = {
+        ...config,
+        plugGroup,
+        segMeshes,
+        connected: false,
+        updateCableCurve() {
+          const p0 = config.startPos;
+          const p2 = plugGroup.position;
+          const midX = (p0.x + p2.x) * 0.5;
+          const midZ = (p0.z + p2.z) * 0.5 + 3.5;
+          const curve = new THREE.QuadraticBezierCurve3(
+            p0,
+            new THREE.Vector3(midX, 0.22, midZ),
+            new THREE.Vector3(p2.x, 0.28, p2.z)
+          );
+          const pts = curve.getPoints(segCount);
+          for (let i = 0; i < segCount; i++) {
+            const a = pts[i], b = pts[i + 1];
+            const seg = segMeshes[i];
+            seg.position.copy(a).lerp(b, 0.5);
+            const dist = a.distanceTo(b);
+            seg.scale.set(1, Math.max(0.1, dist), 1);
+            seg.quaternion.setFromUnitVectors(
+              new THREE.Vector3(0, 1, 0),
+              b.clone().sub(a).normalize()
+            );
+          }
+        }
+      };
+      cableObj.updateCableCurve();
+      hdmiCables.push(cableObj);
+
+      registerGrabbable({
+        id: config.id,
+        type: 'hdmi',
+        name: config.name,
+        group: plugGroup,
+        initX: config.initPlugX, initY: 0.28, initZ: config.initPlugZ, initRotY: 0,
+        grabRadius: 5.5,
+        cableRef: cableObj,
+        onDrag: () => {
+          cableObj.updateCableCurve();
+          // Verifica se chegou perto do monitor destino para conectar automaticamente!
+          const distToTarget = Math.hypot(
+            plugGroup.position.x - config.targetPos.x,
+            plugGroup.position.z - config.targetPos.z
+          );
+          if (!cableObj.connected && distToTarget < 6.8) {
+            cableObj.connected = true;
+            plugGroup.position.set(config.targetPos.x, 0.35, config.targetPos.z + 1.8);
+            plugGroup.rotation.y = 0;
+            cableObj.updateCableCurve();
+            if (heldItem && heldItem.id === config.id) {
+              releaseHeldItem();
+            }
+            config.onConnect();
+          }
+        },
+        onRelease: () => {
+          cableObj.updateCableCurve();
+        }
+      });
+    }
+
+    // Cabo HDMI 1: Do Notebook Acer Nitro (-19, -8) para o Monitor 1 LG UltraGear (6.5, -14.3)
+    createInteractiveHdmiCable({
+      id: 'hdmi_laptop',
+      name: 'Cabo HDMI do Notebook (Conectar no Monitor 1)',
+      startPos: new THREE.Vector3(-25.5, 1.4, -7.5),
+      initPlugX: -9.5,
+      initPlugZ: -1.5,
+      targetPos: new THREE.Vector3(6.5, 0.35, -13.5),
+      cableColor: 0x20242a,
+      badgeColor: 0x00acc1,
+      onConnect: () => {
+        hdmi1Connected = true;
+        typedTextLines.push('> [HDMI-1] NOTEBOOK ACER NITRO CONNECTED!');
+        typedTextLines.push('> DUAL DISPLAY WORKSPACE EXTENDED.');
+        updateMonitorScreen();
+        logInteractionEvent('🔌 Cabo HDMI do Notebook conectado com sucesso no Monitor 1!');
+      }
+    });
+
+    // Cabo HDMI 2: Do PS5 (47, -21) para o Monitor 2 Desligado (31.5, -15.5)
+    createInteractiveHdmiCable({
+      id: 'hdmi_ps5',
+      name: 'Cabo HDMI do PS5 (Conectar no Monitor 2)',
+      startPos: new THREE.Vector3(46.5, 1.2, -19.5),
+      initPlugX: 38.5,
+      initPlugZ: -4.5,
+      targetPos: new THREE.Vector3(MON2_X, 0.35, MON2_Z),
+      cableColor: 0x1a1d22,
+      badgeColor: 0x1e88e5,
+      onConnect: () => {
+        hdmi2Connected = true;
+        mon2PowerLed.material.color.setHex(0x00e676);
+        updateMonitor2Screen();
+        logInteractionEvent('🎮 Cabo HDMI do PS5 conectado! O Monitor 2 ligou com o PS5!');
+      }
+    });
 
     // 10. RÁDIO RETRÔ / BOOMBOX (Esquerda Traseira Expandida)
     const radioGroup = new THREE.Group();
@@ -1674,7 +2200,12 @@
     radioGroup.add(antenna);
 
     deskWorld.add(radioGroup);
-    obstacles.push({ x: -54, z: -18, r: 6.2, name: 'RÁDIO RETRÔ BOOMBOX FM 📻' });
+    const radioObs = { x: -54, z: -18, r: 6.2, name: 'RÁDIO RETRÔ BOOMBOX FM 📻' };
+    obstacles.push(radioObs);
+    registerGrabbable({
+      id: 'radio', name: 'Rádio Retrô Boombox', group: radioGroup, obs: radioObs,
+      initX: -54, initY: 0, initZ: -18, initRotY: 0.42, grabRadius: 8.5
+    });
 
     // 11. PILHAS PALITO (AAA BATTERIES ESPALHADAS NA MESA)
     const batteryPositions = [
@@ -1716,7 +2247,12 @@
       usbPlug.position.set(2.5, 0.1, 0.8);
       cableGroup.add(usbPlug);
       deskWorld.add(cableGroup);
-      obstacles.push({ x, z, r: 2.6, name: 'CABO USB-C ENROLADO' });
+      const usbObs = { x, z, r: 2.6, name: 'CABO USB-C ENROLADO' };
+      obstacles.push(usbObs);
+      registerGrabbable({
+        id: 'usb_' + x, name: 'Cabo USB-C Enrolado', group: cableGroup, obs: usbObs,
+        initX: x, initY: 0.18, initZ: z, initRotY: 0, grabRadius: 5.5
+      });
     }
     createCoiledUsbCable(-38, -2, 0x22252a);
     createCoiledUsbCable(42, 6, 0xe8eceb);
@@ -1762,7 +2298,12 @@
       }
 
       deskWorld.add(cbGroup);
-      obstacles.push({ x, z, r: 2.4, name: 'CAIXINHA ORGANIZADORA DE CLIPS 📎' });
+      const clipObs = { x, z, r: 2.4, name: 'CAIXINHA ORGANIZADORA DE CLIPS 📎' };
+      obstacles.push(clipObs);
+      registerGrabbable({
+        id: 'clipbox_' + x, name: 'Caixinha de Clips', group: cbGroup, obs: clipObs,
+        initX: x, initY: 0, initZ: z, initRotY: 0, grabRadius: 5.5
+      });
     }
     createClipBox(-16, 24);
     createClipBox(32, -5);
@@ -2298,6 +2839,122 @@
     scene.add(vehicle);
 
     // ============================================================================
+    // MENU OCULTO, MINI LOG DE EVENTOS E BALÕES DE CONVERSA DO CARRINHO DO RAVI
+    // ============================================================================
+    const uiOverlayEl = document.getElementById('ui-overlay');
+    const btnToggleMenuEl = document.getElementById('btn-toggle-menu');
+    const miniWaterPillEl = document.getElementById('mini-water-pill');
+    const eventLogListEl = document.getElementById('event-log-list');
+    const speechBubbleEl = document.getElementById('car-speech-bubble');
+    const grabBtnEl = document.getElementById('t-grab');
+    const grabLabelEl = document.getElementById('t-grab-label');
+
+    btnToggleMenuEl.addEventListener('click', () => {
+      uiOverlayEl.classList.toggle('open');
+    });
+
+    let lastLoggedMsg = '';
+    function logInteractionEvent(msg) {
+      if (msg === lastLoggedMsg) return;
+      lastLoggedMsg = msg;
+      const now = new Date();
+      const ts = now.toTimeString().slice(0, 8);
+      const li = document.createElement('li');
+      li.textContent = `[${ts}] ${msg}`;
+      eventLogListEl.prepend(li);
+      while (eventLogListEl.children.length > 25) {
+        eventLogListEl.removeChild(eventLogListEl.lastChild);
+      }
+    }
+
+    // Balão de conversa em cima do carrinho
+    let speechTimeout = null;
+    let isSpeechActive = false;
+    let breakSpeechToggle = false;
+    let accelContinuousTime = 0;
+    let lastVrumSpeechTime = -10;
+    let lastPlantSpeechTime = -10;
+
+    function showCarSpeech(text, durationMs = 2600) {
+      speechBubbleEl.textContent = text;
+      speechBubbleEl.style.display = 'block';
+      isSpeechActive = true;
+      if (speechTimeout) clearTimeout(speechTimeout);
+      speechTimeout = setTimeout(() => {
+        speechBubbleEl.style.display = 'none';
+        isSpeechActive = false;
+      }, durationMs);
+    }
+
+    function updateSpeechBubblePosition() {
+      if (!isSpeechActive) return;
+      const anchor = vehicle.position.clone().add(new THREE.Vector3(0, 3.6, 0));
+      anchor.project(camera);
+      if (anchor.z > 1) {
+        speechBubbleEl.style.display = 'none';
+        return;
+      }
+      const sx = (anchor.x * 0.5 + 0.5) * sizes.width;
+      const sy = (-(anchor.y * 0.5) + 0.5) * sizes.height;
+      speechBubbleEl.style.left = `${sx}px`;
+      speechBubbleEl.style.top = `${sy}px`;
+    }
+
+    // ============================================================================
+    // MECÂNICA DE SEGURAR E ARRASTAR OBJETOS (LÁPIS DE COR, CABOS HDMI, MUG, ETC.)
+    // ============================================================================
+    function releaseHeldItem() {
+      if (!heldItem) return;
+      const item = heldItem;
+      heldItem = null;
+      grabBtnEl.classList.remove('holding');
+      grabLabelEl.textContent = 'PEGAR';
+      item.group.position.y = item.initY;
+      if (item.obs) {
+        item.obs.x = item.group.position.x;
+        item.obs.z = item.group.position.z;
+      }
+      if (item.onRelease) {
+        item.onRelease(item.group.position.x, item.group.position.z);
+      }
+      logInteractionEvent(`🫳 Soltou: ${item.name}`);
+      setStatusBanner(`🫳 Objeto solto: ${item.name}`);
+    }
+
+    function toggleGrabItem() {
+      if (isModalOpen) return;
+      if (heldItem) {
+        releaseHeldItem();
+        return;
+      }
+      // Procura o objeto segurável mais próximo do carrinho
+      let best = null;
+      let bestDist = Infinity;
+      grabbableItems.forEach((item) => {
+        if (item.cableRef && item.cableRef.connected) return; // Cabo já conectado
+        const d = Math.hypot(
+          vehicle.position.x - item.group.position.x,
+          vehicle.position.z - item.group.position.z
+        );
+        const maxR = item.grabRadius || 5.2;
+        if (d < maxR && d < bestDist) {
+          bestDist = d;
+          best = item;
+        }
+      });
+
+      if (best) {
+        heldItem = best;
+        grabBtnEl.classList.add('holding');
+        grabLabelEl.textContent = 'SOLTAR';
+        logInteractionEvent(`🧲 Segurando: ${best.name}`);
+        setStatusBanner(`🧲 Segurando: ${best.name} (arraste pela mesa!)`, '#7ee787');
+      } else {
+        setStatusBanner('ℹ️ Aproxime-se de um objeto (Lápis, Cabo HDMI, Caneca, Controle) para pegar!', '#ffd24c');
+      }
+    }
+
+    // ============================================================================
     // SISTEMA DE ÁGUA DO CARRINHO, REGAR PLANTAS E APAGAR INCÊNDIO DO MONITOR
     // ============================================================================
     let waterLevel = 100.0; // 0 a 100%
@@ -2315,6 +2972,7 @@
     function updateWaterHUD() {
       const pct = Math.max(0, Math.min(100, Math.round(waterLevel)));
       waterPctEl.textContent = pct + '%';
+      miniWaterPillEl.textContent = `💧 ${pct}%`;
       waterBarEl.style.width = pct + '%';
       waterBarEl.style.background = pct <= 15
         ? 'linear-gradient(90deg, #ff3d00, #ff9100)'
@@ -2329,14 +2987,15 @@
       if (isModalOpen) return;
       if (waterLevel <= 0) {
         setStatusBanner('⚠️ SEM ÁGUA! Derrube o copo branco e pare na poça!', '#ff5252');
+        logInteractionEvent('⚠️ Tanque de água vazio! Derrube o copo para abastecer.');
         return;
       }
 
       waterLevel = Math.max(0, waterLevel - 0.85);
       updateWaterHUD();
 
-      yellowRoofButton.position.y = 2.42;
-      setTimeout(() => { yellowRoofButton.position.y = 2.48; }, 120);
+      yellowRoofButton.position.y = 2.50;
+      setTimeout(() => { yellowRoofButton.position.y = 2.56; }, 120);
 
       for (let i = 0; i < 3; i++) {
         const drop = new THREE.Mesh(dropGeo, dropMat);
@@ -2370,12 +3029,15 @@
       modalTitle.textContent = title;
       modalDesc.textContent = desc;
       modalBackdrop.style.display = 'flex';
+      logInteractionEvent(title);
     }
 
     function resetAllGameState() {
+      if (heldItem) releaseHeldItem();
       isModalOpen = false;
       isFallingOff = false;
       fallVelocityY = 0;
+      accelContinuousTime = 0;
       modalBackdrop.style.display = 'none';
 
       // Resetar Carrinho e Água
@@ -2387,6 +3049,7 @@
       waterLevel = 100.0;
       updateWaterHUD();
       setStatusBanner('🔄 Jogo reiniciado! Todos os objetos restaurados.', '#7ee787');
+      logInteractionEvent('🔄 Jogo reiniciado e objetos restaurados!');
 
       // Resetar Copo de Água e Poça
       cupSpilled = false;
@@ -2395,16 +3058,40 @@
       puddleMesh.visible = false;
       puddleScale = 0.001;
       puddleMesh.scale.set(0.001, 0.001, 0.001);
-      cupObstacle.name = 'COPO COM ÁGUA (BATA PARA DERRAMAR E ABASTECER!)';
+      cupObstacle.name = 'COPO COM ÁGUA';
+
+      // Resetar Posição de todos os objetos arrastáveis + Lápis e Pista Oculta
+      resetRaceTrackCanvas();
+      grabbableItems.forEach((item) => {
+        item.group.position.set(item.initX, item.initY, item.initZ);
+        item.group.rotation.set(0, item.initRotY || 0, 0);
+        if (item.obs) {
+          item.obs.x = item.initX;
+          item.obs.z = item.initZ;
+        }
+      });
+
+      // Resetar Cabos HDMI e Monitor 2 Desligado
+      hdmi1Connected = false;
+      hdmi2Connected = false;
+      mon2PowerLed.material.color.setHex(0xff6d00);
+      updateMonitor2Screen();
+      hdmiCables.forEach((c) => {
+        c.connected = false;
+        c.updateCableCurve();
+      });
 
       // Resetar Plantas para o Nível 1
       growablePlants.forEach((p) => {
-        p.waterHits = 0;
+        p.x = p.initX;
+        p.z = p.initZ;
+        p.isWatered = false;
+        p.growthElapsed = 0;
         p.level = 1;
         p.targetScale = 1.0;
         p.foliageGroup.scale.set(1, 1, 1);
         p.flowersGroup.visible = false;
-        p.obs.name = `${p.name} (NÍVEL 1 — REGUE COM ÁGUA PARA CRESCER!)`;
+        p.obs.name = `${p.name} (NÍVEL 1)`;
       });
 
       // Resetar Controles e limpar pedacinhos quebrados
@@ -2415,6 +3102,8 @@
         c.stage = 0;
         c.group.position.set(c.initX, 0.14, c.initZ);
         c.group.rotation.set(0, c.initRotY, 0);
+        c.obs.x = c.initX;
+        c.obs.z = c.initZ;
         c.bodyMat.color.setHex(c.origColor);
         c.centerBody.scale.set(1, 1, 1);
         c.centerBody.rotation.set(0, 0, 0);
@@ -2422,10 +3111,10 @@
         c.gripR.visible = true; c.gripR.rotation.set(Math.PI / 2.3, 0, -0.22); c.gripR.position.set(1.18, 0.38, 0.38);
         c.stickL.visible = true; c.stickL.rotation.set(0, 0, 0);
         c.stickR.visible = true; c.stickR.rotation.set(0, 0, 0);
-        c.obs.name = `${c.name} (INTACTO - BATA ATÉ 20X PARA QUEBRAR!)`;
+        c.obs.name = `${c.name} (INTACTO)`;
       });
 
-      // Resetar Teclado, Autodestruição e Monitor
+      // Resetar Teclado, Autodestruição e Monitor 1
       typedTextLines = ['> terminal ready...'];
       selfDestructProgress = 0;
       monitorState = 'normal';
@@ -2434,7 +3123,7 @@
       fireLight.intensity = 0;
       fireAlertEl.style.display = 'none';
       monitorHeadGroup.rotation.set(0, 0, 0);
-      curvedBackMat.color.setHex(0x16181c);
+      curvedBackMat.color.setHex(0x131519);
       updateMonitorScreen();
     }
 
@@ -2454,6 +3143,9 @@
       if (['KeyS', 'ArrowDown'].includes(e.code)) keys.backward = true;
       if (['KeyA', 'ArrowLeft'].includes(e.code)) keys.left = true;
       if (['KeyD', 'ArrowRight'].includes(e.code)) keys.right = true;
+      if (e.code === 'KeyE') {
+        toggleGrabItem();
+      }
       if (e.code === 'Space') {
         keys.spray = true;
         spawnWaterJet();
@@ -2493,6 +3185,11 @@
     bindTouchButton('t-right', 'right');
     bindTouchButton('t-water', 'spray', true);
 
+    grabBtnEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      toggleGrabItem();
+    });
+
     let carSpeed = 0;
     let carAngle = -0.55;
     const maxSpeed = 0.36;
@@ -2509,9 +3206,6 @@
       'CRITICAL_OVERHEAT_WARNING();',
       'disabling_cooling_fans()...'
     ];
-
-    const promptEl = document.getElementById('interaction-prompt');
-    const promptTitleEl = document.getElementById('prompt-title');
 
     window.addEventListener('resize', () => {
       sizes.width = window.innerWidth;
@@ -2532,7 +3226,7 @@
       prevTime = elapsedTime;
 
       // 1. Animação dos Peixinhos no Aquário
-      fishes.forEach((f, idx) => {
+      fishes.forEach((f) => {
         const t = elapsedTime * f.speed + f.phase;
         const fx = Math.cos(t) * f.radiusX;
         const fz = Math.sin(t * 1.3) * f.radiusZ;
@@ -2553,12 +3247,20 @@
         }
       }
 
-      // 3. Crescimento Suave das Plantas Regadas
+      // 3. CRESCIMENTO GRADUAL DAS PLANTAS REGADAS (ENTRE 2 A 5 MINUTOS = 180s!)
       growablePlants.forEach((p) => {
-        const curr = p.foliageGroup.scale.x;
-        if (Math.abs(p.targetScale - curr) > 0.01) {
-          const nextS = curr + (p.targetScale - curr) * 0.08;
-          p.foliageGroup.scale.set(nextS, nextS, nextS);
+        if (p.isWatered && p.level < 2) {
+          p.growthElapsed += dt;
+          const progress = Math.min(1.0, p.growthElapsed / PLANT_GROWTH_DURATION);
+          p.targetScale = 1.0 + progress * 0.85;
+          p.foliageGroup.scale.set(p.targetScale, p.targetScale, p.targetScale);
+
+          if (progress >= 1.0) {
+            p.level = 2;
+            p.flowersGroup.visible = true;
+            logInteractionEvent(`🌸 ${p.name} completou o crescimento gradual e floresceu no Nível 2!`);
+            setStatusBanner(`🌸 ${p.name} chegou ao Nível 2!`, '#7ee787');
+          }
         }
       });
 
@@ -2573,7 +3275,6 @@
         updateMonitorScreen();
 
         if (fireTimer <= 0) {
-          // EXPLOSÃO DO MONITOR!
           monitorState = 'exploded';
           monitorFireGroup.visible = false;
           fireLight.intensity = 0;
@@ -2583,14 +3284,14 @@
           curvedBackMat.color.setHex(0x090a0c);
           updateMonitorScreen();
           setStatusBanner('💥 BOOM! O monitor explodiu! Jogue o carro fora da mesa para resetar.', '#ff5252');
+          logInteractionEvent('💥 O Monitor 1 explodiu após a contagem de autodestruição!');
 
-          // Estilhaços da explosão do monitor
           for (let i = 0; i < 16; i++) {
             const shard = new THREE.Mesh(
               new THREE.BoxGeometry(0.5, 0.2, 0.5),
               new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x111111 : 0x35e0ff })
             );
-            shard.position.set(7.5 + (Math.random() - 0.5) * 14, 0.2, -5 + Math.random() * 8);
+            shard.position.set(6.5 + (Math.random() - 0.5) * 14, 0.2, -5 + Math.random() * 8);
             shard.rotation.set(Math.random(), Math.random(), Math.random());
             deskWorld.add(shard);
             controllerDebrisList.push(shard);
@@ -2598,10 +3299,9 @@
         }
       }
 
-      // 5. Movimentação do Carrinho
+      // 5. Movimentação do Carrinho e Balão "vrum vrumm" após 5s acelerando!
       if (!isModalOpen) {
         if (isFallingOff) {
-          // Caindo para fora da mesa!
           fallVelocityY -= 0.025;
           vehicle.position.y += fallVelocityY;
           vehicle.position.x += Math.sin(carAngle) * carSpeed;
@@ -2616,6 +3316,17 @@
             );
           }
         } else {
+          if (keys.forward || keys.backward) {
+            accelContinuousTime += dt;
+            if (accelContinuousTime >= 5.0 && elapsedTime - lastVrumSpeechTime > 6.5) {
+              lastVrumSpeechTime = elapsedTime;
+              showCarSpeech('vrum vrumm', 2800);
+              logInteractionEvent('🏎️ Ravi acelerando por +5s: "vrum vrumm"');
+            }
+          } else {
+            accelContinuousTime = 0;
+          }
+
           if (keys.forward) carSpeed = Math.min(carSpeed + acceleration, maxSpeed);
           else if (keys.backward) carSpeed = Math.max(carSpeed - acceleration, -maxSpeed * 0.65);
           else carSpeed *= friction;
@@ -2629,7 +3340,7 @@
           let nextX = vehicle.position.x + Math.sin(carAngle) * carSpeed;
           let nextZ = vehicle.position.z + Math.cos(carAngle) * carSpeed;
 
-          // Verificar se entrou na RAMPA DE PAPELÃO na lateral esquerda (x < -DESK_HALF_W e z entre 10 e 26)
+          // Verificar se entrou na RAMPA DE PAPELÃO na lateral esquerda
           if (nextX < -DESK_HALF_W + 1.5 && nextZ > 9 && nextZ < 27) {
             openModal(
               '🚧 Cenário em Construção!',
@@ -2642,40 +3353,38 @@
             fallVelocityY = -0.15;
           }
 
-          // Colisões e Interações com Objetos da Mesa
-          let nearestItem = null;
-          let minDist = Infinity;
-
+          // Colisões com Obstáculos (ignorando o objeto atualmente segurado pelo carrinho)
           obstacles.forEach((obs) => {
+            if (heldItem && heldItem.obs === obs) return;
             const dx = nextX - obs.x;
             const dz = nextZ - obs.z;
             const dist = Math.hypot(dx, dz);
             const minAllowed = obs.r + 1.45;
 
             if (dist < minAllowed && dist > 0.001) {
-              // Se bateu no Copo com Água -> Derrama a água!
+              // Se bateu no Copo com Água -> Derrama a água + Balão "ops" / "eita"!
               if (obs.type === 'water_cup' && !cupSpilled) {
                 cupSpilled = true;
                 cupWaterInside.visible = false;
                 puddleMesh.visible = true;
-                obs.name = 'COPO DERRAMADO (PARE SOBRE A POÇA AZUL PARA ABASTECER!)';
+                showCarSpeech(breakSpeechToggle ? 'eita' : 'ops', 2200);
+                breakSpeechToggle = !breakSpeechToggle;
                 setStatusBanner('🌊 Você derrubou o copo! Pare sobre a poça azul para encher o tanque!', '#35e0ff');
+                logInteractionEvent('🌊 Copo derrubado! Água espalhada na mesa para recarga.');
               }
 
-              // Se bateu em um Controle de Videogame -> Quebra em até 20 batidas (5 estágios)!
+              // Se bateu em um Controle de Videogame Quebrável -> Quebra + Balão "ops" / "eita"!
               if (obs.type === 'controller' && Math.abs(carSpeed) > 0.04) {
                 hitController(obs.ctrlRef, Math.abs(carSpeed));
+                showCarSpeech(breakSpeechToggle ? 'eita' : 'ops', 2000);
+                breakSpeechToggle = !breakSpeechToggle;
+                logInteractionEvent(`💥 Batida no ${obs.ctrlRef.name}: ${obs.ctrlRef.hits}/20 (Estágio ${obs.ctrlRef.stage}/5)`);
               }
 
               const pushFactor = (minAllowed - dist) / dist;
               nextX += dx * pushFactor;
               nextZ += dz * pushFactor;
-              carSpeed *= -0.35; // Pequeno rebote físico ao bater!
-            }
-
-            if (dist < obs.r + 5.5 && dist < minDist) {
-              minDist = dist;
-              nearestItem = obs.name;
+              carSpeed *= -0.35;
             }
           });
 
@@ -2683,7 +3392,6 @@
           if (cupSpilled) {
             const distToPuddle = Math.hypot(nextX - puddleMesh.position.x, nextZ - puddleMesh.position.z);
             if (distToPuddle < 7.5 * puddleScale) {
-              nearestItem = '💧 POÇA DE ÁGUA — RECARREGANDO TANQUE DO CARRINHO!';
               if (waterLevel < 100) {
                 waterLevel = Math.min(100, waterLevel + dt * 38);
                 updateWaterHUD();
@@ -2701,7 +3409,6 @@
           // Passando por cima do Teclado Mecânico -> Digita na tela e acumula Autodestruição!
           if (nextX > -3.2 && nextX < 12.2 && nextZ > 0.8 && nextZ < 7.2) {
             targetY = 0.78 + Math.sin(nextX * 5 + nextZ * 5) * 0.06;
-            nearestItem = `⌨️ DIGITANDO NO TECLADO! (AUTODESTRUIÇÃO: ${Math.floor(selfDestructProgress)}%)`;
 
             if (Math.abs(carSpeed) > 0.02 && monitorState === 'normal') {
               selfDestructProgress = Math.min(100, selfDestructProgress + dt * 24);
@@ -2719,6 +3426,7 @@
                 fireAlertEl.style.display = 'block';
                 updateMonitorScreen();
                 setStatusBanner('🔥 CÓDIGO DE AUTODESTRUIÇÃO ATIVADO! APAGUE O FOGO DO MONITOR!', '#ff5252');
+                logInteractionEvent('🔥 Código de autodestruição 100%! Monitor 1 em chamas!');
               }
             }
           }
@@ -2730,6 +3438,27 @@
             vehicle.rotation.y = carAngle;
           }
 
+          // Se o carrinho estiver SEGURANDO UM OBJETO, arrasta o objeto junto com o carrinho!
+          if (heldItem) {
+            const dragDist = heldItem.type === 'pencil' ? 3.4 : 3.2;
+            const dragX = vehicle.position.x - Math.sin(carAngle) * dragDist;
+            const dragZ = vehicle.position.z - Math.cos(carAngle) * dragDist;
+            heldItem.group.position.x = dragX;
+            heldItem.group.position.z = dragZ;
+            heldItem.group.position.y = heldItem.initY + 0.35;
+            heldItem.group.rotation.y = carAngle;
+
+            // Se estiver segurando o LÁPIS DE COR -> Desenha / Revela a Pista de Corrida Oculta na mesa!
+            if (heldItem.type === 'pencil' && Math.abs(carSpeed) > 0.01) {
+              revealTrackAtWorldPos(dragX, dragZ, 62);
+              logInteractionEvent('🏁 Desenhando a pista de corrida secreta com o Lápis de Cor!');
+            }
+
+            if (heldItem.onDrag) {
+              heldItem.onDrag();
+            }
+          }
+
           carBodyGroup.rotation.x = -carSpeed * 0.25;
           carBodyGroup.rotation.z = (keys.left ? 0.06 : keys.right ? -0.06 : 0) * (Math.abs(carSpeed) / maxSpeed);
 
@@ -2737,17 +3466,10 @@
             w.rotation.x += carSpeed * 1.9;
             if (idx < 2) w.rotation.y = keys.left ? 0.35 : keys.right ? -0.35 : 0;
           });
-
-          if (nearestItem) {
-            promptTitleEl.textContent = nearestItem;
-            promptEl.style.display = 'flex';
-          } else {
-            promptEl.style.display = 'none';
-          }
         }
       }
 
-      // 6. Atualização das Gotas de Água (Regar Plantas + Apagar Fogo do Monitor!)
+      // 6. Atualização das Gotas de Água (Regar Plantas Gradualmente + Apagar Fogo do Monitor!)
       if (keys.spray && !isModalOpen && Math.random() > 0.45) spawnWaterJet();
 
       for (let i = waterDrops.length - 1; i >= 0; i--) {
@@ -2756,29 +3478,30 @@
         d.vel.y -= 0.02;
         d.life--;
 
-        // Verifica se a gota atingiu alguma Planta -> Faz crescer para o Nível 2!
+        // Verifica se a gota atingiu alguma Planta -> Inicia/Mantém o crescimento gradual (3 min) + Balão "plantinhas felizes"!
         growablePlants.forEach((p) => {
           if (p.level < 2) {
             const distP = Math.hypot(d.mesh.position.x - p.x, d.mesh.position.z - p.z);
-            if (distP < 3.4) {
-              p.waterHits++;
-              p.targetScale = 1.0 + Math.min(0.85, (p.waterHits / 18) * 0.85);
-              if (p.waterHits >= 18) {
-                p.level = 2;
-                p.targetScale = 1.85;
-                p.flowersGroup.visible = true;
-                p.obs.name = `🌸 ${p.name} — NÍVEL 2 MÁXIMO (FLORIDA!)`;
-                setStatusBanner(`🌱 ${p.name} cresceu para o Nível 2 e floresceu!`, '#7ee787');
+            if (distP < 3.5) {
+              if (!p.isWatered) {
+                p.isWatered = true;
+                logInteractionEvent(`🌱 ${p.name} regada! Crescendo gradualmente (3 min)...`);
+              }
+              // Avança um pouquinho com a rega ativa enquanto o crescimento gradual de 3 minutos corre
+              p.growthElapsed = Math.min(PLANT_GROWTH_DURATION, p.growthElapsed + 0.08);
+              if (elapsedTime - lastPlantSpeechTime > 3.5) {
+                lastPlantSpeechTime = elapsedTime;
+                showCarSpeech('plantinhas felizes', 2600);
               }
             }
           }
         });
 
-        // Verifica se a gota atingiu o Monitor em Chamas -> Apaga o Incêndio!
+        // Verifica se a gota atingiu o Monitor em Chamas -> Apaga o Incêndio + Balão "eeeee parabens pro Ravi"!
         if (monitorState === 'burning') {
-          const distMon = Math.hypot(d.mesh.position.x - 7.5, d.mesh.position.z - (-11.5));
-          if (distMon < 12.5) {
-            selfDestructProgress = Math.max(0, selfDestructProgress - 3.5);
+          const distMon = Math.hypot(d.mesh.position.x - 6.5, d.mesh.position.z - (-11.5));
+          if (distMon < 13.0) {
+            selfDestructProgress = Math.max(0, selfDestructProgress - 3.8);
             if (selfDestructProgress <= 0) {
               monitorState = 'normal';
               monitorFireGroup.visible = false;
@@ -2786,7 +3509,9 @@
               fireAlertEl.style.display = 'none';
               typedTextLines.push('> FIRE EXTINGUISHED! SYSTEM SAVED.');
               updateMonitorScreen();
-              setStatusBanner('🧯 INCÊNDIO APAGADO! Você salvou o monitor a tempo!', '#35e0ff');
+              showCarSpeech('eeeee parabens pro Ravi', 3800);
+              setStatusBanner('🧯 INCÊNDIO APAGADO! Parabéns pro Ravi!', '#35e0ff');
+              logInteractionEvent('🧯 Incêndio apagado! "eeeee parabens pro Ravi"');
             }
           }
         }
@@ -2800,16 +3525,14 @@
       // 7. Câmera Dinâmica
       let camOffset, lookTarget;
       if (camMode === 'close') {
-        let angleDelta = 0.58; // 0: 3/4 Frontal-Lateral (frente + lateral esquerda)
+        let angleDelta = 0.58;
         let heightCam = 4.6;
         let distCam = 8.2;
         if (closeAngleIndex === 1) {
-          // 1: Perfil Lateral puro (idêntico à foto lateral do carrinho do Ravi!)
           angleDelta = Math.PI / 2;
           heightCam = 2.6;
           distCam = 7.6;
         } else if (closeAngleIndex === 2) {
-          // 2: Traseira & Teto (idêntico à foto traseira mostrando furos de som e janela amarela!)
           angleDelta = Math.PI - 0.15;
           heightCam = 4.8;
           distCam = 7.8;
@@ -2835,6 +3558,9 @@
       const desiredCamPos = lookTarget.clone().add(camOffset);
       camera.position.lerp(desiredCamPos, 0.09);
       camera.lookAt(lookTarget);
+
+      // Atualiza a posição 2D do balão de fala em cima do carrinho do Ravi
+      updateSpeechBubblePosition();
 
       renderer.render(scene, camera);
     }
