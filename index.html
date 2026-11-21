@@ -2422,6 +2422,44 @@
     // ============================================================================
     // obstacles already declared
 
+    // ---------- Líquidos animados (água do copo, aquário e café) ----------
+    const liquidUniforms = { uTime: { value: 0 } };
+    // Padrão de "cáusticas" (luz refratada pela água) feito com senos entrelaçados
+    const GLSL_CAUSTIC = `
+      float caustic(vec2 p, float t) {
+        float v = 0.0;
+        v += sin(p.x * 3.1 + t * 1.3 + sin(p.y * 2.7 + t));
+        v += sin(p.y * 3.7 - t * 1.1 + sin(p.x * 2.3 - t * 0.7));
+        v += sin((p.x + p.y) * 2.9 + t * 0.9 + sin(p.x * 1.7 - t * 0.5));
+        v /= 3.0;
+        return pow(1.0 - abs(v), 5.0);
+      }`;
+    // Superfície redonda de água (copo): ondas concêntricas, cáusticas, menisco claro na borda e reflexo
+    function createRoundWaterMaterial(deep, shallow) {
+      return new THREE.ShaderMaterial({
+        uniforms: { uTime: liquidUniforms.uTime, uDeep: { value: new THREE.Color(deep) }, uShallow: { value: new THREE.Color(shallow) }, uAgitation: { value: 0 } },
+        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `
+          uniform float uTime; uniform vec3 uDeep; uniform vec3 uShallow; uniform float uAgitation;
+          varying vec2 vUv;
+          ${GLSL_CAUSTIC}
+          void main() {
+            vec2 p = vUv * 2.0 - 1.0;
+            float r = length(p);
+            float ring = sin(r * (16.0 + uAgitation * 10.0) - uTime * (3.0 + uAgitation * 6.0)) * 0.5 + 0.5;
+            ring *= (1.0 - r) * (0.25 + uAgitation);
+            float c = caustic(p * 2.6, uTime * 1.2);
+            vec3 col = mix(uDeep, uShallow, 0.3 + 0.45 * c + 0.35 * ring);
+            float rim = smoothstep(0.78, 0.98, r);
+            col = mix(col, vec3(0.92, 1.0, 1.0), rim * 0.6);
+            float spec = pow(max(0.0, 1.0 - length(p - vec2(-0.38, 0.32)) * 2.4), 5.0);
+            col += spec * 0.7;
+            gl_FragColor = vec4(col, 0.94);
+          }`,
+        transparent: true
+      });
+    }
+
     // 1. COPO TÉRMICO STANLEY BRANCO COM ÁGUA (Borda Inox, Tampa Translúcida, Canudo e Logo!)
     const tumblerGroup = new THREE.Group();
     const tumblerPivot = new THREE.Group(); // Pivô na base para tombar!
@@ -2440,21 +2478,23 @@
     tumblerBody.castShadow = true;
     tumblerPivot.add(tumblerBody);
 
-    const tumblerTopRim = new THREE.Mesh(new THREE.CylinderGeometry(1.99, 1.95, 0.45, 28), inoxMat);
+    // Borda aberta (tubo): o cilindro fechado tampava a água do copo
+    const tumblerTopRim = new THREE.Mesh(new THREE.CylinderGeometry(1.99, 1.95, 0.45, 28, 1, true), inoxMat.clone());
+    tumblerTopRim.material.side = THREE.DoubleSide;
     tumblerTopRim.position.y = 6.22;
     tumblerPivot.add(tumblerTopRim);
 
-    const cupWaterInside = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.84, 1.84, 0.15, 24),
-      new THREE.MeshBasicMaterial({ color: 0x26d0ff })
-    );
-    cupWaterInside.position.y = 6.38;
+    // Superfície da água do copo (shader com ondinhas; agita quando o carrinho chega perto)
+    const cupWaterMat = createRoundWaterMaterial(0x0a7fb8, 0x6fe3ff);
+    const cupWaterInside = new THREE.Mesh(new THREE.CircleGeometry(1.84, 40), cupWaterMat);
+    cupWaterInside.rotation.x = -Math.PI / 2;
+    cupWaterInside.position.y = 6.3;
     tumblerPivot.add(cupWaterInside);
 
     // Tampa acrílica translúcida + Canudo reutilizável
     const cupLid = new THREE.Mesh(
       new THREE.CylinderGeometry(1.96, 1.96, 0.22, 28),
-      new THREE.MeshStandardMaterial({ color: 0xe8f4f8, transparent: true, opacity: 0.55, roughness: 0.1 })
+      new THREE.MeshStandardMaterial({ color: 0xe8f4f8, transparent: true, opacity: 0.2, roughness: 0.05, depthWrite: false })
     );
     cupLid.position.y = 6.52;
     const cupStraw = new THREE.Mesh(
@@ -2465,7 +2505,7 @@
     cupStraw.rotation.z = -0.18;
     tumblerPivot.add(cupLid, cupStraw);
 
-    tumblerGroup.position.set(-26, 0, 14);
+    tumblerGroup.position.set(-26, 0.14, 14); // apoiado no tampo (antes ficava 0,14 afundado)
     deskWorld.add(tumblerGroup);
 
     // Poça de água derramada (inicialmente invisível / escala zero)
@@ -2495,8 +2535,90 @@
       },
       group: tumblerGroup,
       mass: 0.85,
-      canTopple: true
+      canTopple: false // o tombo do copo é feito pela animação própria (gira pela quina da base)
     });
+
+    // ---------- Tombo do copo: gira pela QUINA da base no sentido da batida (nunca entra na mesa) ----------
+    // Geometria: base r=1.46 (y=0), boca r=1.99 (y=6.45). Deitado, a lateral encosta na mesa:
+    // ângulo de repouso = 90° − inclinação da lateral.
+    // Quina de apoio = borda inferior da base de inox (r=1.40). Repouso calculado pelo ponto que encosta primeiro
+    // (quina superior da base inox x corpo: atan(0.555 / 0.06) ≈ 1.463 rad), com folga.
+    const CUP_BASE_R = 1.40, CUP_TOP_R = 1.99, CUP_H = 6.45;
+    const CUP_REST_ANGLE = 1.455;
+    const cupFall = { active: false, theta: 0, omega: 0, bounced: false, dirX: 1, dirZ: 0, settled: false, splashT: 0 };
+    const _cupQ = new THREE.Quaternion(), _cupAxis = new THREE.Vector3(0, 0, -1), _cupE = new THREE.Vector3(CUP_BASE_R, 0, 0);
+    function applyCupTilt(theta) {
+      // Rotação em torno do eixo z local (negativo = tomba para +x local) com pivô na quina E=(1.46,0,0)
+      _cupQ.setFromAxisAngle(_cupAxis, theta);
+      tumblerPivot.quaternion.copy(_cupQ);
+      const re = _cupE.clone().applyQuaternion(_cupQ);
+      tumblerPivot.position.set(_cupE.x - re.x + (cupFall.shiftX || 0), _cupE.y - re.y, _cupE.z - re.z);
+    }
+    function spillCup(dx, dz) {
+      const len = Math.hypot(dx, dz) || 1;
+      dx /= len; dz /= len;
+      cupSpilled = true;
+      Object.assign(cupFall, { active: true, theta: 0.04, omega: 1.2, bounced: false, dirX: dx, dirZ: dz, settled: false, splashT: 0, shiftX: 0 });
+      // Gira o grupo para que o +x local aponte para a direção da queda
+      tumblerGroup.rotation.y = Math.atan2(-dz, dx);
+      cupObstacle.vRotY = 0;
+      cupWaterInside.visible = false;
+      // Poça nasce na frente da boca do copo, alongada no sentido do tombo
+      const base = tumblerGroup.position;
+      let px = base.x + dx * (CUP_H + CUP_BASE_R + 2.2), pz = base.z + dz * (CUP_H + CUP_BASE_R + 2.2);
+      px = clamp(px, -DESK_HALF_W + 7, DESK_HALF_W - 7); pz = clamp(pz, -DESK_HALF_D + 7, DESK_HALF_D - 7);
+      puddleMesh.position.set(px, puddleMesh.position.y, pz);
+      puddleMesh.rotation.y = Math.atan2(-dz, dx);
+      puddleScale = 0.001;
+      puddleMesh.visible = true;
+    }
+    function updateCupFall(dt) {
+      if (!cupFall.active) return;
+      if (!cupFall.settled) {
+        // Gravidade puxa mais quanto mais inclinado (como um pêndulo invertido)
+        cupFall.omega += (2.5 + 14 * Math.sin(cupFall.theta)) * dt;
+        cupFall.theta += cupFall.omega * dt;
+        if (cupFall.theta >= CUP_REST_ANGLE) {
+          cupFall.theta = CUP_REST_ANGLE;
+          if (!cupFall.bounced && cupFall.omega > 1.5) { cupFall.omega = -cupFall.omega * 0.18; cupFall.bounced = true; playImpactSound(cupObstacle, 0.3, 1); }
+          else {
+            cupFall.settled = true;
+            // Deitado: o colisor vira uma caixa do tamanho do copo, centrada no corpo dele
+            const bodyMid = new THREE.Vector3(0, CUP_H * 0.5, 0).sub(_cupE).applyQuaternion(_cupQ).add(_cupE);
+            const shift = bodyMid.x;
+            cupFall.shiftX = -shift;
+            const c = Math.cos(tumblerGroup.rotation.y), s = Math.sin(tumblerGroup.rotation.y);
+            cupObstacle.x += shift * c; cupObstacle.z -= shift * s;
+            cupObstacle._px = cupObstacle.x; cupObstacle._pz = cupObstacle.z;
+            tumblerGroup.position.x = cupObstacle.x; tumblerGroup.position.z = cupObstacle.z;
+            cupObstacle.box = { hx: CUP_H / 2 + 0.2, hz: CUP_TOP_R };
+            cupObstacle.r = Math.hypot(cupObstacle.box.hx, cupObstacle.box.hz) * 0.75;
+          }
+        }
+        applyCupTilt(cupFall.theta);
+        // Água jorra pela boca na direção do tombo enquanto o copo cai
+        if (cupFall.theta > 0.7 && cupFall.splashT < 0.6) {
+          cupFall.splashT += dt;
+          const mouth = new THREE.Vector3(0, CUP_H, 0).sub(_cupE).applyQuaternion(_cupQ).add(_cupE).applyMatrix4(tumblerGroup.matrixWorld);
+          for (let i = 0; i < 3; i++) {
+            spawnFx(mouth.x, mouth.y, mouth.z,
+              cupFall.dirX * (5 + Math.random() * 4) + (Math.random() - 0.5) * 2, 1 + Math.random() * 2.5,
+              cupFall.dirZ * (5 + Math.random() * 4) + (Math.random() - 0.5) * 2, 0x6fe3ff, 0.32, 18, 0.7);
+          }
+        }
+      }
+    }
+    function resetCupFall() {
+      Object.assign(cupFall, { active: false, theta: 0, omega: 0, settled: false, shiftX: 0 });
+      tumblerPivot.quaternion.identity();
+      tumblerPivot.position.set(0, 0, 0);
+      tumblerPivot.rotation.set(0, 0, 0);
+      tumblerGroup.rotation.set(0, 0, 0);
+      cupObstacle.box = null;
+      cupObstacle.r = 2.35;
+      puddleMesh.position.set(-20.5, puddleMesh.position.y, 14);
+      puddleMesh.rotation.y = 0;
+    }
 
     // 2 & 3. SUPORTE ARTICULADO A GÁS DUPLO (DUAL ARM COM MORSA NA MESA) + NOTEBOOK ACER NITRO V 15 + MONITOR LG ULTRAGEAR™ 45"
     // ============================================================================
@@ -3183,7 +3305,7 @@
     mouseGroup.rotation.y = -0.12;
     deskWorld.add(mouseGroup);
     const mouseObs = registerDynamicObstacle({
-      obs: { x: 15.6, z: 4.6, r: 1.85, name: 'MOUSE LOGITECH G502 HERO (COM FIO)' },
+      obs: { x: 15.6, z: 4.6, r: 1.85, name: 'MOUSE LOGITECH G502 (SEM FIO)' },
       group: mouseGroup,
       mass: 0.65,
       canTopple: false
@@ -3217,14 +3339,39 @@
     mugBody.position.y = 2.58; mugBody.castShadow = true; mugGroup.add(mugBody);
 
     // Borda Superior de Aço Inox Escovado
-    const mugRim = new THREE.Mesh(new THREE.CylinderGeometry(1.78, 1.75, 0.28, 32), inoxMat);
+    // Borda aberta (tubo + anel no topo): antes era um cilindro fechado que tampava o café
+    const mugRim = new THREE.Mesh(new THREE.CylinderGeometry(1.78, 1.75, 0.28, 32, 1, true), inoxMat.clone());
+    mugRim.material.side = THREE.DoubleSide;
     mugRim.position.y = 4.19;
+    const mugRimTop = new THREE.Mesh(new THREE.RingGeometry(1.66, 1.79, 40), inoxMat);
+    mugRimTop.rotation.x = -Math.PI / 2;
+    mugRimTop.position.y = 4.335;
+    mugGroup.add(mugRimTop);
     // Café Escuro Quente Dentro
-    const coffeeInside = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.68, 1.68, 0.12, 32),
-      new THREE.MeshStandardMaterial({ color: 0x221106, roughness: 0.12 })
-    );
-    coffeeInside.position.y = 4.25;
+    // Café quente: superfície com creme (crema) girando devagar e reflexo; o vapor sai por cima (ver updateCoffeeSteam)
+    const coffeeMat = new THREE.ShaderMaterial({
+      uniforms: { uTime: liquidUniforms.uTime },
+      vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `
+        uniform float uTime; varying vec2 vUv;
+        void main() {
+          vec2 p = vUv * 2.0 - 1.0;
+          float r = length(p), a = atan(p.y, p.x);
+          float swirl = sin(a * 3.0 + r * 9.0 - uTime * 0.7) * 0.5 + 0.5;
+          float swirl2 = sin(a * 5.0 - r * 13.0 + uTime * 0.45) * 0.5 + 0.5;
+          vec3 coffee = vec3(0.16, 0.075, 0.03);
+          vec3 crema = vec3(0.62, 0.38, 0.19);
+          float mask = smoothstep(0.55, 0.97, r) * 0.85 + (swirl * 0.22 + swirl2 * 0.12) * smoothstep(0.15, 0.85, r);
+          vec3 col = mix(coffee, crema, clamp(mask, 0.0, 1.0));
+          float spec = pow(max(0.0, 1.0 - length(p - vec2(-0.32, 0.36)) * 2.6), 6.0);
+          col += spec * 0.45;
+          gl_FragColor = vec4(col, 1.0);
+        }`
+    });
+    const coffeeInside = new THREE.Mesh(new THREE.CircleGeometry(1.7, 40), coffeeMat);
+    coffeeInside.rotation.x = -Math.PI / 2;
+    coffeeInside.position.y = 4.22;
+    coffeeInside.userData.isCoffee = true;
 
     // Alça Retangular Metálica Moderna com Cantos Suaves (Exata da Foto do Usuário!)
     const handleMat = new THREE.MeshStandardMaterial({ color: 0x17191d, roughness: 0.45, metalness: 0.4 });
@@ -3246,6 +3393,63 @@
 
     mugGroup.position.set(21.5, 0.14, -2.5);
     deskWorld.add(mugGroup);
+
+    // ---------- Vapor do café quente (sai de todas as canecas MuleSoft) ----------
+    const coffeeMugs = [mugGroup]; // a caneca gigante do Portal 4 entra aqui também
+    const steamTexture = (() => {
+      const c = document.createElement('canvas'); c.width = c.height = 64;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.45, 'rgba(255,255,255,0.35)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
+      return new THREE.CanvasTexture(c);
+    })();
+    const steamPuffs = [];
+    for (let i = 0; i < 48; i++) {
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: steamTexture, transparent: true, opacity: 0, depthWrite: false, color: 0xf4f1ee }));
+      s.visible = false;
+      scene.add(s);
+      steamPuffs.push({ s, life: 0, max: 1, vx: 0, vz: 0, k: 1, phase: 0 });
+    }
+    const _coffeeWorld = new THREE.Vector3(), _coffeeUp = new THREE.Vector3();
+    let steamSpawnAcc = 0;
+    function updateCoffeeSteam(dt, time) {
+      steamSpawnAcc += dt * 9; // ~9 baforadas por segundo por caneca
+      while (steamSpawnAcc >= 1) {
+        steamSpawnAcc -= 1;
+        coffeeMugs.forEach((mug) => {
+          if (!mug.visible) return;
+          let coffee = mug.userData.coffeeMesh;
+          if (!coffee) { mug.traverse((o) => { if (o.userData && o.userData.isCoffee) coffee = o; }); mug.userData.coffeeMesh = coffee; }
+          if (!coffee) return;
+          // Caneca tombada não solta vapor
+          _coffeeUp.set(0, 1, 0).applyQuaternion(mug.getWorldQuaternion(new THREE.Quaternion()));
+          if (_coffeeUp.y < 0.85) return;
+          coffee.getWorldPosition(_coffeeWorld);
+          const k = mug.getWorldScale(new THREE.Vector3()).x; // caneca gigante = vapor maior
+          const p = steamPuffs.find(q => q.life <= 0);
+          if (!p) return;
+          p.life = p.max = 1.6 + Math.random() * 0.9;
+          p.k = k;
+          p.vx = (Math.random() - 0.5) * 0.25 * k; p.vz = (Math.random() - 0.5) * 0.25 * k;
+          p.phase = Math.random() * 6.28;
+          p.s.position.set(_coffeeWorld.x + (Math.random() - 0.5) * 1.6 * k, _coffeeWorld.y + 0.15 * k, _coffeeWorld.z + (Math.random() - 0.5) * 1.6 * k);
+          p.s.visible = true;
+        });
+      }
+      steamPuffs.forEach((p) => {
+        if (p.life <= 0) return;
+        p.life -= dt;
+        if (p.life <= 0) { p.s.visible = false; return; }
+        const age = 1 - p.life / p.max; // 0 → 1
+        p.s.position.x += (p.vx + Math.sin(time * 2.2 + p.phase) * 0.35 * p.k) * dt;
+        p.s.position.z += (p.vz + Math.cos(time * 1.7 + p.phase) * 0.25 * p.k) * dt;
+        p.s.position.y += (1.4 + age * 0.8) * p.k * dt;
+        const size = (0.6 + age * 1.8) * p.k;
+        p.s.scale.set(size, size, 1);
+        p.s.material.opacity = Math.sin(age * Math.PI) * 0.38;
+      });
+    }
     const mugObs = registerDynamicObstacle({
       obs: { x: 21.5, z: -2.5, r: 1.95, name: 'CANECA MULESOFT MENTOR COM CORTIÇA' },
       group: mugGroup,
@@ -3759,6 +3963,7 @@
         g.scale.setScalar(2.2);
         const wrap = new THREE.Group();
         wrap.add(g);
+        coffeeMugs.push(g); // café quente com vapor também na caneca gigante
         return { g: wrap, col: { r: 4.3 }, h: 9.6 };
       }
       // 5) Galão de água + tubulação (saneamento)
@@ -4157,15 +4362,20 @@
     // Bolhas de ar 3D que sobem continuamente da pedra porosa
     const aquariumBubbles = [];
     const bubbleGeo = new THREE.SphereGeometry(0.14, 10, 10);
-    const bubbleMat = new THREE.MeshBasicMaterial({ color: 0xe0f7fa, transparent: true, opacity: 0.75 });
-    for (let i = 0; i < 12; i++) {
+    const bubbleMat = new THREE.MeshStandardMaterial({ color: 0xeafcff, transparent: true, opacity: 0.6, roughness: 0.05, metalness: 0.2, emissive: 0x9fe8ff, emissiveIntensity: 0.25 });
+    // Duas saídas de bolhas: pedra porosa (colunas finas) e bico do filtro (bolhas maiores e mais rápidas)
+    const BUBBLE_SOURCES = [{ x: -6.8, y: 2.1, z: 2.6, size: 1 }, { x: -7.6, y: 6.6, z: -2.9, size: 1.4 }];
+    for (let i = 0; i < 22; i++) {
+      const src = BUBBLE_SOURCES[i < 14 ? 0 : 1];
       const bMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
-      bMesh.position.set(-6.8 + (Math.random() - 0.5) * 0.6, 2.1 + (i / 12) * 6.8, 2.6 + (Math.random() - 0.5) * 0.6);
+      const t = (i % 14) / 14;
+      bMesh.position.set(src.x, src.y + t * (9.0 - src.y), src.z);
       aquariumGroup.add(bMesh);
       aquariumBubbles.push({
-        mesh: bMesh,
-        speed: 1.8 + Math.random() * 1.1,
-        wobble: Math.random() * Math.PI * 2
+        mesh: bMesh, src,
+        speed: (1.5 + Math.random() * 1.0) * (src.size > 1 ? 1.3 : 1),
+        wobble: Math.random() * Math.PI * 2,
+        size: (0.6 + Math.random() * 0.7) * src.size
       });
     }
 
@@ -4184,19 +4394,119 @@
     }
 
     // Água Cristalina Azul-Turquesa + Superfície Superior com Brilho
+    // Volume de água: mais escuro no fundo, claro perto da superfície, com faixas de luz ondulando
     const aqWater = new THREE.Mesh(
       new THREE.BoxGeometry(17.9, 7.6, 10.7),
-      new THREE.MeshStandardMaterial({ color: 0x16c2f5, transparent: true, opacity: 0.34, roughness: 0.08 })
+      new THREE.ShaderMaterial({
+        uniforms: { uTime: liquidUniforms.uTime },
+        vertexShader: `varying vec3 vPos; void main() { vPos = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `
+          uniform float uTime; varying vec3 vPos;
+          ${GLSL_CAUSTIC}
+          void main() {
+            float h = clamp((vPos.y + 3.8) / 7.6, 0.0, 1.0);
+            vec3 deep = vec3(0.02, 0.32, 0.55), shallow = vec3(0.35, 0.86, 0.98);
+            vec3 col = mix(deep, shallow, pow(h, 0.8));
+            float c = caustic(vec2(vPos.x * 0.32 + vPos.y * 0.12, vPos.z * 0.32 - vPos.y * 0.1), uTime * 0.7);
+            col += c * (0.12 + 0.18 * h) * vec3(0.7, 1.0, 1.0);
+            gl_FragColor = vec4(col, 0.30 + (1.0 - h) * 0.2);
+          }`,
+        transparent: true,
+        depthWrite: false
+      })
     );
     aqWater.position.y = 5.45;
+    aqWater.renderOrder = 1;
     aquariumGroup.add(aqWater);
+
+    // Superfície ondulada (malha com ondas no vértice) + brilho das cáusticas
+    const aqSurface = new THREE.Mesh(
+      new THREE.PlaneGeometry(17.9, 10.7, 36, 22),
+      new THREE.ShaderMaterial({
+        uniforms: { uTime: liquidUniforms.uTime },
+        vertexShader: `
+          uniform float uTime; varying vec2 vUv; varying float vWave;
+          void main() {
+            vUv = uv;
+            vec3 p = position;
+            float w = sin(p.x * 1.1 + uTime * 1.6) * 0.06 + sin(p.y * 1.4 - uTime * 1.3) * 0.05 + sin((p.x + p.y) * 2.3 + uTime * 2.1) * 0.025;
+            p.z += w;
+            vWave = w;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+          }`,
+        fragmentShader: `
+          uniform float uTime; varying vec2 vUv; varying float vWave;
+          ${GLSL_CAUSTIC}
+          void main() {
+            vec2 p = (vUv - 0.5) * vec2(17.9, 10.7) * 0.28;
+            float c = caustic(p, uTime * 1.1);
+            vec3 col = mix(vec3(0.25, 0.78, 0.95), vec3(0.85, 1.0, 1.0), c * 0.8 + vWave * 4.0);
+            gl_FragColor = vec4(col, 0.42 + c * 0.25);
+          }`,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      })
+    );
+    aqSurface.rotation.x = -Math.PI / 2;
+    aqSurface.position.y = 9.24;
+    aqSurface.renderOrder = 2;
+    aquariumGroup.add(aqSurface);
+
+    // Cáusticas dançando na areia (luz somada por cima do substrato)
+    const aqSandCaustics = new THREE.Mesh(
+      new THREE.PlaneGeometry(17.6, 10.4),
+      new THREE.ShaderMaterial({
+        uniforms: { uTime: liquidUniforms.uTime },
+        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `
+          uniform float uTime; varying vec2 vUv;
+          ${GLSL_CAUSTIC}
+          void main() {
+            vec2 p = (vUv - 0.5) * vec2(17.6, 10.4) * 0.42;
+            float c = caustic(p, uTime * 1.3) + caustic(p * 1.7 + 3.0, uTime * 0.9) * 0.5;
+            gl_FragColor = vec4(vec3(0.55, 0.95, 1.0) * c * 0.55, 1.0);
+          }`,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      })
+    );
+    aqSandCaustics.rotation.x = -Math.PI / 2;
+    aqSandCaustics.position.y = 1.82;
+    aquariumGroup.add(aqSandCaustics);
+
+    // Raios de luz da luminária atravessando a água (planos suaves e aditivos)
+    const aqShaftMat = new THREE.ShaderMaterial({
+      uniforms: { uTime: liquidUniforms.uTime },
+      vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `
+        uniform float uTime; varying vec2 vUv;
+        void main() {
+          float edge = smoothstep(0.0, 0.35, vUv.x) * smoothstep(1.0, 0.65, vUv.x);
+          float fade = pow(vUv.y, 1.6);
+          float flick = 0.75 + 0.25 * sin(uTime * 1.3 + vUv.x * 6.0);
+          gl_FragColor = vec4(vec3(0.6, 0.95, 1.0) * edge * fade * flick * 0.22, 1.0);
+        }`,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    [[-5.5, 0.18], [-1.2, -0.12], [3.4, 0.1], [6.8, -0.2]].forEach(([sx, tilt]) => {
+      const shaft = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 7.2), aqShaftMat);
+      shaft.position.set(sx, 5.5, -0.4);
+      shaft.rotation.z = tilt;
+      aquariumGroup.add(shaft);
+    });
 
     // Paredes de Vidro Temperado Cristalino
     const aqGlass = new THREE.Mesh(
       new THREE.BoxGeometry(18.2, 8.8, 11.0),
-      new THREE.MeshStandardMaterial({ color: 0xe8faff, transparent: true, opacity: 0.16, roughness: 0.04, metalness: 0.1 })
+      new THREE.MeshStandardMaterial({ color: 0xe8faff, transparent: true, opacity: 0.12, roughness: 0.04, metalness: 0.1, depthWrite: false })
     );
     aqGlass.position.y = 5.25;
+    aqGlass.renderOrder = 3; // vidro por último: não esconde a água de dentro
     aquariumGroup.add(aqGlass);
 
     // APENAS 3 PEIXES TROPICAIS DETALHADOS (1: Peixe-Palhaço Nemo, 2: Blue Tang Dory, 3: Acará-Bandeira Dourado!)
@@ -6347,7 +6657,17 @@
       worldUniforms.uPlayer.value.copy(vehicle.position);
       updateFallingLeaves(time, dt);
       wallClock.update();
+      // Líquidos: tempo dos shaders, vapor do café e água do copo agitada pelo carrinho passando perto
+      liquidUniforms.uTime.value = time;
+      updateCoffeeSteam(dt, time);
+      {
+        const tp = tumblerGroup.position;
+        const near = Math.hypot(vehicle.position.x - tp.x, vehicle.position.z - tp.z);
+        const target = vehicle.position.y > -15 ? clamp((1 - near / 12) * (0.4 + Math.abs(carSpeed) * 2), 0, 1) : 0;
+        cupWaterMat.uniforms.uAgitation.value += (target - cupWaterMat.uniforms.uAgitation.value) * Math.min(1, dt * 3);
+      }
       updateCareerObjects(time);
+      updateBowlingGame(time, dt);
       updateExplosionFx(dt);
       updateBatteryRespawns(time);
       updateFx(dt);
@@ -6603,23 +6923,26 @@
 
     // Muros de tijolinhos (cada tijolo é um objeto que cai e desliza)
     const brickMat = new THREE.MeshStandardMaterial({ color: 0xb5523b, roughness: 0.85 });
-    const brickGeo = new THREE.BoxGeometry(1.8, 0.9, 0.9);
+    // Tijolos maiores (proporção do carrinho: ~2.6 de largura)
+    const BRICK = { w: 2.7, h: 1.35, d: 1.35 };
+    const brickGeo = new THREE.BoxGeometry(BRICK.w, BRICK.h, BRICK.d);
     function createBrickWall(x, z, y, rotY, cols = 4, rows = 3) {
       const dirX = Math.cos(rotY), dirZ = -Math.sin(rotY);
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const off = (c - (cols - 1) / 2) * 1.85 + (r % 2 ? 0.9 : 0);
+          const off = (c - (cols - 1) / 2) * (BRICK.w + 0.06) + (r % 2 ? BRICK.w / 2 : 0);
           const bx = x + dirX * off, bz = z + dirZ * off;
           const group = new THREE.Group();
           const brick = new THREE.Mesh(brickGeo, brickMat);
-          brick.position.y = 0.45;
+          brick.position.y = BRICK.h / 2;
           brick.castShadow = true; brick.receiveShadow = true;
           group.add(brick);
-          group.position.set(bx, y + r * 0.92, bz);
+          group.position.set(bx, y + r * (BRICK.h + 0.02), bz);
           group.rotation.y = rotY;
           scene.add(group);
-          const obs = registerDynamicObstacle({ obs: { x: bx, z: bz, r: 0.8, box: { hx: 0.9, hz: 0.45 }, h: 0.9, name: 'TIJOLINHO' }, group, mass: 0.45, canTopple: true });
-          obs.stackOffset = r * 0.92;     // tijolos de cima caem quando o muro é atingido
+          const obs = registerDynamicObstacle({ obs: { x: bx, z: bz, r: 1.1, box: { hx: BRICK.w / 2, hz: BRICK.d / 2 }, h: BRICK.h, name: 'TIJOLINHO' }, group, mass: 0.75, canTopple: true });
+          obs.friction = 0.86; // tijolo arrasta no chão e para logo
+          obs.stackOffset = r * (BRICK.h + 0.02);     // tijolos de cima caem quando o muro é atingido
           obs.initStack = obs.stackOffset;
           obs.restOffset = (y - surfaceBaseY(y));
           obs.brickWall = { x, z };
@@ -6660,7 +6983,7 @@
       scene.add(lane);
       const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: createDsLabelTexture('Boliche', { width: 512, height: 128 }), depthWrite: false }));
       sign.scale.set(9, 2.25, 1);
-      sign.position.set(BOWLING.x, FLOOR_SURFACE_Y + 12, BOWLING.zEnd - 2);
+      sign.position.set(BOWLING.x, FLOOR_SURFACE_Y + 14.6, BOWLING.zEnd - 1.2);
       scene.add(sign);
     })();
 
@@ -6699,6 +7022,7 @@
       obs.r = 0.6;
       playTone(300 + Math.random() * 200, 0, 0.08, 'square', 0.05);
       clearTimeout(bowlingCheckTimer);
+      if (bowlingGame.active) return; // durante o evento o placar conta os pontos
       bowlingCheckTimer = setTimeout(() => {
         const down = bowlingPins.filter(p => p.knocked).length;
         if (down === bowlingPins.length) {
@@ -6755,9 +7079,191 @@
     }
     const bowlingInteractive = {
       id: 'bowling', name: 'Boliche', point: [BOWLING.x - 8, BOWLING.zStart + 3], y: FLOOR_SURFACE_Y,
-      text: 'Empurre a bola de boliche com o carrinho e tente derrubar os 10 pinos de uma vez. STRIKE!',
-      actions: [{ label: 'Arrumar os pinos', run: () => { resetBowling(); showCarSpeech('Pinos arrumados!', 1600); } }]
+      text: 'Ilha do Boliche: empurre a bola com o carrinho e derrube os 10 pinos! A cada jogada os pinos são arrumados e o carrinho volta para a frente da bola. Sair da área do boliche encerra o jogo.',
+      actions: [
+        { label: '🎳 Jogar boliche', run: () => startBowlingGame() },
+        { label: 'Arrumar os pinos', run: () => { resetBowling(); showCarSpeech('Pinos arrumados!', 1600); } }
+      ]
     };
+
+    // ---------- Evento do Boliche: LEDs na pista, placar e rodadas automáticas ----------
+    const BOWLING_AREA = { x0: BOWLING.x - 13, x1: BOWLING.x + 13, z0: BOWLING.zStart - 10, z1: BOWLING.zEnd };
+    const BOWLING_BEST_KEY = 'fire_engine_bowling_best_v1';
+    let bowlingBest = 0;
+    try { bowlingBest = parseInt(localStorage.getItem(BOWLING_BEST_KEY) || '0', 10) || 0; } catch (e) { /* ignora */ }
+    const bowlingGame = { active: false, phase: 'idle', t: 0, throwNo: 0, total: 0, strikes: 0, last: null, lastText: '' };
+
+    // Fileiras de LEDs nas duas canaletas (InstancedMesh com cor por LED)
+    const BOWLING_LEDS_PER_SIDE = 18;
+    const bowlingLeds = (() => {
+      const geo = new THREE.BoxGeometry(0.45, 0.22, 0.9);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const mesh = new THREE.InstancedMesh(geo, mat, BOWLING_LEDS_PER_SIDE * 2);
+      const m4 = new THREE.Matrix4();
+      const len = BOWLING.zEnd - BOWLING.zStart - 2;
+      for (let s = 0; s < 2; s++) {
+        for (let i = 0; i < BOWLING_LEDS_PER_SIDE; i++) {
+          const z = BOWLING.zStart + 1 + (i / (BOWLING_LEDS_PER_SIDE - 1)) * len;
+          m4.makeTranslation(BOWLING.x + (s ? 6.35 : -6.35), FLOOR_SURFACE_Y + 0.12, z);
+          mesh.setMatrixAt(s * BOWLING_LEDS_PER_SIDE + i, m4);
+          mesh.setColorAt(s * BOWLING_LEDS_PER_SIDE + i, new THREE.Color(0x35e0ff));
+        }
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      scene.add(mesh);
+      return mesh;
+    })();
+    // Marcações da pista: linha de falta, pontos-guia e flechas extras
+    (function bowlingLaneMarks() {
+      const markMat = new THREE.MeshBasicMaterial({ color: 0x2b1d2e });
+      const foul = new THREE.Mesh(new THREE.PlaneGeometry(12, 0.25), new THREE.MeshBasicMaterial({ color: 0xc21515 }));
+      foul.rotation.x = -Math.PI / 2;
+      foul.position.set(BOWLING.x, FLOOR_SURFACE_Y + 0.06, BOWLING.zStart + 8.5);
+      scene.add(foul);
+      [-3.6, -1.8, 0, 1.8, 3.6].forEach((dx) => {
+        const dot = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), markMat);
+        dot.rotation.x = -Math.PI / 2;
+        dot.position.set(BOWLING.x + dx, FLOOR_SURFACE_Y + 0.06, BOWLING.zStart + 10.5);
+        scene.add(dot);
+      });
+    })();
+    // Placar 3D atrás dos pinos (virado para quem vem jogar)
+    const bowlingBoard = (() => {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 256;
+      const tex = new THREE.CanvasTexture(c);
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x251f2b, roughness: 0.6 });
+      const board = new THREE.Mesh(new THREE.BoxGeometry(12, 6, 0.4), [frameMat, frameMat, frameMat, frameMat, frameMat, new THREE.MeshBasicMaterial({ map: tex })]);
+      board.position.set(BOWLING.x, FLOOR_SURFACE_Y + 9.5, BOWLING.zEnd - 1.2);
+      [-1, 1].forEach((s) => {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6.6, 0.5), frameMat);
+        post.position.set(BOWLING.x + s * 5.6, FLOOR_SURFACE_Y + 3.3, BOWLING.zEnd - 1.2);
+        scene.add(post);
+      });
+      scene.add(board);
+      return { c, ctx: c.getContext('2d'), tex };
+    })();
+    function drawBowlingBoard() {
+      const { ctx, tex } = bowlingBoard;
+      const g = bowlingGame;
+      ctx.fillStyle = '#1d1721'; ctx.fillRect(0, 0, 512, 256);
+      ctx.strokeStyle = '#ffceca'; ctx.lineWidth = 6; ctx.strokeRect(6, 6, 500, 244);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffceca'; ctx.font = 'bold 44px "Amatic SC", sans-serif';
+      ctx.fillText(g.active ? `JOGADA ${Math.max(1, g.throwNo)}` : 'BOLICHE', 256, 42);
+      ctx.fillStyle = '#ffffff'; ctx.font = 'bold 78px Nunito, sans-serif';
+      ctx.fillText(String(g.total), 256, 120);
+      ctx.font = 'bold 24px Nunito, sans-serif';
+      ctx.fillStyle = '#d5ff95';
+      ctx.fillText(g.lastText || (g.active ? 'Empurre a bola!' : 'Aperte o ponto do boliche para jogar'), 256, 180);
+      ctx.fillStyle = '#ffc67b'; ctx.font = '22px Nunito, sans-serif';
+      ctx.fillText(`Strikes: ${g.strikes}   ·   Recorde: ${bowlingBest}`, 256, 222);
+      tex.needsUpdate = true;
+    }
+    drawBowlingBoard();
+
+    function inBowlingArea(x, z) {
+      return x > BOWLING_AREA.x0 && x < BOWLING_AREA.x1 && z > BOWLING_AREA.z0 && z < BOWLING_AREA.z1;
+    }
+    // Carrinho de frente para a bola, no começo da pista
+    function placeCarForBowling() {
+      teleportVehicle({ name: 'Boliche', x: BOWLING.x, z: bowlingBall.initZ - 7, angle: 0, silent: true, floor: true });
+      carSpeed = 0;
+      if (typeof closeCamAngle !== 'undefined') closeCamAngle = 0;
+    }
+    function startBowlingGame() {
+      if (raceState !== 'idle') endRace(true);
+      Object.assign(bowlingGame, { active: true, phase: 'aim', t: 0, throwNo: 1, total: 0, strikes: 0, lastText: '' });
+      resetBowling();
+      placeCarForBowling();
+      setCameraMode('close');
+      drawBowlingBoard();
+      notify({ type: 'info', title: '🎳 Boliche!', description: 'Empurre a bola contra os pinos. Sair da área encerra o jogo.', duration: 4000 });
+      showCarSpeech('Vamos jogar boliche!', 2000);
+    }
+    function endBowlingGame(reason) {
+      if (!bowlingGame.active) return;
+      const throwsDone = bowlingGame.throwNo - (bowlingGame.phase === 'aim' ? 1 : 0);
+      bowlingGame.active = false;
+      bowlingGame.phase = 'idle';
+      if (bowlingGame.total > bowlingBest) {
+        bowlingBest = bowlingGame.total;
+        try { localStorage.setItem(BOWLING_BEST_KEY, String(bowlingBest)); } catch (e) { /* ignora */ }
+      }
+      bowlingGame.lastText = `Fim de jogo: ${bowlingGame.total} pontos`;
+      drawBowlingBoard();
+      notify({ type: 'info', title: 'Boliche encerrado', description: `${reason || ''} Total: ${bowlingGame.total} pontos em ${throwsDone} jogada(s).`.trim(), duration: 4500 });
+    }
+    function scoreBowlingThrow() {
+      const g = bowlingGame;
+      const down = bowlingPins.filter(p => p.knocked).length;
+      const strike = down === bowlingPins.length;
+      const pts = down + (strike ? 10 : 0); // strike vale bônus de 10
+      g.total += pts;
+      if (strike) g.strikes++;
+      g.lastText = strike ? `STRIKE! +${pts}` : down ? `${down} pino${down > 1 ? 's' : ''}: +${pts}` : 'Nenhum pino... tente de novo!';
+      drawBowlingBoard();
+      if (strike) {
+        notify({ type: 'achievement', title: 'STRIKE!', description: 'Todos os 10 pinos derrubados! +20 pontos', progress: '10 / 10', duration: 4500 });
+        confettiBurst(BOWLING.x, FLOOR_SURFACE_Y + 3, BOWLING.pinsZ + 3, 90);
+        unlockAchievement('bowling');
+      } else {
+        notify({ type: 'info', title: `Jogada ${g.throwNo}: ${down} pino${down === 1 ? '' : 's'}`, description: `Total: ${g.total} pontos`, duration: 3000 });
+      }
+      playTone(strike ? 880 : 520, 0, 0.15, 'triangle', 0.06);
+      g.flash = strike ? 2.4 : 0.8;
+    }
+    function updateBowlingGame(time, dt) {
+      const g = bowlingGame;
+      // LEDs: ondas que correm para os pinos; mais rápidas com a bola rolando; arco-íris no strike
+      const col = new THREE.Color();
+      const rolling = g.phase === 'rolling';
+      for (let s = 0; s < 2; s++) {
+        for (let i = 0; i < BOWLING_LEDS_PER_SIDE; i++) {
+          const k = i / BOWLING_LEDS_PER_SIDE;
+          if (g.flash > 0) col.setHSL((time * 1.5 + k) % 1, 1, 0.55);
+          else {
+            const wave = 0.5 + 0.5 * Math.sin((k * 8 - time * (rolling ? 14 : g.active ? 5 : 2)));
+            // Ciano forte em ondas; esperando a jogada = rosa/magenta do DS; bola rolando = ciano acelerado
+            if (g.active && !rolling) col.setHSL(0.88, 1, 0.32 + wave * 0.3);
+            else col.setHSL(0.52, 1, 0.28 + wave * 0.32);
+          }
+          bowlingLeds.setColorAt(s * BOWLING_LEDS_PER_SIDE + i, col);
+        }
+      }
+      bowlingLeds.instanceColor.needsUpdate = true;
+      if (g.flash > 0) g.flash = Math.max(0, g.flash - dt);
+      if (!g.active) return;
+
+      // Sair da área do boliche encerra o evento
+      const vp = vehicle.position;
+      if (!inBowlingArea(vp.x, vp.z) || vp.y > -15) { endBowlingGame('Você saiu da área do boliche.'); return; }
+
+      const b = bowlingBall;
+      const ballSpeed = Math.hypot(b.vx, b.vz);
+      g.t += dt;
+      if (g.phase === 'aim') {
+        const moved = Math.hypot(b.x - b.initX, b.z - b.initZ);
+        if (ballSpeed > 0.04 || moved > 0.8 || bowlingPins.some(p => p.knocked)) { g.phase = 'rolling'; g.t = 0; }
+      } else if (g.phase === 'rolling') {
+        const passedPins = b.z > BOWLING.pinsZ + 7.5 || b.x < BOWLING.x - 7 || b.x > BOWLING.x + 7;
+        if ((g.t > 1.2 && ballSpeed < 0.015) || passedPins || g.t > 8) { g.phase = 'counting'; g.t = 0; }
+      } else if (g.phase === 'counting') {
+        if (g.t > 2.4) { scoreBowlingThrow(); g.phase = 'refresh'; g.t = 0; }
+      } else if (g.phase === 'refresh') {
+        if (g.t > 2.2) {
+          // Monta de novo os pinos, bola centralizada e carrinho de frente para ela
+          resetBowling();
+          placeCarForBowling();
+          g.throwNo++;
+          g.phase = 'aim';
+          g.t = 0;
+          g.lastText = '';
+          drawBowlingBoard();
+          showCarSpeech(`Jogada ${g.throwNo}!`, 1400);
+        }
+      }
+    }
 
     // ============================================================================
     // CARRINHO DO RAVI: //Fire Engine// (MODELO 3D FIEL AOS 4 ÂNGULOS REAIS!)
@@ -8231,7 +8737,7 @@
 
       // Copo d'água e poça
       cupSpilled = false;
-      tumblerPivot.rotation.set(0, 0, 0);
+      resetCupFall();
       cupWaterInside.visible = true;
       puddleMesh.visible = false;
       puddleScale = 0.001;
@@ -9475,7 +9981,70 @@
         if (px2 < pz2) { nlx = Math.sign(lx) || 1; nlz = 0; overlap = r + px2; }
         else { nlx = 0; nlz = Math.sign(lz) || 1; overlap = r + pz2; }
       }
-      return { nx: nlx * c + nlz * s, nz: -nlx * s + nlz * c, overlap };
+      // Ponto de contato na superfície da caixa (mundo): usado para o giro (torque) nas batidas
+      return { nx: nlx * c + nlz * s, nz: -nlx * s + nlz * c, overlap, px: obs.x + qx * c + qz * s, pz: obs.z - qx * s + qz * c };
+    }
+    // Faixa vertical ocupada por um objeto móvel (para não colidir com quem está em outra fileira/altura)
+    function dynVerticalSpan(o) {
+      const y0 = o.group ? o.group.position.y : 0;
+      return [y0, y0 + (o.h || o.r * 2)];
+    }
+    // Eixos do OBB no mundo: [eixo x local, eixo z local]
+    function boxAxesOf(o) {
+      const th = obstacleBoxRotation(o), c = Math.cos(th), s = Math.sin(th);
+      return [[c, -s], [s, c]];
+    }
+    // Contato entre dois objetos móveis (normal de a para b) + ponto de contato aproximado
+    function dynPairContact(a, b) {
+      if (a.box && b.box) {
+        // Teorema do eixo separador (2D) entre duas caixas orientadas
+        const A = boxAxesOf(a), B = boxAxesOf(b);
+        const dx = b.x - a.x, dz = b.z - a.z;
+        let best = Infinity, bnx = 0, bnz = 0;
+        for (const u of [A[0], A[1], B[0], B[1]]) {
+          const rA = a.box.hx * Math.abs(u[0] * A[0][0] + u[1] * A[0][1]) + a.box.hz * Math.abs(u[0] * A[1][0] + u[1] * A[1][1]);
+          const rB = b.box.hx * Math.abs(u[0] * B[0][0] + u[1] * B[0][1]) + b.box.hz * Math.abs(u[0] * B[1][0] + u[1] * B[1][1]);
+          const dist = dx * u[0] + dz * u[1];
+          const ov = rA + rB - Math.abs(dist);
+          if (ov <= 0) return null;
+          if (ov < best) { best = ov; const sg = dist >= 0 ? 1 : -1; bnx = u[0] * sg; bnz = u[1] * sg; }
+        }
+        // Ponto de contato: média dos cantos de B mais enterrados em A
+        const corners = [];
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+          corners.push([b.x + B[0][0] * b.box.hx * sx + B[1][0] * b.box.hz * sz, b.z + B[0][1] * b.box.hx * sx + B[1][1] * b.box.hz * sz]);
+        }
+        const proj = corners.map(p => p[0] * bnx + p[1] * bnz);
+        const minP = Math.min(...proj);
+        const deep = corners.filter((p, i) => proj[i] < minP + 0.15);
+        const px = deep.reduce((s, p) => s + p[0], 0) / deep.length, pz = deep.reduce((s, p) => s + p[1], 0) / deep.length;
+        return { nx: bnx, nz: bnz, overlap: best, px, pz };
+      }
+      if (a.box || b.box) {
+        const boxO = a.box ? a : b, circ = a.box ? b : a;
+        const c = circleVsBox(circ.x, circ.z, circ.r, boxO);
+        if (!c) return null;
+        // circleVsBox aponta para o círculo; converte para "de a para b"
+        const sg = a.box ? 1 : -1;
+        return { nx: c.nx * sg, nz: c.nz * sg, overlap: c.overlap, px: c.px, pz: c.pz };
+      }
+      const dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz), minD = a.r + b.r;
+      if (d >= minD || d < 1e-4) return null;
+      return { nx: dx / d, nz: dz / d, overlap: minD - d, px: a.x + dx / d * a.r, pz: a.z + dz / d * a.r };
+    }
+    // Momento de inércia aproximado no eixo vertical (caixa ou disco)
+    function dynInertia(o) {
+      const m = o.mass || 1;
+      return o.box ? m * (o.box.hx * o.box.hx + o.box.hz * o.box.hz) / 3 : m * o.r * o.r * 0.4;
+    }
+    // Aplica um impulso (jx,jz) no ponto (px,pz): muda velocidade e giro (torque = r × J)
+    function applyDynImpulse(o, jx, jz, px, pz, spinK = 1) {
+      const m = o.mass || 1;
+      o.vx += jx / m; o.vz += jz / m;
+      if (o.pin || o.ball || (o.stackOffset > 0) || px === undefined) return;
+      const rx = px - o.x, rz = pz - o.z;
+      const torque = rz * jx - rx * jz;
+      o.vRotY = clamp((o.vRotY || 0) + spinK * torque / dynInertia(o), -0.3, 0.3);
     }
     // Contato da cápsula do carrinho (centro cx,cz, ângulo ang) com um obstáculo
     function carContact(obs, cx, cz, ang) {
@@ -9494,8 +10063,8 @@
       const d = Math.hypot(dx, dz);
       const minD = obs.r + CAR_COL_R;
       if (d >= minD) return null;
-      if (d < 1e-6) return { nx: -fx, nz: -fz, overlap: minD };
-      return { nx: dx / d, nz: dz / d, overlap: minD - d };
+      if (d < 1e-6) return { nx: -fx, nz: -fz, overlap: minD, px: obs.x, pz: obs.z };
+      return { nx: dx / d, nz: dz / d, overlap: minD - d, px: obs.x + dx / d * obs.r, pz: obs.z + dz / d * obs.r };
     }
     // Um objeto móvel está "preso" se a nova posição invade a parede ou um obstáculo fixo:
     // nesse caso quem recua é o carrinho (senão o objeto seria empurrado para dentro do carro)
@@ -9689,9 +10258,17 @@
             const strong = relApproach > 0.2;
             const restitution = obs.ball ? (obs.restitution || 0.5) : strong ? 0.45 : 0.25;
             const j = relApproach * (1 + restitution) / (1 / CAR_MASS + 1 / mass);
-            obs.vx -= nx * (j / mass);
-            obs.vz -= nz * (j / mass);
-            obs.vRotY += (Math.random() - 0.5) * (strong ? 0.6 : 0.2) * (j / mass);
+            // Impulso normal aplicado no ponto de contato real: batida de quina gira o objeto (torque)
+            applyDynImpulse(obs, -nx * j, -nz * j, contact.px, contact.pz, 0.8);
+            if (obs.pin || obs.ball || !(contact.px !== undefined)) obs.vRotY += (Math.random() - 0.5) * 0.1 * (j / mass);
+            // Atrito no contato: o objeto também ganha parte do movimento lateral do carrinho (não "escorrega" do para-choque)
+            if (!obs.ball) {
+              const tx = -nz, tz = nx;
+              const vt = (velX - obs.vx) * tx + (velZ - obs.vz) * tz;
+              const mEff = 1 / (1 / CAR_MASS + 1 / mass);
+              const jt = clamp(vt * mEff * 0.5, -0.45 * j, 0.45 * j);
+              applyDynImpulse(obs, tx * jt, tz * jt, contact.px, contact.pz, 0.8);
+            }
             // O carrinho recebe a reação ao longo da direção em que anda
             carSpeed += (nx * Math.sin(carAngle) + nz * Math.cos(carAngle)) * (j / CAR_MASS);
             if (obs.ball) {
@@ -9739,9 +10316,8 @@
         }
 
         if (obs.type === 'water_cup' && !cupSpilled) {
-          cupSpilled = true;
-          cupWaterInside.visible = false;
-          puddleMesh.visible = true;
+          // Cai para o lado oposto ao carrinho (direção da batida)
+          spillCup(-nx, -nz);
           showCarSpeech(breakSpeechToggle ? 'eita' : 'ops', 2200);
           breakSpeechToggle = !breakSpeechToggle;
           setStatusBanner('🌊 Você derrubou o copo! Pare sobre a poça azul para encher o tanque!', '#35e0ff');
@@ -10047,6 +10623,14 @@
           // Tijolos empilhados caem quando o muro é empurrado
           if (obs.stackOffset > 0) {
             if (moving) obs.stackDropping = true;
+            // Sem tijolo embaixo (foi arrancado pelo carrinho): o de cima cai
+            if (!obs.stackDropping && obs.box) {
+              const myBottom = grp.position.y;
+              const supported = dynamicObstacles.some((o) => o !== obs && o.box && o.group && o.level === obs.level &&
+                Math.abs(o.group.position.y + (o.h || 0) - myBottom) < 0.25 &&
+                Math.hypot(o.x - obs.x, o.z - obs.z) < obs.box.hx * 1.45);
+              if (!supported) obs.stackDropping = true;
+            }
             if (obs.stackDropping) obs.stackOffset = Math.max(0, obs.stackOffset - 0.09);
             grp.position.y = baseY + obs.stackOffset;
           }
@@ -10076,12 +10660,17 @@
         for (let j = i + 1; j < dynamicObstacles.length; j++) {
           const b = dynamicObstacles[j];
           if (b.isFalling || b.level !== a.level || (heldItem && heldItem.obs === b)) continue;
-          const dx = b.x - a.x, dz = b.z - a.z;
-          const d = Math.hypot(dx, dz);
-          const minD = a.r + b.r;
-          if (d >= minD || d < 1e-4) continue;
-          const nx = dx / d, nz = dz / d;
-          const overlap = minD - d;
+          // Fase ampla: raio envolvente (caixas usam a meia-diagonal)
+          const ra = a.box ? Math.hypot(a.box.hx, a.box.hz) : a.r, rb = b.box ? Math.hypot(b.box.hx, b.box.hz) : b.r;
+          if (Math.hypot(b.x - a.x, b.z - a.z) >= ra + rb || a.r < 0.01 || b.r < 0.01) continue;
+          // Só colidem se estiverem na mesma altura (tijolo de outra fileira do muro não empurra o de baixo)
+          const sa = dynVerticalSpan(a), sb = dynVerticalSpan(b);
+          if (sa[1] - 0.08 <= sb[0] || sb[1] - 0.08 <= sa[0]) continue;
+          // Forma real: caixa x caixa (SAT), caixa x círculo ou círculo x círculo
+          const contact = dynPairContact(a, b);
+          if (!contact) continue;
+          const nx = contact.nx, nz = contact.nz;
+          const overlap = contact.overlap;
           const ma = a.mass || 1, mb = b.mass || 1;
           a.x -= nx * overlap * mb / (ma + mb);
           a.z -= nz * overlap * mb / (ma + mb);
@@ -10091,8 +10680,9 @@
           if (closing > 0) {
             const e = (a.ball || b.ball) ? Math.max(a.restitution || 0.3, b.restitution || 0.3) : 0.3;
             const j2 = (1 + e) * closing / (1 / ma + 1 / mb);
-            a.vx -= (j2 / ma) * nx; a.vz -= (j2 / ma) * nz;
-            b.vx += (j2 / mb) * nx; b.vz += (j2 / mb) * nz;
+            // Impulso no ponto de contato: batida de quina faz a caixa/tijolo girar
+            applyDynImpulse(a, -j2 * nx, -j2 * nz, contact.px, contact.pz, 0.6);
+            applyDynImpulse(b, j2 * nx, j2 * nz, contact.px, contact.pz, 0.6);
             // Pinos tombam quando algo bate neles com força (bola, outro pino, caixa)
             if (closing > 0.03) {
               if (b.pin) knockPin(b, nx, nz);
@@ -10293,9 +10883,17 @@
         if (f.tailFin) f.tailFin.rotation.y = Math.sin(elapsedTime * 14 + f.phase) * 0.38;
       });
       aquariumBubbles.forEach((b) => {
-        b.mesh.position.y += b.speed * dt;
-        b.mesh.position.x = -6.8 + Math.sin(elapsedTime * 4 + b.wobble) * 0.25;
-        if (b.mesh.position.y > 8.8) b.mesh.position.y = 2.1;
+        const src = b.src;
+        const rise = clamp((b.mesh.position.y - src.y) / (9.0 - src.y), 0, 1);
+        // Sobe acelerando, oscila em espiral e cresce (menos pressão perto da superfície)
+        b.mesh.position.y += b.speed * (0.8 + rise * 0.6) * dt;
+        b.mesh.position.x = src.x + Math.sin(elapsedTime * 4 + b.wobble) * (0.15 + rise * 0.3);
+        b.mesh.position.z = src.z + Math.cos(elapsedTime * 3.3 + b.wobble) * (0.12 + rise * 0.25);
+        b.mesh.scale.setScalar(b.size * (0.7 + rise * 0.7));
+        if (b.mesh.position.y > 9.1) {
+          b.mesh.position.y = src.y;
+          b.wobble = Math.random() * Math.PI * 2;
+        }
       });
       turboBatteries.forEach((tb, idx) => {
         const s = 1.0 + Math.sin(elapsedTime * 5 + idx) * 0.1;
@@ -10304,12 +10902,13 @@
 
       // Copo derrubado: tomba e a poça se espalha
       if (cupSpilled) {
-        if (tumblerPivot.rotation.z < Math.PI / 2.15) {
-          tumblerPivot.rotation.z = Math.min(Math.PI / 2.15, tumblerPivot.rotation.z + dt * 5.5);
-        }
-        if (puddleScale < 1.0) {
-          puddleScale = Math.min(1.0, puddleScale + dt * 1.6);
-          puddleMesh.scale.set(puddleScale, puddleScale, 1);
+        updateCupFall(dt);
+        // A poça só começa a crescer quando a boca do copo chega perto da mesa, e se espalha alongada no sentido do tombo
+        if (puddleScale < 1.0 && cupFall.theta > 1.0) {
+          puddleScale = Math.min(1.0, puddleScale + dt * 1.3);
+          const ease = 1 - Math.pow(1 - puddleScale, 2);
+          // Geometria da poça fica no plano XZ: x = sentido do tombo (mais comprida), z = largura
+          puddleMesh.scale.set(ease * 1.25, 1, ease * 0.85);
         }
       }
 
