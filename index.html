@@ -213,6 +213,10 @@
     .account-box { margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: var(--ds-glass); border: 1px solid #ffffff1f; display: flex; flex-direction: column; gap: 10px; align-self: stretch; }
     .account-box .account-status { margin: 0; }
     .account-box .account-privacy { margin: 0; font-size: 12.5px; opacity: .7; }
+    /* Selo flutuante do reCAPTCHA cobriria os controles de toque: substituído pelo aviso em texto (permitido pelo Google) */
+    .grecaptcha-badge { visibility: hidden !important; }
+    .recaptcha-note { margin: 0; font-size: 11.5px; opacity: .6; }
+    .recaptcha-note a { color: inherit; text-decoration: underline; }
     .account-box .button.is-disabled { opacity: .45; pointer-events: none; }
     .leaderboard-scope { margin: 0 0 6px; font-size: 13px; opacity: .8; }
     /* Marcos de carreira: mural de madeira laranja, título Amatic, faixa roxa, setas roxas e miniaturas */
@@ -711,6 +715,7 @@
                   <button class="button is-small" id="account-delete" type="button" hidden>Apagar meus dados</button>
                 </div>
                 <p class="text account-privacy">Guardamos só o necessário: apelido de 3 letras, recordes, conquistas e as cores do carrinho. Nada de e-mail ou foto. Você pode apagar tudo quando quiser.</p>
+                <p class="recaptcha-note" id="recaptcha-note" hidden>Site protegido pelo reCAPTCHA; valem a <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Política de Privacidade</a> e os <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Termos de Serviço</a> do Google.</p>
               </div>
             </div>
           </div>
@@ -2405,12 +2410,20 @@
     const footrestGroup = new THREE.Group();
     footrestGroup.position.set(4, -36.0, -10);
     const footTubeMat = new THREE.MeshStandardMaterial({ color: 0x1e2025, metalness: 0.6, roughness: 0.35 });
-    const footFrame = new THREE.Mesh(new THREE.BoxGeometry(17, 0.6, 13), footTubeMat);
+    // Apoio de pés de PAPELÃO (mesmo material da rampa de descida): base de caixa achatada + placa inclinada
+    const footCardboardDark = rampMat.clone();
+    footCardboardDark.color = new THREE.Color(0xb08560);
+    const footFrame = new THREE.Mesh(new THREE.BoxGeometry(17, 0.6, 13), footCardboardDark);
     footFrame.position.y = 0.3;
-    const footPlate = new THREE.Mesh(
-      new THREE.BoxGeometry(15, 1.1, 11),
-      new THREE.MeshStandardMaterial({ color: 0x141518, roughness: 0.85 })
-    );
+    const footPlate = new THREE.Mesh(new THREE.BoxGeometry(15, 1.1, 11), rampMat);
+    // Calços de papelão dobrado sustentando a placa (no lugar do tubo de metal)
+    [[-6.2, -3.4], [6.2, -3.4], [-6.2, 3.4], [6.2, 3.4]].forEach(([sx, sz]) => {
+      const h = 2.5 + sz * Math.tan(0.38) - 0.3;
+      const prop = new THREE.Mesh(new THREE.BoxGeometry(1.6, Math.max(0.6, h), 1.6), footCardboardDark);
+      prop.position.set(sx, Math.max(0.6, h) / 2 + 0.3, sz);
+      prop.castShadow = true;
+      footrestGroup.add(prop);
+    });
     footPlate.rotation.x = -0.38; // Inclinação de 22° virada para o usuário (rampinha!)
     footPlate.position.set(0, 2.5, 0);
     footPlate.castShadow = true;
@@ -2545,6 +2558,8 @@
     switchLight.position.set(0, 2.2, -6.8);
     powerStripGroup.add(switchRed, switchLight);
     bedroomWorld.add(powerStripGroup);
+    // Objeto fixo: o carrinho bate (antes atravessava). Baixinho: dá para pular por cima.
+    obstacles.push({ x: 18, z: -22, r: 8.2, box: { hx: 2.25, hz: 8.0 }, boxRot: 0, name: 'FILTRO DE LINHA', isStatic: true, level: 'floor', h: 1.45 });
 
     // 9. PAINEL PERFURADO (PEGBOARD) PRETO NA PAREDE ESQUERDA
     const pegboardGroup = new THREE.Group();
@@ -3766,6 +3781,35 @@
       return tex;
     }
 
+    // Pista como um tapete: topo um pouco acima da superfície e borda lateral emborrachada (igual ao mousepad da mesa).
+    // A pista principal fica mais alta que o atalho escondido: onde os dois se cruzam não há mais disputa de profundidade.
+    const TRACK_RAISE = 0.07, TRACK_SKIRT = 0.16;
+    const trackSkirtMat = new THREE.MeshStandardMaterial({ color: 0x23262c, roughness: 0.9 });
+    // positions: pares (borda esquerda, borda direita) por amostra, já com a altura do topo
+    function createTrackSkirt(positions, segs) {
+      const pos = [], idx = [];
+      const count = positions.length / 6;
+      for (let side = 0; side < 2; side++) {
+        const base = pos.length / 3;
+        for (let k = 0; k < count; k++) {
+          const o = k * 6 + side * 3;
+          const x = positions[o], y = positions[o + 1], z = positions[o + 2];
+          pos.push(x, y, z, x, y - TRACK_SKIRT, z);
+        }
+        for (let k = 0; k < Math.min(segs, count - 1); k++) {
+          const a = base + k * 2, b = a + 1, c = a + 2, d = a + 3;
+          if (side === 0) idx.push(a, b, c, c, b, d); else idx.push(a, c, b, c, d, b);
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setIndex(idx);
+      g.computeVertexNormals();
+      const m = new THREE.Mesh(g, trackSkirtMat);
+      m.material.side = THREE.DoubleSide;
+      m.receiveShadow = true;
+      return m;
+    }
     const trackPaintUniforms = { uMagic: { value: 0 }, uTrackTime: { value: 0 } };
     const trackMesh = (() => {
       const N = trackSamples.length;
@@ -3776,7 +3820,8 @@
       for (let k = 0; k <= N; k++) {
         const f = trackFrameAt(k % N);
         const v = (k === N ? trackLength : f.s.dist) / 8;
-        positions.set([f.s.x + f.nx * half, f.s.y, f.s.z + f.nz * half, f.s.x - f.nx * half, f.s.y, f.s.z - f.nz * half], k * 6);
+        const ty = f.s.y + TRACK_RAISE;
+        positions.set([f.s.x + f.nx * half, ty, f.s.z + f.nz * half, f.s.x - f.nx * half, ty, f.s.z - f.nz * half], k * 6);
         uvs.set([0, v, 1, v], k * 4);
         if (k < N) {
           const a = k * 2, b = k * 2 + 1, c = k * 2 + 2, d = k * 2 + 3;
@@ -3823,15 +3868,30 @@
               float pulse = 0.2 + 0.06 * sin(uTrackTime * 2.2 + vTrackUv.y * 2.5);
               diffuseColor.rgb = mix(diffuseColor.rgb, rainbow, pulse);
               trackGlow = rainbow * 0.05;
+              // Zebras (bordas) acendem em arco-íris
+              float edge = smoothstep(0.86, 0.97, abs(vTrackUv.x - 0.5) * 2.0);
+              trackGlow += hsv2rgbT(vec3(fract(h + 0.5), 0.6, 1.0)) * edge * (0.22 + 0.12 * sin(uTrackTime * 4.0 + vTrackUv.y * 6.0));
+              // Faixa de reflexo mágico que percorre a pista
+              float sweep = smoothstep(0.0, 0.08, 0.08 - abs(fract(vTrackUv.y * 0.05 - uTrackTime * 0.12) - 0.5));
+              trackGlow += vec3(1.0, 0.95, 1.0) * sweep * 0.25;
+              // Brilhinhos cintilantes espalhados (estrelinhas)
+              vec2 cell = floor(vTrackUv * vec2(9.0, 3.5));
+              float rnd = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
+              vec2 inCell = fract(vTrackUv * vec2(9.0, 3.5)) - 0.5;
+              float twinkle = max(0.0, sin(uTrackTime * 3.0 + rnd * 60.0));
+              float star = step(0.82, rnd) * (1.0 - smoothstep(0.0, 0.09, length(inCell))) * twinkle;
+              trackGlow += vec3(1.0) * star * 0.9;
             }`)
           .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
             totalEmissiveRadiance += trackGlow;`);
       };
-      mat.customProgramCacheKey = () => 'track-paint-v1';
+      mat.customProgramCacheKey = () => 'track-paint-v2';
       const mesh = new THREE.Mesh(geo, mat);
       mesh.receiveShadow = true;
       mesh.name = 'Circuito do Ravi';
       scene.add(mesh);
+      // Borda lateral do "tapete": desce do topo até abaixo da superfície (some dentro da mesa/chão)
+      scene.add(createTrackSkirt(positions, N));
       return mesh;
     })();
 
@@ -3849,7 +3909,8 @@
         const len = Math.hypot(tx, tz) || 1; tx /= len; tz /= len;
         const nx = -tz, nz = tx, half = width / 2;
         if (k > 0) dist += p.distanceTo(pts[k - 1]);
-        positions.push(p.x + nx * half, p.y, p.z + nz * half, p.x - nx * half, p.y, p.z - nz * half);
+        const ry = p.y + TRACK_RAISE * 0.45; // abaixo da pista principal: no cruzamento, a principal fica por cima
+        positions.push(p.x + nx * half, ry, p.z + nz * half, p.x - nx * half, ry, p.z - nz * half);
         uvs.push(0, dist / 8, 1, dist / 8);
         if (k < N) { const i0 = k * 2; idx.push(i0, i0 + 2, i0 + 1, i0 + 1, i0 + 2, i0 + 3); }
       }
@@ -3863,12 +3924,32 @@
       geo.computeVertexNormals();
       const mesh = new THREE.Mesh(geo, trackMesh.material);
       mesh.receiveShadow = true;
+      mesh.renderOrder = -1;
       scene.add(mesh);
+      scene.add(createTrackSkirt(positions, N));
       return mesh;
     }
     (function createHiddenShortcut() {
       const FY = -35.815, ramp = (z) => -36 + footrestTopAt(z) + 0.06;
-      buildTrackRibbon([[0, FY, -37.5], [2, FY, -30], [4, FY, -22], [4, FY, -16.6]], 7);
+      buildTrackRibbon([[0, FY, -37.5], [2, FY, -30], [4, FY, -24], [4, FY, -20.8]], 7);
+      // Rampinha de acesso: sobe do chão até a borda baixa da placa (antes a pista sumia sob a base de papelão)
+      const yA = FY, yB = ramp(-15.25);
+      buildTrackRibbon([[4, yA, -20.8], [4, (yA + yB) / 2, -18.0], [4, yB, -15.25]], 7);
+      (function accessWedge() {
+        const len = Math.hypot(5.55, yB - yA), ang = Math.atan2(yB - yA, 5.55);
+        const wedge = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.5, len + 0.3), rampMat);
+        wedge.rotation.x = -ang;
+        wedge.position.set(4, (yA + yB) / 2 - 0.3, -18.03);
+        wedge.castShadow = true; wedge.receiveShadow = true;
+        scene.add(wedge);
+        // Abas laterais da rampinha (papelão dobrado)
+        [-4.3, 4.3].forEach((dx) => {
+          const flap = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.0, len), rampMat);
+          flap.rotation.x = -ang;
+          flap.position.set(4 + dx, (yA + yB) / 2 + 0.25, -18.03);
+          scene.add(flap);
+        });
+      })();
       // Trecho sobre a placa: reta exata no plano inclinado (sem curva Catmull que afunda no meio)
       const rampRibbon = buildTrackRibbon([[4, ramp(-15.2), -15.2], [4, ramp(-10.15), -10.15], [4, ramp(-5.1), -5.1]], 7);
       rampRibbon.renderOrder = 2;
@@ -3892,7 +3973,7 @@
       );
       plane.rotation.x = -Math.PI / 2;
       plane.rotation.z = Math.atan2(f.tx, f.tz) + Math.PI / 2;
-      plane.position.set(f.s.x, f.s.y + 0.01, f.s.z);
+      plane.position.set(f.s.x, f.s.y + TRACK_RAISE + 0.012, f.s.z);
       plane.receiveShadow = true;
       scene.add(plane);
     })();
@@ -4040,7 +4121,7 @@
       { obj: [-39.8, -31], pin: [-39.9, -35.6], level: 'desk', rotY: Math.PI },
       { obj: [-144, -7.4], pin: [-148.6, -7.7], level: 'floor', rotY: -Math.PI / 2 },
       { obj: [-40.4, -24.3], pin: [-40.1, -28.9], level: 'floor', rotY: Math.PI },
-      { obj: [0, 22], pin: [0, 26.6], level: 'floor', rotY: 0 },
+      { obj: [-6, 20], pin: [-4.5, 25.4], level: 'floor', rotY: 0 }, // fora da pista do atalho (antes invadia a saída dele)
       { obj: [-138.4, 49.1], pin: [-139, 53.7], level: 'floor', rotY: 0 }
     ];
     const careerInteractives = [];
@@ -7640,6 +7721,46 @@
       placeModel('mushroom_02', { x: BOWLING.x - 12.4, z: BOWLING.zStart + 16, y: FLOOR_SURFACE_Y + 0.12, isStatic: true, r: 1.2, rotY: 0.6 });
       placeModel('mushroom_03', { x: BOWLING.x + 12.2, z: BOWLING.zStart + 24, y: FLOOR_SURFACE_Y + 0.12, isStatic: true, r: 1.3, rotY: 2.1 });
     })();
+    // Atalho escondido com cara de passagem secreta: mato denso dos dois lados (entrada, apoio de pés e saída)
+    (function secretPassageFoliage() {
+      const PATH = [[0, -37.5], [2, -30], [4, -24], [4, -18], [4, -10], [4, -4], [4, 4], [5, 11], [7, 19], [9, 25], [11, 28.5]];
+      const floorTrack = trackSamples.filter(s => s.level === 'floor');
+      const nearMainTrack = (x, z, m) => floorTrack.some(s => (s.x - x) ** 2 + (s.z - z) ** 2 < (TRACK_WIDTH / 2 + m) ** 2);
+      const blocked = (x, z) => (x > 14.5 && x < 21.5 && z > -31 && z < -13)   // filtro de linha
+        || Math.hypot(x + 6, z - 20) < 7.5                                       // galão do Portal 5
+        || (x > -4 && x < 12 && z > -16.5 && z < -3.5);                          // placa do apoio de pés
+      let seed = 4242;
+      const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+      const grassPts = [];
+      for (let i = 0; i < PATH.length - 1; i++) {
+        const [ax, az] = PATH[i], [bx, bz] = PATH[i + 1];
+        const len = Math.hypot(bx - ax, bz - az), tx = (bx - ax) / len, tz = (bz - az) / len, nx = -tz, nz = tx;
+        for (let d = 0; d < len; d += 2.2) {
+          const cx = ax + tx * d, cz = az + tz * d;
+          [-1, 1].forEach((side) => {
+            // Arbustos encostados na beira do caminho (fazem o "túnel" verde)
+            const off = 5.2 + rnd() * 2.6;
+            const x = cx + nx * side * off, z = cz + nz * side * off;
+            if (!blocked(x, z) && !nearMainTrack(x, z, 2.5) && rnd() < 0.55) {
+              createBush(x, z, FLOOR_SURFACE_Y, 0.45 + rnd() * 0.4, Math.floor(rnd() * 3));
+            }
+            // Capim alto e matinhos invadindo a borda (sem cobrir o meio da pista)
+            for (let g = 0; g < 26; g++) {
+              const o = 4.0 + rnd() * 5.5, a = (rnd() - 0.5) * 2.2;
+              const gx = cx + nx * side * o + tx * a, gz = cz + nz * side * o + tz * a;
+              if (blocked(gx, gz) || nearMainTrack(gx, gz, 0.6)) continue;
+              grassPts.push({ x: gx, y: FLOOR_SURFACE_Y, z: gz, h: 0.7 + rnd() * 1.5 });
+            }
+          });
+        }
+      }
+      createGrassPatch(grassPts);
+      // Cogumelos, pedrinhas e uma placa escondida "atalho?" na entrada
+      [[-7, -27, 'mushroom_01', 0.7], [11, -27, 'mushroom_03', 0.6], [-6, 8, 'mushroom_02', 0.7], [14, 14, 'mushroom_01', 0.55], [16, 23, 'rock_01', 0.6], [-5, -20, 'rock_02', 0.5]].forEach(([x, z, key, s]) => {
+        if (!blocked(x, z) && !nearMainTrack(x, z, 2)) placeModel(key, { x, z, floor: true, scale: s, physics: false, rotY: rnd() * 6 });
+      });
+      placeModel('finger_post_sign_01', { x: -4.5, z: -29, floor: true, scale: 0.55, rotY: 0.6, physics: false, name: 'Placa do Atalho' });
+    })();
     // Marcações da pista: linha de falta, pontos-guia e flechas extras
     (function bowlingLaneMarks() {
       const markMat = new THREE.MeshBasicMaterial({ color: 0x2b1d2e });
@@ -10337,6 +10458,7 @@
       accSignOutEl.hidden = !signed;
       accDeleteEl.hidden = !signed;
       accSignInEl.disabled = !(c && c.enabled);
+      document.getElementById('recaptcha-note').hidden = !(c && c.appCheckEnabled);
       accSignInEl.classList.toggle('is-disabled', !(c && c.enabled));
       if (!c || !c.ready) accStatusEl.textContent = 'Conectando…';
       else if (c.error) accStatusEl.textContent = c.error;
@@ -10836,6 +10958,12 @@
       }
       if (curY > -15 && Math.abs(x) <= DESK_HALF_W + 1.2 && Math.abs(z) <= DESK_HALF_D + 1.2) {
         return { y: CAR_DESK_Y, ramp: null, level: 'desk' };
+      }
+      // Rampinha de acesso ao apoio de pés (chão → borda baixa da placa), alinhada com a pista do atalho
+      if (x >= 0.0 && x <= 8.0 && z >= -20.8 && z < FOOTREST.z0) {
+        const tA = (z + 20.8) / (FOOTREST.z0 + 20.8);
+        const rampY = FLOOR_CAR_Y + tA * (FLOOR_SURFACE_Y + footrestTopAt(FOOTREST.z0) + 0.15 - FLOOR_CAR_Y);
+        if (curY > rampY - 1.3) return { y: rampY, ramp: null, level: 'floor', footrest: true };
       }
       // Apoio de pés sob a mesa = rampa do atalho escondido (sobe em direção à frente da mesa, +z)
       if (x >= FOOTREST.x0 && x <= FOOTREST.x1 && z >= FOOTREST.z0 && z <= FOOTREST.z1) {

@@ -70,8 +70,16 @@ async function init() {
     ]);
     const app = appMod.initializeApp(CFG);
     if (window.FIREBASE_APPCHECK_SITE_KEY) {
+      // Testes locais: token de depuração do App Check (NUNCA no site publicado).
+      // Na primeira vez o SDK imprime o token no console; cadastre-o em App Check → Gerenciar tokens de depuração.
+      const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      if (isLocal) self.FIREBASE_APPCHECK_DEBUG_TOKEN = window.FIREBASE_APPCHECK_DEBUG_TOKEN || true;
       const ac = await import(`${base}/firebase-app-check.js`);
-      ac.initializeAppCheck(app, { provider: new ac.ReCaptchaV3Provider(window.FIREBASE_APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+      // Provedor atual: Google Cloud Fraud Defense (ex-reCAPTCHA Enterprise). O reCAPTCHA v3 clássico foi
+      // descontinuado para novos cadastros no App Check; 'v3' só para registros antigos que ainda existam.
+      const Provider = window.FIREBASE_APPCHECK_PROVIDER === 'v3' ? ac.ReCaptchaV3Provider : ac.ReCaptchaEnterpriseProvider;
+      cloud.appCheck = ac.initializeAppCheck(app, { provider: new Provider(window.FIREBASE_APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+      cloud.appCheckEnabled = true;
     }
     const auth = authMod.getAuth(app);
     auth.languageCode = 'pt';

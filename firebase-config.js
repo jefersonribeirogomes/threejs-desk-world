@@ -15,6 +15,7 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: "357767695383",
   appId: "1:357767695383:web:892e80a661c8c8df2ee052"
 };
-// Chave de site do reCAPTCHA v3 usada pelo App Check (opcional)
+// App Check (opcional, recomendado): chave de site do Google Cloud Fraud Defense (ex-reCAPTCHA Enterprise),
+// tipo "Site" com verificação por pontuação. Ela é pública. Passo a passo em docs/FIREBASE.md (passo 9).
 window.FIREBASE_APPCHECK_SITE_KEY = null;
 

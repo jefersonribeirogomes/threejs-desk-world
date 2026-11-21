@@ -37,8 +37,19 @@ documentos do usuário (direito de exclusão).
    - Restrição de API: **Identity Toolkit API**, **Token Service API** e **Cloud Firestore API**
      (sem as duas primeiras o login falha com `auth/permission-denied-on-the-service`).
    - As mudanças levam alguns minutos para valer.
-9. (Recomendado) **App Check**: em *App Check*, registre o app Web com **reCAPTCHA v3**, cole a chave do site em
-   `window.FIREBASE_APPCHECK_SITE_KEY` e ative a *aplicação obrigatória* (enforcement) para o Firestore.
+9. (Recomendado) **App Check com Google Cloud Fraud Defense** (antigo reCAPTCHA Enterprise; o reCAPTCHA v3
+   clássico foi descontinuado para novos cadastros) — só o site verdadeiro consegue usar o banco:
+   1. No Google Cloud Console (mesmo projeto do Firebase), ative a API **reCAPTCHA Enterprise / Fraud Defense** e crie uma
+      **chave de site** do tipo **Site (web)** com **verificação por pontuação** (sem caixa "não sou um robô").
+      Domínios: `jefersonribeirogomes.github.io` e `localhost`. O plano gratuito cobre 10.000 verificações/mês.
+   2. No Firebase: *App Check → Apps* → app Web → **reCAPTCHA Enterprise** → cole a **chave de site** → Salvar.
+   3. Cole a mesma chave em `window.FIREBASE_APPCHECK_SITE_KEY` (`firebase-config.js`). Ela é pública.
+   4. Na chave de API do navegador (passo 8), adicione **Firebase App Check API** às APIs permitidas.
+   5. Testes locais: abra `http://localhost:8080`, copie o *App Check debug token* que aparece no console do navegador
+      e cadastre em *App Check → Apps → ⋮ → Gerenciar tokens de depuração*.
+   6. Acompanhe as **métricas** do Firestore em *App Check → APIs* por alguns minutos (requisições "verificadas").
+      Quando estiverem todas verificadas, clique em **Aplicar (Enforce)** no Cloud Firestore.
+   - O selo flutuante do reCAPTCHA fica escondido; no lugar dele o menu mostra o aviso em texto exigido pelo Google.
 
 ## Notas de segurança
 
