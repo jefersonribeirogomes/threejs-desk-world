@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Setup Desk Playground - Fire Engine Edition</title>
   <style>
     * {
@@ -10,6 +10,8 @@
       margin: 0;
       padding: 0;
       user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
     body, html {
       width: 100%;
@@ -17,6 +19,7 @@
       overflow: hidden;
       background-color: #d8d4cf;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      touch-action: none;
     }
     canvas.webgl {
       position: fixed;
@@ -29,62 +32,101 @@
     }
     #ui-overlay {
       position: fixed;
-      top: 18px;
-      left: 18px;
+      top: 14px;
+      left: 14px;
       color: #e8eaed;
-      background: rgba(24, 26, 30, 0.88);
+      background: rgba(20, 22, 26, 0.88);
       backdrop-filter: blur(10px);
-      padding: 16px 20px;
+      padding: 14px 18px;
       border-radius: 14px;
       box-shadow: 0 12px 32px rgba(0,0,0,0.35);
       z-index: 10;
       border: 1px solid rgba(255,255,255,0.12);
-      max-width: 340px;
+      max-width: 350px;
     }
     #ui-overlay h1 {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 6px;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
       color: #ff5722;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
     #ui-overlay p {
-      font-size: 12.5px;
-      line-height: 1.45;
+      font-size: 11.5px;
+      line-height: 1.35;
       color: #c4c9d0;
       margin-bottom: 6px;
+    }
+    /* Barra de Nível de Água do Carrinho */
+    #water-hud {
+      margin-top: 8px;
+      background: rgba(0,0,0,0.45);
+      padding: 8px 10px;
+      border-radius: 9px;
+      border: 1px solid rgba(53, 208, 186, 0.35);
+    }
+    .water-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 800;
+      color: #35e0ff;
+      margin-bottom: 5px;
+    }
+    .water-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: #1b222c;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    #water-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #0099ff, #35e0ff);
+      transition: width 0.1s;
+    }
+    #status-banner {
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffd24c;
+      min-height: 15px;
     }
     .keys-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
+      gap: 5px;
+      margin-top: 6px;
+      font-size: 11px;
+      align-items: center;
     }
     .keys {
       font-weight: 700;
       background: #2d3139;
       border: 1px solid #454b57;
-      padding: 3px 7px;
+      padding: 2px 6px;
       border-radius: 5px;
-      font-size: 11px;
+      font-size: 10.5px;
       color: #35d0ba;
     }
     #cam-controls {
-      margin-top: 10px;
+      margin-top: 8px;
       display: flex;
-      gap: 6px;
+      flex-wrap: wrap;
+      gap: 5px;
     }
     .btn-cam {
       background: #2b3038;
       color: #fff;
       border: 1px solid #48505e;
-      padding: 5px 10px;
+      padding: 4px 9px;
       border-radius: 6px;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.15s;
@@ -93,55 +135,253 @@
       background: #ff5722;
       border-color: #ff784e;
     }
-    #interaction-prompt {
+
+    /* Alerta de Autodestruição / Incêndio no Monitor */
+    #fire-alert {
       position: fixed;
-      bottom: 36px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(18, 20, 24, 0.94);
+      top: 16px;
+      right: 16px;
+      background: rgba(180, 20, 20, 0.92);
       color: #fff;
-      padding: 10px 20px;
-      border-radius: 10px;
+      padding: 12px 18px;
+      border-radius: 12px;
       font-weight: 800;
       font-size: 13px;
-      letter-spacing: 1.2px;
+      border: 2px solid #ffeb3b;
+      box-shadow: 0 0 25px rgba(255, 60, 0, 0.7);
+      z-index: 25;
+      display: none;
+      animation: pulseAlert 0.6s infinite alternate;
+    }
+    @keyframes pulseAlert {
+      from { transform: scale(1); }
+      to { transform: scale(1.04); }
+    }
+
+    /* Badge de Interação / Status de Objeto */
+    #interaction-prompt {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(18, 20, 24, 0.92);
+      color: #fff;
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 12.5px;
+      letter-spacing: 0.8px;
       display: none;
       align-items: center;
       gap: 10px;
       box-shadow: 0 10px 28px rgba(0,0,0,0.45);
-      border: 1px solid rgba(53, 208, 186, 0.5);
+      border: 1px solid rgba(53, 208, 186, 0.55);
       pointer-events: none;
       z-index: 20;
+      text-align: center;
     }
     #interaction-prompt span.badge {
       background: #ff481c;
       color: #fff;
       padding: 3px 8px;
       border-radius: 5px;
-      font-size: 11px;
+      font-size: 10.5px;
+    }
+
+    /* CONTROLES VIRTUAIS TOUCH / MOBILE ESMAECIDOS */
+    #touch-controls {
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      width: 100%;
+      padding: 0 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      pointer-events: none;
+      z-index: 30;
+    }
+    .dpad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 54px);
+      grid-template-rows: repeat(2, 54px);
+      gap: 8px;
+      pointer-events: auto;
+    }
+    .touch-btn {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: rgba(25, 28, 34, 0.38);
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 20px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: background 0.1s, transform 0.1s;
+      pointer-events: auto;
+    }
+    .touch-btn:active, .touch-btn.pressed {
+      background: rgba(255, 87, 34, 0.75);
+      color: #fff;
+      border-color: #fff;
+      transform: scale(0.94);
+    }
+    .action-pad {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .touch-btn-water {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      background: rgba(0, 168, 255, 0.36);
+      border: 2px solid rgba(53, 224, 255, 0.45);
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+    .touch-btn-water:active, .touch-btn-water.pressed {
+      background: rgba(0, 195, 255, 0.85);
+      color: #fff;
+      transform: scale(0.94);
+    }
+
+    /* MODAL DE QUEDA DA MESA / RAMPA DE PAPELÃO */
+    #modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 12, 16, 0.78);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    #modal-box {
+      background: #1c1f26;
+      border: 2px solid #ff5722;
+      border-radius: 18px;
+      padding: 28px 32px;
+      max-width: 430px;
+      width: 90%;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.65);
+    }
+    #modal-box h2 {
+      font-size: 20px;
+      margin-bottom: 10px;
+      color: #ff784e;
+    }
+    #modal-box p {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #cfd4dc;
+      margin-bottom: 22px;
+    }
+    #modal-btn {
+      background: linear-gradient(135deg, #ff5722, #ff3d00);
+      color: #fff;
+      border: none;
+      padding: 12px 26px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(255, 87, 34, 0.45);
+      transition: transform 0.15s;
+    }
+    #modal-btn:hover {
+      transform: scale(1.04);
+    }
+
+    @media (max-width: 650px) {
+      #ui-overlay {
+        max-width: 260px;
+        padding: 10px 12px;
+      }
+      .keys-row { display: none; }
     }
   </style>
   <script src="./three.min.js"></script>
 </head>
 <body>
   <div id="ui-overlay">
-    <h1>🚒 //Fire Engine// Desk World</h1>
-    <p>Seu setup real expandido em 3D + o carrinho de bombeiro do seu filho!</p>
+    <h1>🚒 //Fire Engine// Desk World 3X</h1>
+    <p>Explore a mesa gigante, derrube o copo d'água para reabastecer, regue as plantas, quebre controles ou salve o monitor em chamas!</p>
+    <div id="water-hud">
+      <div class="water-header">
+        <span>💧 TANQUE DE ÁGUA</span>
+        <span id="water-pct">100%</span>
+      </div>
+      <div class="water-bar-bg">
+        <div id="water-bar-fill"></div>
+      </div>
+      <div id="status-banner">Pronto para patrulhar a mesa!</div>
+    </div>
     <div class="keys-row">
       <span class="keys">W A S D / Setas</span> Dirigir
-      <span class="keys">Espaço</span> Botão Amarelo (Esguicho!)
+      <span class="keys">Espaço</span> Esguicho
       <span class="keys">Scroll</span> Zoom
     </div>
     <div id="cam-controls">
       <button class="btn-cam active" id="btn-cam-iso">Visão Mesa</button>
-      <button class="btn-cam" id="btn-cam-close">Close no Carrinho</button>
-      <button class="btn-cam" id="btn-cam-wide">Visão Geral Setup</button>
+      <button class="btn-cam" id="btn-cam-close">Close Carrinho</button>
+      <button class="btn-cam" id="btn-cam-wide">Mesa 3x Completa</button>
     </div>
+  </div>
+
+  <div id="fire-alert">
+    🔥 AUTODESTRUIÇÃO! MONITOR EM CHAMAS! APAGUE COM ÁGUA: <span id="fire-timer">15.0</span>s
   </div>
 
   <div id="interaction-prompt">
     <span id="prompt-title">NOTEBOOK ACER NITRO V15</span>
-    <span class="badge">ENTER ↵</span>
+    <span class="badge" id="prompt-badge">INFO</span>
+  </div>
+
+  <!-- CONTROLES TOUCH / VIRTUAIS ESMAECIDOS -->
+  <div id="touch-controls">
+    <div class="dpad-grid">
+      <div></div>
+      <button class="touch-btn" id="t-up" aria-label="Frente">▲</button>
+      <div></div>
+      <button class="touch-btn" id="t-left" aria-label="Esquerda">◄</button>
+      <button class="touch-btn" id="t-down" aria-label="Ré">▼</button>
+      <button class="touch-btn" id="t-right" aria-label="Direita">►</button>
+    </div>
+    <div class="action-pad">
+      <button class="touch-btn-water" id="t-water" aria-label="Esguicho de Água">
+        <span style="font-size:22px;">💦</span>
+        <span>ÁGUA</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL DE REINÍCIO / RAMPA -->
+  <div id="modal-backdrop">
+    <div id="modal-box">
+      <h2 id="modal-title">🚨 O Carrinho Caiu da Mesa!</h2>
+      <p id="modal-desc">Deseja reiniciar o jogo e restaurar todos os objetos da mesa para o estado original?</p>
+      <button id="modal-btn">🔄 Reiniciar Jogo</button>
+    </div>
   </div>
 
   <canvas class="webgl"></canvas>
@@ -149,36 +389,29 @@
   <script>
     const canvas = document.querySelector('canvas.webgl');
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xdcd7d0); // Parede clara do quarto da foto
+    scene.background = new THREE.Color(0xd5cfc7);
 
     const sizes = {
       width: window.innerWidth,
       height: window.innerHeight
     };
 
-    // Câmera Perspectiva com FOV baixo (estilo isométrico moderno com profundidade real)
-    const camera = new THREE.PerspectiveCamera(32, sizes.width / sizes.height, 0.5, 250);
-    let camMode = 'iso'; // 'iso', 'close', 'wide'
+    const camera = new THREE.PerspectiveCamera(34, sizes.width / sizes.height, 0.5, 450);
+    let camMode = 'iso';
     let zoomFactor = 1.0;
 
     window.addEventListener('wheel', (e) => {
-      zoomFactor = Math.max(0.45, Math.min(1.75, zoomFactor + e.deltaY * 0.0008));
+      zoomFactor = Math.max(0.4, Math.min(2.2, zoomFactor + e.deltaY * 0.0008));
     });
 
     document.getElementById('btn-cam-iso').addEventListener('click', (e) => {
-      camMode = 'iso';
-      zoomFactor = 1.0;
-      setActiveBtn(e.target);
+      camMode = 'iso'; zoomFactor = 1.0; setActiveBtn(e.target);
     });
     document.getElementById('btn-cam-close').addEventListener('click', (e) => {
-      camMode = 'close';
-      zoomFactor = 0.7;
-      setActiveBtn(e.target);
+      camMode = 'close'; zoomFactor = 0.75; setActiveBtn(e.target);
     });
     document.getElementById('btn-cam-wide').addEventListener('click', (e) => {
-      camMode = 'wide';
-      zoomFactor = 1.3;
-      setActiveBtn(e.target);
+      camMode = 'wide'; zoomFactor = 1.65; setActiveBtn(e.target);
     });
     function setActiveBtn(btn) {
       document.querySelectorAll('.btn-cam').forEach(b => b.classList.remove('active'));
@@ -192,305 +425,222 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
 
-    // --- ILUMINAÇÃO REALISTA DE QUARTO / SETUP ---
+    // --- ILUMINAÇÃO ---
     const ambientLight = new THREE.AmbientLight(0xfff8f0, 0.85);
     scene.add(ambientLight);
 
-    // Luz principal de teto/janela
     const mainLight = new THREE.DirectionalLight(0xfffdf8, 1.15);
-    mainLight.position.set(14, 38, 24);
+    mainLight.position.set(25, 65, 42);
     mainLight.castShadow = true;
     mainLight.shadow.mapSize.width = 2048;
     mainLight.shadow.mapSize.height = 2048;
     mainLight.shadow.camera.near = 5;
-    mainLight.shadow.camera.far = 95;
-    const sd = 34;
+    mainLight.shadow.camera.far = 180;
+    const sd = 85;
     mainLight.shadow.camera.left = -sd;
     mainLight.shadow.camera.right = sd;
     mainLight.shadow.camera.top = sd;
     mainLight.shadow.camera.bottom = -sd;
-    mainLight.shadow.bias = -0.0004;
+    mainLight.shadow.bias = -0.0005;
     scene.add(mainLight);
 
-    // Luz azulada suave vinda dos monitores
-    const screenGlowLight = new THREE.PointLight(0x88b4ff, 0.55, 35);
-    screenGlowLight.position.set(2, 10, -10);
+    const screenGlowLight = new THREE.PointLight(0x88b4ff, 0.65, 45);
+    screenGlowLight.position.set(4, 12, -10);
     scene.add(screenGlowLight);
 
-    // --- GERADORES DE TEXTURAS PROCEDURAIS (FIÉIS ÀS FOTOS) ---
-
-    // 1. Textura de Feltro Chumbo do Deskmat
+    // --- TEXTURAS PROCEDURAIS ---
     function createFeltTexture() {
       const c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 512;
+      c.width = 512; c.height = 512;
       const ctx = c.getContext('2d');
       ctx.fillStyle = '#383a3d';
       ctx.fillRect(0, 0, 512, 512);
-      // Fibras do feltro
-      for (let i = 0; i < 18000; i++) {
-        const x = Math.random() * 512;
-        const y = Math.random() * 512;
-        const len = 2 + Math.random() * 5;
-        const ang = Math.random() * Math.PI * 2;
+      for (let i = 0; i < 16000; i++) {
+        const x = Math.random() * 512, y = Math.random() * 512;
+        const len = 2 + Math.random() * 5, ang = Math.random() * Math.PI * 2;
         ctx.strokeStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.12)';
-        ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x + Math.cos(ang) * len, y + Math.sin(ang) * len);
         ctx.stroke();
       }
       const tex = new THREE.CanvasTexture(c);
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(4, 2.5);
+      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(6, 4);
       return tex;
     }
 
-    // 2. Textura do Para-brisa do Carrinho (Óculos escuros azuis com reflexos brancos + sorrisinho!)
     function createWindshieldTexture() {
       const c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 256;
+      c.width = 512; c.height = 256;
       const ctx = c.getContext('2d');
-
-      // Fundo azul translúcido turquesa do plástico do para-brisa
       const grad = ctx.createLinearGradient(0, 0, 0, 256);
-      grad.addColorStop(0, '#1e95b8');
-      grad.addColorStop(1, '#31b3d4');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 512, 256);
-
-      // Moldura interna suave
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-      ctx.lineWidth = 10;
+      grad.addColorStop(0, '#1e95b8'); grad.addColorStop(1, '#31b3d4');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, 512, 256);
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 10;
       ctx.strokeRect(12, 12, 488, 232);
 
-      // Óculos escuros (Lente esquerda e Lente direita + ponte)
-      ctx.fillStyle = '#0d4a85';
-      ctx.strokeStyle = '#093561';
-      ctx.lineWidth = 8;
+      ctx.fillStyle = '#0d4a85'; ctx.strokeStyle = '#093561'; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.roundRect(75, 55, 155, 110, [18, 18, 45, 35]); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(282, 55, 155, 110, [18, 18, 35, 45]); ctx.fill(); ctx.stroke();
 
-      // Lente esquerda
-      ctx.beginPath();
-      ctx.roundRect(75, 55, 155, 110, [18, 18, 45, 35]);
-      ctx.fill();
-      ctx.stroke();
-
-      // Lente direita
-      ctx.beginPath();
-      ctx.roundRect(282, 55, 155, 110, [18, 18, 35, 45]);
-      ctx.fill();
-      ctx.stroke();
-
-      // Ponte dos óculos
       ctx.lineWidth = 14;
-      ctx.beginPath();
-      ctx.moveTo(225, 88);
-      ctx.quadraticCurveTo(256, 75, 287, 88);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(225, 88); ctx.quadraticCurveTo(256, 75, 287, 88); ctx.stroke();
 
-      // Listras brancas diagonais de reflexo nos óculos (exatamente como no brinquedo!)
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#ffffff'; ctx.lineCap = 'round';
+      ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(115, 78); ctx.lineTo(150, 140); ctx.stroke();
+      ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(155, 75); ctx.lineTo(182, 125); ctx.stroke();
+      ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(322, 78); ctx.lineTo(357, 140); ctx.stroke();
+      ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(362, 75); ctx.lineTo(389, 125); ctx.stroke();
 
-      // Reflexos lente esquerda
-      ctx.lineWidth = 18;
-      ctx.beginPath();
-      ctx.moveTo(115, 78);
-      ctx.lineTo(150, 140);
-      ctx.stroke();
-
-      ctx.lineWidth = 10;
-      ctx.beginPath();
-      ctx.moveTo(155, 75);
-      ctx.lineTo(182, 125);
-      ctx.stroke();
-
-      // Reflexos lente direita
-      ctx.lineWidth = 18;
-      ctx.beginPath();
-      ctx.moveTo(322, 78);
-      ctx.lineTo(357, 140);
-      ctx.stroke();
-
-      ctx.lineWidth = 10;
-      ctx.beginPath();
-      ctx.moveTo(362, 75);
-      ctx.lineTo(389, 125);
-      ctx.stroke();
-
-      // Sorrisinho fofo no centro abaixo dos óculos
-      ctx.strokeStyle = '#08325c';
-      ctx.lineWidth = 9;
-      ctx.beginPath();
-      ctx.arc(256, 172, 18, 0.15 * Math.PI, 0.85 * Math.PI);
-      ctx.stroke();
-
+      ctx.strokeStyle = '#08325c'; ctx.lineWidth = 9;
+      ctx.beginPath(); ctx.arc(256, 172, 18, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
       return new THREE.CanvasTexture(c);
     }
 
-    // 3. Textura Lateral do Carrinho (Janela amarela arredondada + 3 barras + //Fire Engine//)
     function createCarSideTexture(flip = false) {
       const c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 256;
+      c.width = 512; c.height = 256;
       const ctx = c.getContext('2d');
-
-      if (flip) {
-        ctx.translate(512, 0);
-        ctx.scale(-1, 1);
-      }
-
-      // Fundo laranja-avermelhado vivo do caminhãozinho
-      ctx.fillStyle = '#ff471a';
-      ctx.fillRect(0, 0, 512, 256);
-
-      // Janela lateral amarela com topo arredondado
+      if (flip) { ctx.translate(512, 0); ctx.scale(-1, 1); }
+      ctx.fillStyle = '#ff471a'; ctx.fillRect(0, 0, 512, 256);
       ctx.fillStyle = '#ffd15c';
-      ctx.beginPath();
-      ctx.roundRect(75, 48, 86, 95, [42, 42, 10, 10]);
-      ctx.fill();
-
-      // 3 barras verticais amarelas crescentes ao lado da janela
-      const barHeights = [46, 68, 92];
-      barHeights.forEach((bh, idx) => {
-        ctx.beginPath();
-        ctx.roundRect(195 + idx * 38, 143 - bh, 22, bh, 10);
-        ctx.fill();
+      ctx.beginPath(); ctx.roundRect(75, 48, 86, 95, [42, 42, 10, 10]); ctx.fill();
+      [46, 68, 92].forEach((bh, idx) => {
+        ctx.beginPath(); ctx.roundRect(195 + idx * 38, 143 - bh, 22, bh, 10); ctx.fill();
       });
-
-      // Nervuras traseiras em relevo (escada/compartimento)
-      ctx.strokeStyle = '#d9340d';
-      ctx.lineWidth = 6;
-      for (let i = 0; i < 3; i++) {
-        ctx.strokeRect(338 + i * 42, 55, 30, 88);
-      }
-
-      // Faixa branca inferior com texto "// Fire Engine //"
+      ctx.strokeStyle = '#d9340d'; ctx.lineWidth = 6;
+      for (let i = 0; i < 3; i++) ctx.strokeRect(338 + i * 42, 55, 30, 88);
       ctx.fillStyle = '#ffffff';
       ctx.font = 'italic 900 28px "Segoe UI", Arial, sans-serif';
       ctx.fillText('// Fire Engine //', 85, 205);
-
       return new THREE.CanvasTexture(c);
     }
 
-    // 4. Textura do Monitor Ultrawide Curvo (Split Screen: Chat escuro à esquerda + Cena 3D laranja à direita!)
-    function createUltrawideScreenTexture() {
-      const c = document.createElement('canvas');
-      c.width = 1024;
-      c.height = 420;
-      const ctx = c.getContext('2d');
+    // Monitor Ultrawide Dinâmico (Atualiza quando o carrinho digita no teclado ou quando pega fogo/explode!)
+    const monitorCanvas = document.createElement('canvas');
+    monitorCanvas.width = 1024;
+    monitorCanvas.height = 420;
+    const monitorCtx = monitorCanvas.getContext('2d');
+    const monitorTexture = new THREE.CanvasTexture(monitorCanvas);
 
-      // Metade esquerda: Interface Dark Mode (Antigravity / VS Code)
+    let typedTextLines = ['> terminal ready...'];
+    let selfDestructProgress = 0; // 0 a 100
+    let monitorState = 'normal'; // 'normal', 'burning', 'exploded'
+    let fireTimer = 15.0;
+
+    function updateMonitorScreen() {
+      const ctx = monitorCtx;
+      if (monitorState === 'exploded') {
+        // Tela quebrada / estilhaçada preta
+        ctx.fillStyle = '#0a0b0d';
+        ctx.fillRect(0, 0, 1024, 420);
+        ctx.strokeStyle = '#555d66';
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 28; i++) {
+          ctx.beginPath();
+          ctx.moveTo(512, 210);
+          ctx.lineTo(Math.random() * 1024, Math.random() * 420);
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#ff3333';
+        ctx.font = 'bold 34px monospace';
+        ctx.fillText('SYSTEM DESTROYED // NO SIGNAL', 210, 220);
+        monitorTexture.needsUpdate = true;
+        return;
+      }
+
+      if (monitorState === 'burning') {
+        ctx.fillStyle = '#4a0808';
+        ctx.fillRect(0, 0, 1024, 420);
+        ctx.fillStyle = '#ffeb3b';
+        ctx.font = 'bold 36px monospace';
+        ctx.fillText('⚠️ SELF-DESTRUCT SEQUENCE ACTIVE! ⚠️', 120, 120);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px monospace';
+        ctx.fillText('OVERHEATING! EXTINGUISH WITH WATER NOW!', 155, 200);
+        ctx.fillStyle = '#ff5722';
+        ctx.fillRect(150, 260, 724 * (fireTimer / 15.0), 40);
+        monitorTexture.needsUpdate = true;
+        return;
+      }
+
+      // Estado Normal: Metade Esquerda Terminal Dark Mode (com texto digitado pelo carrinho!)
       ctx.fillStyle = '#141619';
       ctx.fillRect(0, 0, 480, 420);
-      // Sidebar
       ctx.fillStyle = '#1c1f24';
-      ctx.fillRect(0, 0, 95, 420);
-      // Linhas de texto simuladas no chat
-      ctx.fillStyle = '#e0e6ed';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.fillText('Antigravity - Three.js Setup', 115, 42);
-      ctx.fillStyle = '#8b949e';
-      for (let i = 0; i < 14; i++) {
-        const w = 140 + ((i * 53) % 180);
-        ctx.fillRect(115, 65 + i * 22, w, 8);
-      }
+      ctx.fillRect(0, 0, 85, 420);
 
-      // Metade direita: Duas janelas lado a lado com a cena laranja do Bruno Simon!
+      ctx.fillStyle = '#35e0ff';
+      ctx.font = 'bold 15px monospace';
+      ctx.fillText('ANTIGRAVITY TERMINAL (PASSE NO TECLADO)', 100, 42);
+
+      // Barra de risco de autodestruição
+      ctx.fillStyle = '#2b303c';
+      ctx.fillRect(100, 56, 350, 14);
+      ctx.fillStyle = selfDestructProgress > 70 ? '#ff3d00' : '#ffab00';
+      ctx.fillRect(100, 56, 3.5 * selfDestructProgress, 14);
+      ctx.fillStyle = '#fff';
+      ctx.font = '11px monospace';
+      ctx.fillText(`AUTO-DESTRUCT CODE: ${Math.floor(selfDestructProgress)}%`, 105, 67);
+
+      ctx.fillStyle = '#7ee787';
+      ctx.font = '14px monospace';
+      const recent = typedTextLines.slice(-12);
+      recent.forEach((line, idx) => {
+        ctx.fillText(line, 100, 98 + idx * 24);
+      });
+
+      // Metade Direita: Cena Three.js Laranja
       ctx.fillStyle = '#f5a274';
       ctx.fillRect(480, 0, 544, 420);
-      // Divisória central
       ctx.fillStyle = '#202225';
       ctx.fillRect(745, 0, 6, 420);
-      // Água azul-turquesa no canto
       ctx.fillStyle = '#68c3c8';
       ctx.beginPath();
-      ctx.moveTo(480, 260);
-      ctx.lineTo(745, 350);
-      ctx.lineTo(745, 420);
-      ctx.lineTo(480, 420);
+      ctx.moveTo(480, 260); ctx.lineTo(745, 350); ctx.lineTo(745, 420); ctx.lineTo(480, 420);
       ctx.fill();
-      // Cards brancos no topo das telas
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(500, 35, 110, 48);
-      ctx.fillRect(768, 35, 110, 48);
-      // Carrinho vermelho e árvores laranjas na tela
+      ctx.fillRect(500, 35, 110, 48); ctx.fillRect(768, 35, 110, 48);
       ctx.fillStyle = '#d93829';
-      ctx.fillRect(560, 230, 40, 26);
-      ctx.fillRect(880, 210, 40, 26);
-      ctx.fillStyle = '#e86f38';
-      ctx.beginPath();
-      ctx.arc(830, 255, 28, 0, Math.PI * 2);
-      ctx.arc(870, 245, 22, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillRect(560, 230, 40, 26); ctx.fillRect(880, 210, 40, 26);
 
-      // Barra de título do navegador
       ctx.fillStyle = '#20232a';
-      ctx.fillRect(0, 0, 1024, 22);
-
-      return new THREE.CanvasTexture(c);
+      ctx.fillRect(0, 0, 1024, 20);
+      monitorTexture.needsUpdate = true;
     }
+    updateMonitorScreen();
 
-    // 5. Textura da Tela do Notebook Acer Nitro (Windows Explorer Dark Mode)
     function createLaptopScreenTexture() {
       const c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 320;
+      c.width = 512; c.height = 320;
       const ctx = c.getContext('2d');
-      ctx.fillStyle = '#191b1f';
-      ctx.fillRect(0, 0, 512, 320);
-      // Barra lateral do Explorer
-      ctx.fillStyle = '#21242b';
-      ctx.fillRect(0, 24, 110, 276);
-      // Pastas e arquivos listados
-      ctx.fillStyle = '#f0c674';
+      ctx.fillStyle = '#191b1f'; ctx.fillRect(0, 0, 512, 320);
+      ctx.fillStyle = '#21242b'; ctx.fillRect(0, 24, 110, 276);
       for (let i = 0; i < 10; i++) {
-        ctx.fillRect(130, 50 + i * 18, 14, 10);
-        ctx.fillStyle = '#abb2bf';
-        ctx.fillRect(152, 52 + i * 18, 120 + (i % 3) * 40, 6);
-        ctx.fillStyle = '#f0c674';
+        ctx.fillStyle = '#f0c674'; ctx.fillRect(130, 50 + i * 18, 14, 10);
+        ctx.fillStyle = '#abb2bf'; ctx.fillRect(152, 52 + i * 18, 120 + (i % 3) * 40, 6);
       }
-      // Barra de tarefas do Windows
-      ctx.fillStyle = '#111317';
-      ctx.fillRect(0, 300, 512, 20);
+      ctx.fillStyle = '#111317'; ctx.fillRect(0, 300, 512, 20);
       return new THREE.CanvasTexture(c);
     }
 
-    // 6. Textura do Adesivo Hexagonal Colorido do Apoio de Pulso do Teclado
     function createHexStickerTexture() {
       const c = document.createElement('canvas');
-      c.width = 256;
-      c.height = 128;
+      c.width = 256; c.height = 128;
       const ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, 256, 128);
-
       const grad = ctx.createLinearGradient(20, 20, 236, 108);
-      grad.addColorStop(0, '#26d0ce');
-      grad.addColorStop(0.35, '#a770ef');
-      grad.addColorStop(0.7, '#cf8bf3');
-      grad.addColorStop(1, '#fdb99b');
-
-      ctx.fillStyle = grad;
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 10;
-      ctx.beginPath();
-      ctx.roundRect(24, 18, 208, 92, 36);
-      ctx.fill();
-      ctx.stroke();
+      grad.addColorStop(0, '#26d0ce'); grad.addColorStop(0.35, '#a770ef');
+      grad.addColorStop(0.7, '#cf8bf3'); grad.addColorStop(1, '#fdb99b');
+      ctx.fillStyle = grad; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.roundRect(24, 18, 208, 92, 36); ctx.fill(); ctx.stroke();
       return new THREE.CanvasTexture(c);
     }
 
-    // 7. Textura do Adesivo de Coração Quebra-Cabeça (Autismo) no Notebook
     function createHeartStickerTexture() {
       const c = document.createElement('canvas');
-      c.width = 128;
-      c.height = 128;
+      c.width = 128; c.height = 128;
       const ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, 128, 128);
-
-      // Função auxiliar para caminho de coração
       function heartPath(cx, cy, size) {
         ctx.beginPath();
         ctx.moveTo(cx, cy + size * 0.35);
@@ -500,16 +650,8 @@
         ctx.bezierCurveTo(cx + size * 0.5, cy, cx, cy, cx, cy + size * 0.35);
         ctx.closePath();
       }
-
-      // Borda branca do adesivo em formato de coração
-      heartPath(64, 14, 92);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-
-      // Recorte interno para peças coloridas do quebra-cabeça
-      ctx.save();
-      heartPath(64, 20, 80);
-      ctx.clip();
+      heartPath(64, 14, 92); ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.save(); heartPath(64, 20, 80); ctx.clip();
       const cols = ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#ff7f50'];
       for (let r = 0; r < 4; r++) {
         for (let col = 0; col < 4; col++) {
@@ -518,350 +660,394 @@
         }
       }
       ctx.restore();
+      heartPath(64, 14, 92); ctx.lineWidth = 6; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+      return new THREE.CanvasTexture(c);
+    }
 
-      heartPath(64, 14, 92);
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
-
+    function createCardboardTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ba8c5c';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.strokeStyle = 'rgba(90, 55, 25, 0.18)';
+      ctx.lineWidth = 3;
+      for (let y = 0; y < 512; y += 8) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+      }
+      // Fita adesiva e aviso escrito à mão no papelão
+      ctx.fillStyle = 'rgba(215, 195, 160, 0.75)';
+      ctx.fillRect(0, 35, 512, 42);
+      ctx.fillStyle = '#2b1b0e';
+      ctx.font = 'bold 30px "Segoe UI", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⬇ RAMPA: CENÁRIO QUARTO ⬇', 256, 230);
+      ctx.font = 'bold 22px monospace';
+      ctx.fillStyle = '#8c1d18';
+      ctx.fillText('(EM CONSTRUÇÃO)', 256, 275);
       return new THREE.CanvasTexture(c);
     }
 
     // ============================================================================
-    // CONSTRUÇÃO DO MUNDO: A SUA MESA DE TRABALHO EXPANDIDA
+    // MESA DE TRABALHO EXPANDIDA 3X (180 x 108 UNIDADES!)
     // ============================================================================
     const deskWorld = new THREE.Group();
     scene.add(deskWorld);
 
-    // 1. Tampo da Mesa Preta com Recorte Ergonômico Frontal (Expandido para 64 x 38)
+    const DESK_HALF_W = 90; // 180 largura total
+    const DESK_HALF_D = 54; // 108 profundidade total
+
     const deskMat = new THREE.MeshStandardMaterial({
       color: 0x1a1c1f,
-      roughness: 0.42,
+      roughness: 0.45,
       metalness: 0.1
     });
-    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(64, 1.4, 38), deskMat);
-    deskTop.position.set(0, -0.7, 0);
+    const deskTop = new THREE.Mesh(new THREE.BoxGeometry(DESK_HALF_W * 2, 1.8, DESK_HALF_D * 2), deskMat);
+    deskTop.position.set(0, -0.9, 0);
     deskTop.receiveShadow = true;
     deskTop.castShadow = true;
     deskWorld.add(deskTop);
 
-    // Painel de controle da mesa com regulagem de altura (^ v) na borda frontal esquerda (igual à foto!)
-    const deskCtrl = new THREE.Mesh(
-      new THREE.BoxGeometry(2.6, 0.7, 1.2),
-      new THREE.MeshStandardMaterial({ color: 0x111214, roughness: 0.3 })
-    );
-    deskCtrl.position.set(-24, -0.5, 19.1);
-    deskWorld.add(deskCtrl);
-
-    // Pernas pretas metálicas da mesa
+    // Pernas robustas da mesa 3x
     const legMat = new THREE.MeshStandardMaterial({ color: 0x121316, roughness: 0.3, metalness: 0.6 });
-    const legL = new THREE.Mesh(new THREE.BoxGeometry(2.2, 24, 2.2), legMat);
-    legL.position.set(-25, -12.7, 8);
-    const legR = new THREE.Mesh(new THREE.BoxGeometry(2.2, 24, 2.2), legMat);
-    legR.position.set(25, -12.7, 8);
-    deskWorld.add(legL, legR);
+    [[-78, -38], [78, -38], [-78, 38], [78, 38]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(4, 38, 4), legMat);
+      leg.position.set(lx, -20, lz);
+      deskWorld.add(leg);
+    });
 
-    // 2. Deskmat de Feltro Cinza-Chumbo (Grande, ocupando o centro-direita da mesa)
+    // Deskmat de Feltro Cinza-Chumbo Expandido
     const feltMat = new THREE.MeshStandardMaterial({
       map: createFeltTexture(),
-      roughness: 0.92,
-      metalness: 0.0
+      roughness: 0.92
     });
-    const deskmat = new THREE.Mesh(new THREE.BoxGeometry(40, 0.14, 22), feltMat);
-    deskmat.position.set(7, 0.07, 4.5);
+    const deskmat = new THREE.Mesh(new THREE.BoxGeometry(68, 0.14, 34), feltMat);
+    deskmat.position.set(8, 0.07, 6);
     deskmat.receiveShadow = true;
     deskWorld.add(deskmat);
 
     // ============================================================================
-    // ELEMENTOS REAIS DA SUA MESA (POSICIONADOS COM ESPAÇO PARA DIRIGIR)
+    // RAMPA DE PAPELÃO NA LATERAL ESQUERDA DA MESA (ACESSO AO CENÁRIO DO QUARTO)
     // ============================================================================
-    const obstacles = []; // Lista de bounding boxes circulares/retangulares para colisão suave
+    const rampGroup = new THREE.Group();
+    const rampMat = new THREE.MeshStandardMaterial({ map: createCardboardTexture(), roughness: 0.85 });
 
-    // 3. COPO TÉRMICO BRANCO (Tipo Stanley com borda inox na esquerda frontal)
+    // Aba superior de papelão apoiada sobre a mesa (convite para descer)
+    const rampLip = new THREE.Mesh(new THREE.BoxGeometry(12, 0.25, 16), rampMat);
+    rampLip.position.set(-DESK_HALF_W + 6, 0.12, 18);
+    rampLip.receiveShadow = true;
+    rampGroup.add(rampLip);
+
+    // Rampa inclinada descendo para fora da mesa
+    const rampGeo = new THREE.BoxGeometry(24, 0.35, 16);
+    const rampMesh = new THREE.Mesh(rampGeo, rampMat);
+    rampMesh.rotation.z = 0.28;
+    rampMesh.position.set(-DESK_HALF_W - 11, -3.1, 18);
+    rampMesh.castShadow = true;
+    rampMesh.receiveShadow = true;
+    rampGroup.add(rampMesh);
+
+    // Abas laterais de papelão da rampa
+    [-7.8, 7.8].forEach((rz) => {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(24, 1.3, 0.35), rampMat);
+      rail.rotation.z = 0.28;
+      rail.position.set(-DESK_HALF_W - 11, -2.5, 18 + rz);
+      rampGroup.add(rail);
+    });
+    deskWorld.add(rampGroup);
+
+    // ============================================================================
+    // LISTA DE OBSTÁCULOS E OBJETOS INTERATIVOS DA MESA
+    // ============================================================================
+    const obstacles = [];
+
+    // 1. COPO TÉRMICO COM ÁGUA (Derruba ao bater e cria poça de recarga!)
     const tumblerGroup = new THREE.Group();
+    const tumblerPivot = new THREE.Group(); // Pivô na base para tombar!
+    tumblerGroup.add(tumblerPivot);
+
     const tumblerBody = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.85, 1.4, 5.8, 28),
+      new THREE.CylinderGeometry(1.95, 1.45, 6.0, 28),
       new THREE.MeshStandardMaterial({ color: 0xf2f4f7, roughness: 0.25 })
     );
     tumblerBody.position.y = 3.2;
     tumblerBody.castShadow = true;
-    tumblerBody.receiveShadow = true;
-
-    const tumblerBaseRim = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.42, 1.38, 0.5, 28),
-      new THREE.MeshStandardMaterial({ color: 0xcfd6de, metalness: 0.85, roughness: 0.18 })
-    );
-    tumblerBaseRim.position.y = 0.25;
+    tumblerPivot.add(tumblerBody);
 
     const tumblerTopRim = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.88, 1.85, 0.45, 28),
+      new THREE.CylinderGeometry(1.98, 1.95, 0.45, 28),
       new THREE.MeshStandardMaterial({ color: 0xd8dfe6, metalness: 0.85, roughness: 0.18 })
     );
-    tumblerTopRim.position.y = 6.1;
+    tumblerTopRim.position.y = 6.2;
+    tumblerPivot.add(tumblerTopRim);
 
-    const tumblerInner = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.72, 1.72, 0.1, 24),
-      new THREE.MeshStandardMaterial({ color: 0x7a828a, metalness: 0.7, roughness: 0.3 })
+    const cupWaterInside = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.82, 1.82, 0.15, 24),
+      new THREE.MeshBasicMaterial({ color: 0x26d0ff })
     );
-    tumblerInner.position.y = 6.28;
+    cupWaterInside.position.y = 6.36;
+    tumblerPivot.add(cupWaterInside);
 
-    tumblerGroup.add(tumblerBody, tumblerBaseRim, tumblerTopRim, tumblerInner);
-    tumblerGroup.position.set(-24, 0, 11);
+    tumblerGroup.position.set(-26, 0, 14);
     deskWorld.add(tumblerGroup);
-    obstacles.push({ x: -24, z: 11, r: 2.3, name: 'COPO TÉRMICO STANLEY BRANCO' });
 
-    // 4. NOTEBOOK ACER NITRO V 15 NO SUPORTE INCLINADO (Esquerda-Traseira)
+    // Poça de água derramada (inicialmente invisível / escala zero)
+    const puddleMesh = new THREE.Mesh(
+      new THREE.CircleGeometry(7.5, 36),
+      new THREE.MeshStandardMaterial({
+        color: 0x24c8ff,
+        roughness: 0.08,
+        metalness: 0.15,
+        transparent: true,
+        opacity: 0.78
+      })
+    );
+    puddleMesh.rotation.x = -Math.PI / 2;
+    puddleMesh.position.set(-20.5, 0.16, 14);
+    puddleMesh.scale.set(0.001, 0.001, 0.001);
+    puddleMesh.visible = false;
+    deskWorld.add(puddleMesh);
+
+    let cupSpilled = false;
+    let puddleScale = 0.001;
+    const cupObstacle = {
+      x: -26, z: 14, r: 2.35,
+      name: 'COPO COM ÁGUA (BATA PARA DERRAMAR E ABASTECER!)',
+      type: 'water_cup'
+    };
+    obstacles.push(cupObstacle);
+
+    // 2. NOTEBOOK ACER NITRO V 15 NO SUPORTE (Esquerda)
     const laptopGroup = new THREE.Group();
     const laptopChassisMat = new THREE.MeshStandardMaterial({ color: 0x24272c, roughness: 0.38, metalness: 0.35 });
-
-    // Suporte elevatório sob o notebook
     const standBase = new THREE.Mesh(new THREE.BoxGeometry(11, 2.2, 8), new THREE.MeshStandardMaterial({ color: 0x16181b }));
-    standBase.position.set(0, 1.1, 0);
-    standBase.castShadow = true;
+    standBase.position.set(0, 1.1, 0); standBase.castShadow = true;
     laptopGroup.add(standBase);
 
-    // Base do teclado do notebook (inclinada para frente como na foto)
     const lapBaseGroup = new THREE.Group();
-    lapBaseGroup.position.set(0, 2.6, 0.5);
-    lapBaseGroup.rotation.x = 0.32;
-
+    lapBaseGroup.position.set(0, 2.6, 0.5); lapBaseGroup.rotation.x = 0.32;
     const lapDeck = new THREE.Mesh(new THREE.BoxGeometry(14.5, 0.5, 10.2), laptopChassisMat);
-    lapDeck.castShadow = true;
-    lapDeck.receiveShadow = true;
-    lapBaseGroup.add(lapDeck);
+    lapDeck.castShadow = true; lapBaseGroup.add(lapDeck);
+    const lapKeys = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.15, 5.4), new THREE.MeshStandardMaterial({ color: 0x141619 }));
+    lapKeys.position.set(0, 0.28, -1.2); lapBaseGroup.add(lapKeys);
+    const touchpad = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.08, 2.6), new THREE.MeshStandardMaterial({ color: 0x2f333a }));
+    touchpad.position.set(-1.1, 0.27, 3.1); lapBaseGroup.add(touchpad);
 
-    // Teclas do notebook
-    const lapKeys = new THREE.Mesh(
-      new THREE.BoxGeometry(13.2, 0.15, 5.4),
-      new THREE.MeshStandardMaterial({ color: 0x141619, roughness: 0.6 })
-    );
-    lapKeys.position.set(0, 0.28, -1.2);
-    lapBaseGroup.add(lapKeys);
-
-    // Touchpad do notebook
-    const touchpad = new THREE.Mesh(
-      new THREE.BoxGeometry(3.8, 0.08, 2.6),
-      new THREE.MeshStandardMaterial({ color: 0x2f333a, roughness: 0.3 })
-    );
-    touchpad.position.set(-1.1, 0.27, 3.1);
-    lapBaseGroup.add(touchpad);
-
-    // Adesivos do Notebook (Intel Azul, RTX Verde e Coração Quebra-Cabeça Colorido!)
-    const stickerIntel = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.8, 0.65),
-      new THREE.MeshBasicMaterial({ color: 0x0071c5 })
-    );
-    stickerIntel.rotation.x = -Math.PI / 2;
-    stickerIntel.position.set(-5.8, 0.28, 2.3);
-
-    const stickerRtx = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.95, 0.65),
-      new THREE.MeshBasicMaterial({ color: 0x76b900 })
-    );
-    stickerRtx.rotation.x = -Math.PI / 2;
-    stickerRtx.position.set(-4.6, 0.28, 2.3);
-
-    const stickerHeart = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.6, 1.6),
-      new THREE.MeshBasicMaterial({ map: createHeartStickerTexture(), transparent: true })
-    );
-    stickerHeart.rotation.x = -Math.PI / 2;
-    stickerHeart.position.set(-5.2, 0.28, 3.7);
-
+    const stickerIntel = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.65), new THREE.MeshBasicMaterial({ color: 0x0071c5 }));
+    stickerIntel.rotation.x = -Math.PI / 2; stickerIntel.position.set(-5.8, 0.28, 2.3);
+    const stickerRtx = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.65), new THREE.MeshBasicMaterial({ color: 0x76b900 }));
+    stickerRtx.rotation.x = -Math.PI / 2; stickerRtx.position.set(-4.6, 0.28, 2.3);
+    const stickerHeart = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), new THREE.MeshBasicMaterial({ map: createHeartStickerTexture(), transparent: true }));
+    stickerHeart.rotation.x = -Math.PI / 2; stickerHeart.position.set(-5.2, 0.28, 3.7);
     lapBaseGroup.add(stickerIntel, stickerRtx, stickerHeart);
 
-    // Tela aberta do Notebook
     const lapScreenGroup = new THREE.Group();
-    lapScreenGroup.position.set(0, 0.25, -4.9);
-    lapScreenGroup.rotation.x = -0.38;
-
+    lapScreenGroup.position.set(0, 0.25, -4.9); lapScreenGroup.rotation.x = -0.38;
     const lapLid = new THREE.Mesh(new THREE.BoxGeometry(14.5, 9.4, 0.35), laptopChassisMat);
-    lapLid.position.set(0, 4.7, 0);
-    lapLid.castShadow = true;
-    lapScreenGroup.add(lapLid);
-
-    const lapDisplay = new THREE.Mesh(
-      new THREE.PlaneGeometry(13.7, 8.4),
-      new THREE.MeshBasicMaterial({ map: createLaptopScreenTexture() })
-    );
-    lapDisplay.position.set(0, 4.7, 0.19);
-    lapScreenGroup.add(lapDisplay);
+    lapLid.position.set(0, 4.7, 0); lapLid.castShadow = true; lapScreenGroup.add(lapLid);
+    const lapDisplay = new THREE.Mesh(new THREE.PlaneGeometry(13.7, 8.4), new THREE.MeshBasicMaterial({ map: createLaptopScreenTexture() }));
+    lapDisplay.position.set(0, 4.7, 0.19); lapScreenGroup.add(lapDisplay);
 
     lapBaseGroup.add(lapScreenGroup);
     laptopGroup.add(lapBaseGroup);
-
-    // Cabos conectados na lateral esquerda do notebook (HDMI / USB)
-    for (let i = 0; i < 3; i++) {
-      const plug = new THREE.Mesh(
-        new THREE.BoxGeometry(1.1, 0.28, 0.55),
-        new THREE.MeshStandardMaterial({ color: 0x111111 })
-      );
-      plug.position.set(-7.6, 2.8 - i * 0.25, -0.5 + i * 1.1);
-      laptopGroup.add(plug);
-    }
-
-    laptopGroup.position.set(-15.5, 0, -4.5);
-    laptopGroup.rotation.y = 0.24; // Levemente virado para o usuário como na foto
+    laptopGroup.position.set(-19, 0, -8);
+    laptopGroup.rotation.y = 0.24;
     deskWorld.add(laptopGroup);
-    obstacles.push({ x: -15.5, z: -4.5, r: 6.8, name: 'NOTEBOOK ACER NITRO V 15' });
+    obstacles.push({ x: -19, z: -8, r: 7.2, name: 'NOTEBOOK ACER NITRO V 15' });
 
-    // 5. MONITOR ULTRAWIDE CURVO (Centro-Direita Traseira)
+    // 3. MONITOR ULTRAWIDE CURVO (Com sistema de Incêndio e Explosão!)
     const monitorGroup = new THREE.Group();
-
-    // Braço articulado e base na mesa
-    const armBase = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.4, 3.8), legMat);
+    const armBase = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.4, 4.0), legMat);
     armBase.position.set(-7, 0.2, -2);
-    const armPole = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 9.5, 16), legMat);
-    armPole.position.set(-7, 4.8, -2.5);
-    armPole.castShadow = true;
+    const armPole = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 9.5, 16), legMat);
+    armPole.position.set(-7, 4.8, -2.5); armPole.castShadow = true;
     monitorGroup.add(armBase, armPole);
 
-    // Geometria Curva Real para o Monitor Ultrawide!
-    const curveRadius = 28;
-    const arcAngle = 0.82; // ~23 unidades de largura curva
-    const monitorHeight = 10.2;
+    const monitorHeadGroup = new THREE.Group();
+    monitorGroup.add(monitorHeadGroup);
 
-    const curvedBackGeo = new THREE.CylinderGeometry(
-      curveRadius + 0.4,
-      curveRadius + 0.4,
-      monitorHeight,
-      48,
-      1,
-      true,
-      Math.PI - arcAngle / 2,
-      arcAngle
-    );
-    const curvedBack = new THREE.Mesh(
-      curvedBackGeo,
-      new THREE.MeshStandardMaterial({ color: 0x16181c, roughness: 0.4, side: THREE.DoubleSide })
-    );
+    const curveRadius = 28, arcAngle = 0.85, monitorHeight = 10.6;
+    const curvedBackGeo = new THREE.CylinderGeometry(curveRadius + 0.4, curveRadius + 0.4, monitorHeight, 48, 1, true, Math.PI - arcAngle / 2, arcAngle);
+    const curvedBackMat = new THREE.MeshStandardMaterial({ color: 0x16181c, roughness: 0.4, side: THREE.DoubleSide });
+    const curvedBack = new THREE.Mesh(curvedBackGeo, curvedBackMat);
     curvedBack.position.set(0, 8.6, curveRadius - 1.5);
     curvedBack.castShadow = true;
-    monitorGroup.add(curvedBack);
+    monitorHeadGroup.add(curvedBack);
 
-    // Painel luminoso curvo interno com a captura da sua tela!
-    const curvedScreenGeo = new THREE.CylinderGeometry(
-      curveRadius,
-      curveRadius,
-      monitorHeight - 0.6,
-      48,
-      1,
-      true,
-      Math.PI - arcAngle / 2,
-      arcAngle
-    );
-    // Ajustar UVs para não espelhar na face interna do cilindro
+    const curvedScreenGeo = new THREE.CylinderGeometry(curveRadius, curveRadius, monitorHeight - 0.6, 48, 1, true, Math.PI - arcAngle / 2, arcAngle);
     const uvAttr = curvedScreenGeo.attributes.uv;
-    for (let i = 0; i < uvAttr.count; i++) {
-      uvAttr.setX(i, 1 - uvAttr.getX(i));
-    }
-    const curvedScreen = new THREE.Mesh(
-      curvedScreenGeo,
-      new THREE.MeshBasicMaterial({ map: createUltrawideScreenTexture(), side: THREE.BackSide })
-    );
+    for (let i = 0; i < uvAttr.count; i++) uvAttr.setX(i, 1 - uvAttr.getX(i));
+    const curvedScreen = new THREE.Mesh(curvedScreenGeo, new THREE.MeshBasicMaterial({ map: monitorTexture, side: THREE.BackSide }));
     curvedScreen.position.set(0, 8.6, curveRadius - 1.45);
-    monitorGroup.add(curvedScreen);
+    monitorHeadGroup.add(curvedScreen);
 
-    monitorGroup.position.set(6.5, 0, -9.5);
+    // Chamas 3D do Monitor (visíveis quando em autodestruição!)
+    const monitorFireGroup = new THREE.Group();
+    monitorFireGroup.position.set(0, 9.5, -1.2);
+    monitorFireGroup.visible = false;
+    const fireCones = [];
+    for (let i = 0; i < 14; i++) {
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.9 + Math.random() * 0.7, 3.2 + Math.random() * 2.0, 7),
+        new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xff4500 : 0xffbe00 })
+      );
+      cone.position.set((i - 6.5) * 1.5, Math.random() * 1.5, (Math.random() - 0.5) * 1.2);
+      monitorFireGroup.add(cone);
+      fireCones.push(cone);
+    }
+    const fireLight = new THREE.PointLight(0xff5500, 0, 35);
+    fireLight.position.set(0, 4, 3);
+    monitorFireGroup.add(fireLight);
+    monitorGroup.add(monitorFireGroup);
+
+    monitorGroup.position.set(7.5, 0, -12.5);
     deskWorld.add(monitorGroup);
-    obstacles.push({ x: -0.5, z: -11.5, r: 2.4, name: 'MONITOR ULTRAWIDE CURVO (ANTIGRAVITY + THREE.JS)' });
+    obstacles.push({ x: 0.5, z: -14.5, r: 2.8, name: 'MONITOR ULTRAWIDE CURVO' });
 
-    // 6. CONTROLE PRETO (Estilo Xbox/Gamepad embaixo do monitor, como na foto!)
-    function createGamepad(colorHex, accentHex, isPS5 = false) {
+    // 4. CONTROLES DE VIDEOGAME (XBOX & PS5 DUALSENSE) — 5 ESTÁGIOS DE QUEBRA (ATÉ 20 BATIDAS!)
+    const controllerDebrisList = [];
+    const breakableControllers = [];
+
+    function createBreakableGamepad(name, x, z, rotY, colorHex, accentHex, isPS5 = false) {
       const gp = new THREE.Group();
+      gp.position.set(x, 0.14, z);
+      gp.rotation.y = rotY;
+
       const bodyMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.35 });
       const darkMat = new THREE.MeshStandardMaterial({ color: accentHex, roughness: 0.4 });
 
-      // Corpo central
-      const centerBody = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.55, 1.35), bodyMat);
-      centerBody.position.y = 0.45;
-      centerBody.castShadow = true;
+      const centerBody = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.6, 1.45), bodyMat);
+      centerBody.position.y = 0.45; centerBody.castShadow = true;
       gp.add(centerBody);
 
+      let ledBar = null;
       if (isPS5) {
-        // Touchpad preto e detalhe azul do DualSense
-        const touch = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.58, 0.8), darkMat);
-        touch.position.set(0, 0.46, -0.15);
-        const ledBar = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.57, 0.84), new THREE.MeshBasicMaterial({ color: 0x0088ff }));
-        ledBar.position.set(0, 0.45, -0.15);
+        const touch = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.64, 0.85), darkMat);
+        touch.position.set(0, 0.47, -0.15);
+        ledBar = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.62, 0.88), new THREE.MeshBasicMaterial({ color: 0x0088ff }));
+        ledBar.position.set(0, 0.46, -0.15);
         gp.add(ledBar, touch);
       }
 
-      // Grips laterais
-      const gripGeo = new THREE.CylinderGeometry(0.38, 0.28, 2.1, 14);
+      const gripGeo = new THREE.CylinderGeometry(0.42, 0.3, 2.25, 14);
       const gripL = new THREE.Mesh(gripGeo, bodyMat);
-      gripL.rotation.x = Math.PI / 2.3;
-      gripL.rotation.z = 0.22;
-      gripL.position.set(-1.1, 0.38, 0.35);
-      gripL.castShadow = true;
+      gripL.rotation.x = Math.PI / 2.3; gripL.rotation.z = 0.22;
+      gripL.position.set(-1.18, 0.38, 0.38); gripL.castShadow = true;
 
       const gripR = new THREE.Mesh(gripGeo, bodyMat);
-      gripR.rotation.x = Math.PI / 2.3;
-      gripR.rotation.z = -0.22;
-      gripR.position.set(1.1, 0.38, 0.35);
-      gripR.castShadow = true;
+      gripR.rotation.x = Math.PI / 2.3; gripR.rotation.z = -0.22;
+      gripR.position.set(1.18, 0.38, 0.38); gripR.castShadow = true;
       gp.add(gripL, gripR);
 
-      // Analógicos
-      const stickGeo = new THREE.CylinderGeometry(0.24, 0.16, 0.35, 14);
+      const stickGeo = new THREE.CylinderGeometry(0.26, 0.18, 0.38, 14);
       const stickL = new THREE.Mesh(stickGeo, darkMat);
-      stickL.position.set(isPS5 ? -0.55 : -0.75, 0.8, isPS5 ? 0.3 : -0.1);
+      stickL.position.set(isPS5 ? -0.58 : -0.78, 0.82, isPS5 ? 0.32 : -0.1);
       const stickR = new THREE.Mesh(stickGeo, darkMat);
-      stickR.position.set(0.55, 0.8, 0.3);
+      stickR.position.set(0.58, 0.82, 0.32);
       gp.add(stickL, stickR);
 
-      return gp;
+      deskWorld.add(gp);
+
+      const ctrlObj = {
+        name,
+        group: gp,
+        initX: x, initZ: z, initRotY: rotY,
+        origColor: colorHex,
+        bodyMat,
+        centerBody, gripL, gripR, stickL, stickR,
+        hits: 0,
+        stage: 0,
+        lastHitTime: 0,
+        obs: {
+          x, z, r: 2.0,
+          name: `${name} (INTACTO - BATA ATÉ 20X PARA QUEBRAR!)`,
+          type: 'controller',
+          ctrlRef: null
+        }
+      };
+      ctrlObj.obs.ctrlRef = ctrlObj;
+      obstacles.push(ctrlObj.obs);
+      breakableControllers.push(ctrlObj);
     }
 
-    const blackController = createGamepad(0x1e2024, 0x111214, false);
-    blackController.position.set(-0.5, 0.14, -5.8);
-    blackController.rotation.y = 0.08;
-    deskWorld.add(blackController);
-    obstacles.push({ x: -0.5, z: -5.8, r: 1.9, name: 'CONTROLE XBOX BLACK EDITION' });
+    createBreakableGamepad('CONTROLE XBOX ONE', -0.5, -7.2, 0.08, 0x1e2024, 0x111214, false);
+    createBreakableGamepad('CONTROLE PS5 DUALSENSE', 25.0, 11.5, -0.45, 0xf2f4f8, 0x181a1e, true);
 
-    // Controle PS5 DualSense Branco & Preto (na área direita expandida da mesa!)
-    const ps5Controller = createGamepad(0xf2f4f8, 0x181a1e, true);
-    ps5Controller.position.set(22.5, 0.14, 9.5);
-    ps5Controller.rotation.y = -0.45;
-    deskWorld.add(ps5Controller);
-    obstacles.push({ x: 22.5, z: 9.5, r: 1.9, name: 'CONTROLE PS5 DUALSENSE' });
+    function hitController(ctrl, impactSpeed) {
+      const now = performance.now();
+      if (now - ctrl.lastHitTime < 280) return; // Evita múltiplos hits no mesmo frame
+      ctrl.lastHitTime = now;
 
-    // 7. TECLADO MECÂNICO PRETO FULL-SIZE COM APOIO DE PULSO E ADESIVO HEXAGONAL
+      if (ctrl.hits >= 20) return;
+      ctrl.hits++;
+      ctrl.stage = Math.min(5, Math.floor(ctrl.hits / 4));
+
+      // Empurrãozinho e vibração no controle
+      ctrl.group.rotation.y += (Math.random() - 0.5) * 0.45;
+
+      // Soltar pedacinhos do controle na mesa a cada batida!
+      const pieceColors = [ctrl.origColor, 0x181a1e, 0x00e5ff, 0xff4081, 0xffeb3b];
+      const piecesToSpawn = ctrl.hits % 4 === 0 ? 4 : 2;
+      for (let i = 0; i < piecesToSpawn; i++) {
+        const piece = new THREE.Mesh(
+          new THREE.BoxGeometry(0.28 + Math.random() * 0.25, 0.16, 0.28 + Math.random() * 0.25),
+          new THREE.MeshStandardMaterial({ color: pieceColors[i % pieceColors.length], roughness: 0.4 })
+        );
+        const ang = Math.random() * Math.PI * 2;
+        const dist = 1.4 + Math.random() * 2.4;
+        piece.position.set(
+          ctrl.group.position.x + Math.cos(ang) * dist,
+          0.22,
+          ctrl.group.position.z + Math.sin(ang) * dist
+        );
+        piece.rotation.set(Math.random(), Math.random(), Math.random());
+        piece.castShadow = true;
+        deskWorld.add(piece);
+        controllerDebrisList.push(piece);
+      }
+
+      // Aplica os 5 estágios visuais de quebra!
+      if (ctrl.stage === 1) {
+        ctrl.stickL.rotation.z = 0.65;
+        ctrl.centerBody.rotation.z = 0.06;
+      } else if (ctrl.stage === 2) {
+        ctrl.stickL.visible = false; // Perdeu o analógico esquerdo
+        ctrl.gripL.rotation.z = 0.55;
+        ctrl.gripL.position.x = -1.45;
+      } else if (ctrl.stage === 3) {
+        ctrl.stickR.visible = false; // Perdeu os dois analógicos
+        ctrl.gripL.visible = false;  // Quebrou o grip esquerdo
+        ctrl.centerBody.rotation.x = 0.18;
+      } else if (ctrl.stage === 4) {
+        ctrl.gripR.rotation.x = 1.2;
+        ctrl.gripR.position.set(1.6, 0.2, 0.8);
+        ctrl.centerBody.scale.set(0.85, 0.7, 0.85);
+      } else if (ctrl.stage >= 5) {
+        ctrl.gripR.visible = false;
+        ctrl.centerBody.scale.set(0.65, 0.4, 0.6);
+        ctrl.centerBody.rotation.set(0.25, 0.4, -0.2);
+        ctrl.bodyMat.color.setHex(0x3a3535);
+      }
+
+      ctrl.obs.name = `${ctrl.name} — QUEBRA: ESTÁGIO ${ctrl.stage}/5 (${ctrl.hits}/20 BATIDAS)`;
+      setStatusBanner(`💥 ${ctrl.name}: Estágio ${ctrl.stage}/5 (${ctrl.hits}/20 batidas)!`);
+    }
+
+    // 5. TECLADO MECÂNICO FULL-SIZE (Digita na tela e aciona Autodestruição!)
     const kbGroup = new THREE.Group();
     const kbBodyMat = new THREE.MeshStandardMaterial({ color: 0x1b1d21, roughness: 0.45 });
-
-    // Base do teclado
     const kbFrame = new THREE.Mesh(new THREE.BoxGeometry(15.2, 0.55, 4.8), kbBodyMat);
-    kbFrame.position.set(0, 0.28, -1.1);
-    kbFrame.castShadow = true;
-    kbFrame.receiveShadow = true;
+    kbFrame.position.set(0, 0.28, -1.1); kbFrame.castShadow = true; kbFrame.receiveShadow = true;
     kbGroup.add(kbFrame);
 
-    // Apoio de pulso integrado (Wrist rest)
     const wristRest = new THREE.Mesh(new THREE.BoxGeometry(15.2, 0.32, 2.4), kbBodyMat);
-    wristRest.position.set(0, 0.16, 2.4);
-    wristRest.rotation.x = 0.08;
-    wristRest.receiveShadow = true;
+    wristRest.position.set(0, 0.16, 2.4); wristRest.rotation.x = 0.08;
     kbGroup.add(wristRest);
 
-    // Adesivo Hexagonal Colorido no canto inferior esquerdo do apoio de pulso!
-    const hexSticker = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.3, 1.15),
-      new THREE.MeshBasicMaterial({ map: createHexStickerTexture(), transparent: true })
-    );
-    hexSticker.rotation.x = -Math.PI / 2 + 0.08;
-    hexSticker.position.set(-5.6, 0.34, 2.45);
+    const hexSticker = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 1.15), new THREE.MeshBasicMaterial({ map: createHexStickerTexture(), transparent: true }));
+    hexSticker.rotation.x = -Math.PI / 2 + 0.08; hexSticker.position.set(-5.6, 0.34, 2.45);
     kbGroup.add(hexSticker);
 
-    // LED Azul no canto superior esquerdo do teclado (igual à foto!)
-    const kbLed = new THREE.Mesh(
-      new THREE.BoxGeometry(0.45, 0.1, 0.2),
-      new THREE.MeshBasicMaterial({ color: 0x00a8ff })
-    );
-    kbLed.position.set(-6.9, 0.58, -3.1);
-    kbGroup.add(kbLed);
-
-    // Teclas mecânicas (InstancedMesh para todas as fileiras + Numpad)
     const keyGeo = new THREE.BoxGeometry(0.62, 0.32, 0.62);
     const keyMat = new THREE.MeshStandardMaterial({ color: 0x262930, roughness: 0.35 });
     const keyInstances = new THREE.InstancedMesh(keyGeo, keyMat, 90);
@@ -869,7 +1055,6 @@
     let kIdx = 0;
     for (let row = 0; row < 5; row++) {
       for (let col = 0; col < 18; col++) {
-        // Pular espaço entre bloco principal e setas/numpad
         if (col === 13 && row > 0) continue;
         kDummy.position.set(-6.8 + col * 0.78, 0.65, -2.6 + row * 0.78);
         kDummy.updateMatrix();
@@ -878,423 +1063,651 @@
     }
     keyInstances.castShadow = true;
     kbGroup.add(keyInstances);
-
     kbGroup.position.set(4.5, 0.14, 4.5);
     deskWorld.add(kbGroup);
 
-    // 8. MOUSE GAMER LOGITECH G502 (À direita do teclado com logo 'G' ciano iluminado)
+    // 6. MOUSE GAMER LOGITECH G502 & CANECA PRETA COM BASE DE CORTIÇA
     const mouseGroup = new THREE.Group();
     const mouseMat = new THREE.MeshStandardMaterial({ color: 0x1c1e22, roughness: 0.32 });
-
     const mouseBody = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.95, 3.6), mouseMat);
-    mouseBody.position.y = 0.48;
-    mouseBody.castShadow = true;
-    mouseGroup.add(mouseBody);
-
-    // Aba de descanso do dedão na esquerda (G502)
-    const thumbWing = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.25, 2.2), mouseMat);
-    thumbWing.position.set(-1.15, 0.2, 0.2);
-    mouseGroup.add(thumbWing);
-
-    // Scroll wheel metálico
-    const scrollWheel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.26, 0.26, 0.22, 16),
-      new THREE.MeshStandardMaterial({ color: 0x99a1ab, metalness: 0.8, roughness: 0.2 })
-    );
-    scrollWheel.rotation.z = Math.PI / 2;
-    scrollWheel.position.set(0, 0.88, -0.95);
-    mouseGroup.add(scrollWheel);
-
-    // Logo 'G' Ciano iluminado
-    const gLogo = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.45, 0.45),
-      new THREE.MeshBasicMaterial({ color: 0x00e5ff })
-    );
-    gLogo.rotation.x = -Math.PI / 2;
-    gLogo.position.set(-0.2, 0.97, 0.6);
-    mouseGroup.add(gLogo);
-
-    mouseGroup.position.set(15.2, 0.14, 4.6);
-    mouseGroup.rotation.y = -0.15;
+    mouseBody.position.y = 0.48; mouseBody.castShadow = true; mouseGroup.add(mouseBody);
+    const gLogo = new THREE.Mesh(new THREE.PlaneGeometry(0.45, 0.45), new THREE.MeshBasicMaterial({ color: 0x00e5ff }));
+    gLogo.rotation.x = -Math.PI / 2; gLogo.position.set(-0.2, 0.97, 0.6); mouseGroup.add(gLogo);
+    mouseGroup.position.set(15.2, 0.14, 4.6); mouseGroup.rotation.y = -0.15;
     deskWorld.add(mouseGroup);
     obstacles.push({ x: 15.2, z: 4.6, r: 2.1, name: 'MOUSE GAMER LOGITECH G502' });
 
-    // 9. CANECA PRETA COM BASE DE CORTIÇA E PORTA-COPO (Canto superior direito do Deskmat)
     const mugGroup = new THREE.Group();
-
-    // Porta-copo marrom (Coaster)
-    const coaster = new THREE.Mesh(
-      new THREE.CylinderGeometry(2.2, 2.2, 0.16, 28),
-      new THREE.MeshStandardMaterial({ color: 0x7d4e38, roughness: 0.75 })
-    );
-    coaster.position.y = 0.08;
-    coaster.receiveShadow = true;
-    mugGroup.add(coaster);
-
-    // Base de cortiça da caneca
-    const corkBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.72, 1.65, 0.85, 28),
-      new THREE.MeshStandardMaterial({ color: 0x9c6b49, roughness: 0.9 })
-    );
-    corkBase.position.y = 0.58;
-    corkBase.castShadow = true;
-    mugGroup.add(corkBase);
-
-    // Corpo preto fosco da caneca
-    const mugBody = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.75, 1.72, 3.1, 28),
-      new THREE.MeshStandardMaterial({ color: 0x181a1d, roughness: 0.55 })
-    );
-    mugBody.position.y = 2.55;
-    mugBody.castShadow = true;
-    mugGroup.add(mugBody);
-
-    // Borda metálica inox superior + café dentro
-    const mugRim = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.77, 1.75, 0.25, 28),
-      new THREE.MeshStandardMaterial({ color: 0xd0d7de, metalness: 0.85, roughness: 0.2 })
-    );
-    mugRim.position.y = 4.15;
-    const coffeeSurface = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.62, 1.62, 0.1, 24),
-      new THREE.MeshStandardMaterial({ color: 0x24140b, roughness: 0.15 })
-    );
-    coffeeSurface.position.y = 4.22;
-    mugGroup.add(mugRim, coffeeSurface);
-
-    // Emblema circular azul e branco na frente da caneca (igual à foto!)
-    const emblem = new THREE.Mesh(
-      new THREE.CircleGeometry(0.85, 24),
-      new THREE.MeshBasicMaterial({ color: 0x5da9e9 })
-    );
-    emblem.position.set(-0.4, 2.5, 1.76);
-    emblem.rotation.y = -0.22;
-    mugGroup.add(emblem);
-
-    // Alça preta da caneca
-    const handle = new THREE.Mesh(
-      new THREE.TorusGeometry(0.95, 0.18, 12, 24, Math.PI),
-      new THREE.MeshStandardMaterial({ color: 0x181a1d, roughness: 0.5 })
-    );
-    handle.rotation.z = -Math.PI / 2;
-    handle.position.set(1.7, 2.4, 0);
-    handle.castShadow = true;
-    mugGroup.add(handle);
-
-    mugGroup.position.set(20.5, 0.14, -1.8);
+    const coaster = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.16, 28), new THREE.MeshStandardMaterial({ color: 0x7d4e38 }));
+    coaster.position.y = 0.08; mugGroup.add(coaster);
+    const corkBase = new THREE.Mesh(new THREE.CylinderGeometry(1.72, 1.65, 0.85, 28), new THREE.MeshStandardMaterial({ color: 0x9c6b49 }));
+    corkBase.position.y = 0.58; mugGroup.add(corkBase);
+    const mugBody = new THREE.Mesh(new THREE.CylinderGeometry(1.75, 1.72, 3.1, 28), new THREE.MeshStandardMaterial({ color: 0x181a1d }));
+    mugBody.position.y = 2.55; mugBody.castShadow = true; mugGroup.add(mugBody);
+    const emblem = new THREE.Mesh(new THREE.CircleGeometry(0.85, 24), new THREE.MeshBasicMaterial({ color: 0x5da9e9 }));
+    emblem.position.set(-0.4, 2.5, 1.76); emblem.rotation.y = -0.22; mugGroup.add(emblem);
+    mugGroup.position.set(21.5, 0.14, -2.5);
     deskWorld.add(mugGroup);
-    obstacles.push({ x: 20.5, z: -1.8, r: 2.35, name: 'CANECA DE CAFÉ COM BASE DE CORTIÇA' });
+    obstacles.push({ x: 21.5, z: -2.5, r: 2.35, name: 'CANECA PRETA COM BASE DE CORTIÇA' });
 
-    // 10. ITENS EXTRAS NA MESA EXPANDIDA (Plantinha Suculenta, Post-its & Rampa Caderno!)
-    const plantGroup = new THREE.Group();
-    const pot = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.6, 1.2, 2.4, 8),
-      new THREE.MeshStandardMaterial({ color: 0xe6dfd5, roughness: 0.6, flatShading: true })
-    );
-    pot.position.y = 1.2;
-    pot.castShadow = true;
-    plantGroup.add(pot);
+    // ============================================================================
+    // NOVOS OBJETOS NA MESA 3X EXPANDIDA!
+    // ============================================================================
 
-    const leafMat = new THREE.MeshStandardMaterial({ color: 0x3a9d5d, roughness: 0.4, flatShading: true });
-    for (let i = 0; i < 8; i++) {
-      const leaf = new THREE.Mesh(new THREE.DodecahedronGeometry(0.75, 0), leafMat);
-      const ang = (i / 8) * Math.PI * 2;
-      leaf.position.set(Math.cos(ang) * 0.75, 2.5 + (i % 2) * 0.3, Math.sin(ang) * 0.75);
-      leaf.castShadow = true;
-      plantGroup.add(leaf);
+    // 7. TRÊS PLANTAS DIFERENTES QUE CRESCEM PARA O NÍVEL 2 AO SEREM REGADAS!
+    const growablePlants = [];
+
+    function createGrowablePlant(type, name, x, z) {
+      const pGroup = new THREE.Group();
+      pGroup.position.set(x, 0, z);
+
+      // Vaso
+      const potColor = type === 'cactus' ? 0xc8643b : type === 'fern' ? 0x2c353d : 0xe6dfd5;
+      const pot = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.9, 1.4, 2.6, 12),
+        new THREE.MeshStandardMaterial({ color: potColor, roughness: 0.65, flatShading: true })
+      );
+      pot.position.y = 1.3; pot.castShadow = true;
+      pGroup.add(pot);
+
+      // Folhagem (escala aumenta quando regada!)
+      const foliageGroup = new THREE.Group();
+      foliageGroup.position.y = 2.5;
+      pGroup.add(foliageGroup);
+
+      const flowersGroup = new THREE.Group();
+      flowersGroup.visible = false; // Desabrocha no nível 2!
+      foliageGroup.add(flowersGroup);
+
+      if (type === 'succulent') {
+        const leafMat = new THREE.MeshStandardMaterial({ color: 0x3a9d5d, roughness: 0.4, flatShading: true });
+        for (let i = 0; i < 8; i++) {
+          const leaf = new THREE.Mesh(new THREE.DodecahedronGeometry(0.8, 0), leafMat);
+          const ang = (i / 8) * Math.PI * 2;
+          leaf.position.set(Math.cos(ang) * 0.85, 0.2 + (i % 2) * 0.25, Math.sin(ang) * 0.85);
+          leaf.castShadow = true; foliageGroup.add(leaf);
+        }
+        const fl = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65, 0), new THREE.MeshBasicMaterial({ color: 0xff4081 }));
+        fl.position.set(0, 1.2, 0); flowersGroup.add(fl);
+      } else if (type === 'cactus') {
+        const cacMat = new THREE.MeshStandardMaterial({ color: 0x2d8a4e, roughness: 0.5 });
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.85, 3.8, 12), cacMat);
+        trunk.position.y = 1.6; trunk.castShadow = true; foliageGroup.add(trunk);
+        const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.8, 10), cacMat);
+        armL.position.set(-1.0, 2.0, 0); armL.rotation.z = -0.5; foliageGroup.add(armL);
+        const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.6, 10), cacMat);
+        armR.position.set(1.0, 1.6, 0); armR.rotation.z = 0.5; foliageGroup.add(armR);
+
+        const fl1 = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffeb3b }));
+        fl1.position.set(0, 3.6, 0);
+        const fl2 = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 10), new THREE.MeshBasicMaterial({ color: 0xff5722 }));
+        fl2.position.set(-1.35, 2.8, 0);
+        flowersGroup.add(fl1, fl2);
+      } else {
+        // Samambaia / Costela-de-Adão
+        const fernMat = new THREE.MeshStandardMaterial({ color: 0x1f7a3e, roughness: 0.35 });
+        for (let i = 0; i < 10; i++) {
+          const frond = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 2.6), fernMat);
+          const ang = (i / 10) * Math.PI * 2;
+          frond.position.set(Math.cos(ang) * 1.1, 0.6 + (i % 3) * 0.3, Math.sin(ang) * 1.1);
+          frond.rotation.y = -ang + Math.PI / 2;
+          frond.rotation.x = 0.35;
+          frond.castShadow = true;
+          foliageGroup.add(frond);
+        }
+        for (let i = 0; i < 5; i++) {
+          const fl = new THREE.Mesh(new THREE.SphereGeometry(0.42, 8, 8), new THREE.MeshBasicMaterial({ color: 0xe040fb }));
+          const ang = (i / 5) * Math.PI * 2;
+          fl.position.set(Math.cos(ang) * 1.2, 1.4, Math.sin(ang) * 1.2);
+          flowersGroup.add(fl);
+        }
+      }
+
+      deskWorld.add(pGroup);
+      const plantObj = {
+        name,
+        x, z,
+        foliageGroup,
+        flowersGroup,
+        waterHits: 0,
+        level: 1,
+        targetScale: 1.0,
+        obs: { x, z, r: 2.3, name: `${name} (NÍVEL 1 — REGUE COM ÁGUA PARA CRESCER!)` }
+      };
+      obstacles.push(plantObj.obs);
+      growablePlants.push(plantObj);
     }
-    const centerLeaf = new THREE.Mesh(new THREE.DodecahedronGeometry(0.85, 0), leafMat);
-    centerLeaf.position.set(0, 2.9, 0);
-    plantGroup.add(centerLeaf);
 
-    plantGroup.position.set(24.5, 0, -9.5);
-    deskWorld.add(plantGroup);
-    obstacles.push({ x: 24.5, z: -9.5, r: 2.0, name: 'PLANTINHA SUCULENTA DO SETUP' });
+    createGrowablePlant('succulent', 'PLANTINHA SUCULENTA', 28, -11);
+    createGrowablePlant('cactus', 'CACTO DO DESERTO', -42, -22);
+    createGrowablePlant('fern', 'SAMAMBAIA COSTELA-DE-ADÃO', 48, 22);
 
-    // Blocos de Post-it coloridos (Interativos / Decorativos)
-    const postItColors = [0xffeb3b, 0xff4081, 0x00e5ff];
-    postItColors.forEach((col, i) => {
+    // 8. AQUÁRIO COM PEIXES ANIMADOS NADANDO! (Lado Direito Expandido)
+    const aquariumGroup = new THREE.Group();
+    aquariumGroup.position.set(52, 0, -16);
+
+    // Base preta e tampa do aquário
+    const aqBase = new THREE.Mesh(new THREE.BoxGeometry(18, 0.8, 11), new THREE.MeshStandardMaterial({ color: 0x141619 }));
+    aqBase.position.y = 0.4; aquariumGroup.add(aqBase);
+
+    // Cascalho colorido no fundo do aquário
+    const aqSand = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.9, 10.2), new THREE.MeshStandardMaterial({ color: 0xd8b888, roughness: 0.9 }));
+    aqSand.position.y = 1.1; aquariumGroup.add(aqSand);
+
+    // Água translúcida azul do aquário
+    const aqWater = new THREE.Mesh(
+      new THREE.BoxGeometry(17.2, 7.5, 10.2),
+      new THREE.MeshStandardMaterial({ color: 0x18b4e8, transparent: true, opacity: 0.42, roughness: 0.1 })
+    );
+    aqWater.position.y = 5.2; aquariumGroup.add(aqWater);
+
+    // Paredes de vidro com bordas
+    const aqGlass = new THREE.Mesh(
+      new THREE.BoxGeometry(17.6, 8.6, 10.6),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, roughness: 0.05 })
+    );
+    aqGlass.position.y = 5.2; aquariumGroup.add(aqGlass);
+
+    // Algas verdes dentro do aquário
+    for (let i = 0; i < 6; i++) {
+      const weed = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.25, 3.5 + (i % 3), 8),
+        new THREE.MeshStandardMaterial({ color: 0x16a05d })
+      );
+      weed.position.set(-6 + i * 2.4, 3.0, -2.5 + (i % 2) * 4);
+      aquariumGroup.add(weed);
+    }
+
+    // Peixinhos coloridos nadando dentro do aquário!
+    const fishes = [];
+    const fishColors = [0xff5722, 0xffeb3b, 0xff4081, 0x00e5ff, 0xff9800];
+    for (let i = 0; i < 7; i++) {
+      const fGroup = new THREE.Group();
+      const fMat = new THREE.MeshStandardMaterial({ color: fishColors[i % fishColors.length], roughness: 0.2 });
+      const fBody = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 10), fMat);
+      fBody.scale.set(1.6, 0.9, 0.6);
+      const fTail = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.55, 4), fMat);
+      fTail.rotation.z = Math.PI / 2;
+      fTail.position.x = -0.75;
+      fGroup.add(fBody, fTail);
+      aquariumGroup.add(fGroup);
+      fishes.push({
+        group: fGroup,
+        speed: 0.8 + Math.random() * 0.9,
+        radiusX: 3.5 + Math.random() * 3.2,
+        radiusZ: 1.8 + Math.random() * 2.0,
+        y: 3.0 + Math.random() * 4.2,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+    deskWorld.add(aquariumGroup);
+    obstacles.push({ x: 52, z: -16, r: 9.8, name: 'AQUÁRIO COM PEIXES TROPICAIS NADANDO 🐠' });
+
+    // 9. CONSOLE PLAYSTATION 5 (PS5 Vertical na Mesa Expandida!)
+    const ps5ConsoleGroup = new THREE.Group();
+    ps5ConsoleGroup.position.set(36, 0, -24);
+    ps5ConsoleGroup.rotation.y = -0.35;
+
+    const ps5Stand = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.8, 0.45, 24), new THREE.MeshStandardMaterial({ color: 0x16181c }));
+    ps5Stand.position.y = 0.22; ps5ConsoleGroup.add(ps5Stand);
+
+    const ps5Core = new THREE.Mesh(new THREE.BoxGeometry(2.1, 11.5, 6.8), new THREE.MeshStandardMaterial({ color: 0x121316, roughness: 0.25 }));
+    ps5Core.position.y = 6.2; ps5Core.castShadow = true; ps5ConsoleGroup.add(ps5Core);
+
+    // Tampas brancas laterais curvadas do PS5
+    const plateMat = new THREE.MeshStandardMaterial({ color: 0xf4f6fa, roughness: 0.3 });
+    const plateL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 12.2, 7.2), plateMat);
+    plateL.position.set(-1.15, 6.3, 0); plateL.castShadow = true;
+    const plateR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 12.2, 7.2), plateMat);
+    plateR.position.set(1.15, 6.3, 0); plateR.castShadow = true;
+    ps5ConsoleGroup.add(plateL, plateR);
+
+    // Fitas de LED Azul do PS5
+    const ps5Led = new THREE.Mesh(new THREE.BoxGeometry(2.16, 10.8, 0.15), new THREE.MeshBasicMaterial({ color: 0x00a8ff }));
+    ps5Led.position.set(0, 6.2, 3.38); ps5ConsoleGroup.add(ps5Led);
+
+    deskWorld.add(ps5ConsoleGroup);
+    obstacles.push({ x: 36, z: -24, r: 4.5, name: 'CONSOLE PLAYSTATION 5 (PS5)' });
+
+    // 10. RÁDIO RETRÔ / BOOMBOX (Esquerda Traseira Expandida)
+    const radioGroup = new THREE.Group();
+    radioGroup.position.set(-54, 0, -18);
+    radioGroup.rotation.y = 0.42;
+
+    const radioBody = new THREE.Mesh(
+      new THREE.BoxGeometry(11.5, 5.8, 4.2),
+      new THREE.MeshStandardMaterial({ color: 0xb8332a, roughness: 0.35 })
+    );
+    radioBody.position.y = 2.9; radioBody.castShadow = true; radioGroup.add(radioBody);
+
+    // Alto-falantes duplos pretos
+    const spkMat = new THREE.MeshStandardMaterial({ color: 0x1c1e22, roughness: 0.6 });
+    const spkL = new THREE.Mesh(new THREE.CylinderGeometry(1.85, 1.85, 0.3, 24), spkMat);
+    spkL.rotation.x = Math.PI / 2; spkL.position.set(-3.1, 2.6, 2.05);
+    const spkR = new THREE.Mesh(new THREE.CylinderGeometry(1.85, 1.85, 0.3, 24), spkMat);
+    spkR.rotation.x = Math.PI / 2; spkR.position.set(3.1, 2.6, 2.05);
+    radioGroup.add(spkL, spkR);
+
+    // Visor de frequência iluminado + Antena cromada
+    const tuner = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.1), new THREE.MeshBasicMaterial({ color: 0xffea78 }));
+    tuner.position.set(0, 4.6, 2.12); radioGroup.add(tuner);
+
+    const antenna = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.12, 8.5, 10),
+      new THREE.MeshStandardMaterial({ color: 0xd0d7de, metalness: 0.9, roughness: 0.15 })
+    );
+    antenna.position.set(-4.2, 8.8, -1.2); antenna.rotation.z = -0.25;
+    radioGroup.add(antenna);
+
+    deskWorld.add(radioGroup);
+    obstacles.push({ x: -54, z: -18, r: 6.2, name: 'RÁDIO RETRÔ BOOMBOX FM 📻' });
+
+    // 11. PILHAS PALITO (AAA BATTERIES ESPALHADAS NA MESA)
+    const batteryPositions = [
+      [-34, 24, 0.4], [-32.2, 25.4, 1.1], [-35.5, 25.8, -0.3],
+      [34, 28, 0.8], [35.8, 27.2, -0.5]
+    ];
+    batteryPositions.forEach(([bx, bz, brot]) => {
+      const bat = new THREE.Group();
+      bat.position.set(bx, 0.38, bz);
+      bat.rotation.y = brot;
+
+      // Corpo preto e dourado (estilo Duracell/Alcalina)
+      const bBlack = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 1.5, 16), new THREE.MeshStandardMaterial({ color: 0x181a1d, roughness: 0.3 }));
+      bBlack.rotation.z = Math.PI / 2;
+      const bGold = new THREE.Mesh(new THREE.CylinderGeometry(0.385, 0.385, 0.7, 16), new THREE.MeshStandardMaterial({ color: 0xd4882a, metalness: 0.6, roughness: 0.25 }));
+      bGold.rotation.z = Math.PI / 2; bGold.position.x = 0.85;
+      const bTip = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.2, 12), new THREE.MeshStandardMaterial({ color: 0xd0d7de, metalness: 0.9 }));
+      bTip.rotation.z = Math.PI / 2; bTip.position.x = 1.25;
+
+      bat.add(bBlack, bGold, bTip);
+      deskWorld.add(bat);
+    });
+    obstacles.push({ x: -34, z: 25, r: 2.2, name: 'PILHAS PALITO ALCALINAS (AAA)' });
+
+    // 12. CABOS USB ENROLADOS NA MESA
+    function createCoiledUsbCable(x, z, colorHex) {
+      const cableGroup = new THREE.Group();
+      cableGroup.position.set(x, 0.18, z);
+      const cMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.5 });
+      for (let i = 0; i < 3; i++) {
+        const loop = new THREE.Mesh(new THREE.TorusGeometry(2.2 + i * 0.25, 0.14, 10, 32), cMat);
+        loop.rotation.x = Math.PI / 2;
+        loop.position.set((i - 1) * 0.2, i * 0.08, 0);
+        loop.castShadow = true;
+        cableGroup.add(loop);
+      }
+      // Pontas USB metálicas
+      const usbPlug = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.3, 0.55), new THREE.MeshStandardMaterial({ color: 0xcfd6de, metalness: 0.85 }));
+      usbPlug.position.set(2.5, 0.1, 0.8);
+      cableGroup.add(usbPlug);
+      deskWorld.add(cableGroup);
+      obstacles.push({ x, z, r: 2.6, name: 'CABO USB-C ENROLADO' });
+    }
+    createCoiledUsbCable(-38, -2, 0x22252a);
+    createCoiledUsbCable(42, 6, 0xe8eceb);
+
+    // 13. CAIXINHAS DE GUARDAR CLIPS (COM CLIPS COLORIDOS DENTRO E ESPALHADOS!)
+    function createClipBox(x, z) {
+      const cbGroup = new THREE.Group();
+      cbGroup.position.set(x, 0, z);
+
+      const boxBase = new THREE.Mesh(
+        new THREE.BoxGeometry(3.6, 1.4, 3.6),
+        new THREE.MeshStandardMaterial({ color: 0x22262c, transparent: true, opacity: 0.75, roughness: 0.2 })
+      );
+      boxBase.position.y = 0.7; boxBase.castShadow = true;
+      cbGroup.add(boxBase);
+
+      // Borda magnética branca superior
+      const magRim = new THREE.Mesh(
+        new THREE.BoxGeometry(3.7, 0.25, 3.7),
+        new THREE.MeshStandardMaterial({ color: 0xf0f4f8 })
+      );
+      magRim.position.y = 1.4;
+      cbGroup.add(magRim);
+
+      // Clips metálicos coloridos dentro da caixinha e ao redor na mesa!
+      const clipColors = [0x00e5ff, 0xff4081, 0xffeb3b, 0x76ff03, 0xd0d7de];
+      for (let i = 0; i < 18; i++) {
+        const clip = new THREE.Mesh(
+          new THREE.TorusGeometry(0.35, 0.05, 8, 16),
+          new THREE.MeshStandardMaterial({ color: clipColors[i % clipColors.length], metalness: 0.6, roughness: 0.2 })
+        );
+        clip.scale.set(1.6, 0.7, 1);
+        clip.rotation.x = Math.PI / 2 + (Math.random() - 0.5) * 0.4;
+        clip.rotation.z = Math.random() * Math.PI;
+        if (i < 11) {
+          // Dentro/no topo da caixinha
+          clip.position.set((Math.random() - 0.5) * 2.2, 1.55 + (i % 3) * 0.05, (Math.random() - 0.5) * 2.2);
+        } else {
+          // Espalhados ao redor na mesa
+          clip.position.set(2.5 + (Math.random() - 0.5) * 3.5, 0.08, (Math.random() - 0.5) * 4.5);
+        }
+        cbGroup.add(clip);
+      }
+
+      deskWorld.add(cbGroup);
+      obstacles.push({ x, z, r: 2.4, name: 'CAIXINHA ORGANIZADORA DE CLIPS 📎' });
+    }
+    createClipBox(-16, 24);
+    createClipBox(32, -5);
+
+    // 14. CANETAS, PAPÉIS A4 E BLOCOS DE NOTAS ESPALHADOS PELA MESA
+    function createNotepadAndPens(x, z, rotY) {
+      const npGroup = new THREE.Group();
+      npGroup.position.set(x, 0, z);
+      npGroup.rotation.y = rotY;
+
+      // Bloco de notas amarelo pautado
+      const pad = new THREE.Mesh(
+        new THREE.BoxGeometry(7.5, 0.28, 9.8),
+        new THREE.MeshStandardMaterial({ color: 0xfff3a1, roughness: 0.8 })
+      );
+      pad.position.y = 0.14; pad.receiveShadow = true;
+      npGroup.add(pad);
+
+      // Cabeçalho vermelho do bloco
+      const padTop = new THREE.Mesh(
+        new THREE.BoxGeometry(7.55, 0.32, 1.1),
+        new THREE.MeshStandardMaterial({ color: 0x8c2318 })
+      );
+      padTop.position.set(0, 0.16, -4.35);
+      npGroup.add(padTop);
+
+      // Folha A4 branca solta ao lado
+      const sheet = new THREE.Mesh(
+        new THREE.BoxGeometry(7.2, 0.06, 9.5),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.7 })
+      );
+      sheet.position.set(6.8, 0.04, 1.2);
+      sheet.rotation.y = 0.28;
+      sheet.receiveShadow = true;
+      npGroup.add(sheet);
+
+      // Canetas esferográficas (Azul e Vermelha)
+      [
+        { px: 1.5, pz: 0.5, rot: 0.45, col: 0x1565c0 },
+        { px: 5.8, pz: -1.0, rot: -0.3, col: 0xd32f2f }
+      ].forEach((p) => {
+        const pen = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.16, 0.14, 5.2, 12),
+          new THREE.MeshStandardMaterial({ color: p.col, roughness: 0.25 })
+        );
+        pen.rotation.x = Math.PI / 2;
+        pen.rotation.z = p.rot;
+        pen.position.set(p.px, 0.35, p.pz);
+        pen.castShadow = true;
+        npGroup.add(pen);
+      });
+
+      deskWorld.add(npGroup);
+    }
+    createNotepadAndPens(-52, 16, 0.18);
+    createNotepadAndPens(14, 30, -0.22);
+
+    // Post-its coloridos
+    [0xffeb3b, 0xff4081, 0x00e5ff].forEach((col, i) => {
       const postIt = new THREE.Mesh(
-        new THREE.BoxGeometry(2.2, 0.18, 2.2),
+        new THREE.BoxGeometry(2.4, 0.18, 2.4),
         new THREE.MeshStandardMaterial({ color: col, roughness: 0.7 })
       );
-      postIt.position.set(-10 + i * 2.8, 0.09, 12.5 + (i % 2) * 0.6);
+      postIt.position.set(-10 + i * 3.0, 0.09, 13.5 + (i % 2) * 0.6);
       postIt.rotation.y = (i - 1) * 0.18;
       postIt.receiveShadow = true;
       deskWorld.add(postIt);
     });
 
     // ============================================================================
-    // O CARRINHO DE BRINQUEDO DO SEU FILHO: //Fire Engine// (SUPER FIEL À FOTO!)
+    // CARRINHO DE BRINQUEDO DO SEU FILHO: //Fire Engine//
     // ============================================================================
     const vehicle = new THREE.Group();
 
-    const carOrangeMat = new THREE.MeshStandardMaterial({
-      color: 0xff4518,
-      roughness: 0.15, // Plástico brilhante como na foto!
-      metalness: 0.05
-    });
-    const carWhiteSkirtMat = new THREE.MeshStandardMaterial({
-      color: 0xeef2f1,
-      roughness: 0.22
-    });
-    const cyanWheelMat = new THREE.MeshStandardMaterial({
-      color: 0x32d2be,
-      roughness: 0.2
-    });
-    const tireDarkMat = new THREE.MeshStandardMaterial({
-      color: 0x1d2024,
-      roughness: 0.7
-    });
-    const yellowDetailMat = new THREE.MeshStandardMaterial({
-      color: 0xffd24c,
-      roughness: 0.18
-    });
+    const carOrangeMat = new THREE.MeshStandardMaterial({ color: 0xff4518, roughness: 0.15, metalness: 0.05 });
+    const carWhiteSkirtMat = new THREE.MeshStandardMaterial({ color: 0xeef2f1, roughness: 0.22 });
+    const cyanWheelMat = new THREE.MeshStandardMaterial({ color: 0x32d2be, roughness: 0.2 });
+    const tireDarkMat = new THREE.MeshStandardMaterial({ color: 0x1d2024, roughness: 0.7 });
+    const yellowDetailMat = new THREE.MeshStandardMaterial({ color: 0xffd24c, roughness: 0.18 });
 
-    // Grupo da carroceria (para animar suspensão / pulinho ao apertar o botão!)
     const carBodyGroup = new THREE.Group();
     vehicle.add(carBodyGroup);
 
-    // 1. Saia / Para-choque branco inferior envolvente (rounded base sem rebarbas)
     const skirtShape = new THREE.Shape();
     const sw = 1.08, sl = 1.65, sr = 0.45;
-    skirtShape.moveTo(-sw + sr, -sl);
-    skirtShape.lineTo(sw - sr, -sl);
-    skirtShape.quadraticCurveTo(sw, -sl, sw, -sl + sr);
-    skirtShape.lineTo(sw, sl - sr);
-    skirtShape.quadraticCurveTo(sw, sl, sw - sr, sl);
-    skirtShape.lineTo(-sw + sr, sl);
-    skirtShape.quadraticCurveTo(-sw, sl, -sw, sl - sr);
-    skirtShape.lineTo(-sw, -sl + sr);
+    skirtShape.moveTo(-sw + sr, -sl); skirtShape.lineTo(sw - sr, -sl);
+    skirtShape.quadraticCurveTo(sw, -sl, sw, -sl + sr); skirtShape.lineTo(sw, sl - sr);
+    skirtShape.quadraticCurveTo(sw, sl, sw - sr, sl); skirtShape.lineTo(-sw + sr, sl);
+    skirtShape.quadraticCurveTo(-sw, sl, -sw, sl - sr); skirtShape.lineTo(-sw, -sl + sr);
     skirtShape.quadraticCurveTo(-sw, -sl, -sw + sr, -sl);
 
-    const skirtGeo = new THREE.ExtrudeGeometry(skirtShape, {
-      depth: 0.34,
-      bevelEnabled: true,
-      bevelThickness: 0.1,
-      bevelSize: 0.18,
-      bevelSegments: 8
-    });
+    const skirtGeo = new THREE.ExtrudeGeometry(skirtShape, { depth: 0.34, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.18, bevelSegments: 8 });
     skirtGeo.rotateX(Math.PI / 2);
     const skirtMesh = new THREE.Mesh(skirtGeo, carWhiteSkirtMat);
-    skirtMesh.position.set(0, 0.68, 0);
-    skirtMesh.castShadow = true;
-    skirtMesh.receiveShadow = true;
+    skirtMesh.position.set(0, 0.68, 0); skirtMesh.castShadow = true;
     carBodyGroup.add(skirtMesh);
 
-    // 2. Corpo principal gordinho com cantos redondos suaves (ExtrudeGeometry com Bevel largo)
     const bodyShape = new THREE.Shape();
     const bw = 0.96, bl = 1.48, br = 0.38;
-    bodyShape.moveTo(-bw + br, -bl);
-    bodyShape.lineTo(bw - br, -bl);
-    bodyShape.quadraticCurveTo(bw, -bl, bw, -bl + br);
-    bodyShape.lineTo(bw, bl - br);
-    bodyShape.quadraticCurveTo(bw, bl, bw - br, bl);
-    bodyShape.lineTo(-bw + br, bl);
-    bodyShape.quadraticCurveTo(-bw, bl, -bw, bl - br);
-    bodyShape.lineTo(-bw, -bl + br);
+    bodyShape.moveTo(-bw + br, -bl); bodyShape.lineTo(bw - br, -bl);
+    bodyShape.quadraticCurveTo(bw, -bl, bw, -bl + br); bodyShape.lineTo(bw, bl - br);
+    bodyShape.quadraticCurveTo(bw, bl, bw - br, bl); bodyShape.lineTo(-bw + br, bl);
+    bodyShape.quadraticCurveTo(-bw, bl, -bw, bl - br); bodyShape.lineTo(-bw, -bl + br);
     bodyShape.quadraticCurveTo(-bw, -bl, -bw + br, -bl);
 
-    const mainBodyGeo = new THREE.ExtrudeGeometry(bodyShape, {
-      depth: 1.25,
-      bevelEnabled: true,
-      bevelThickness: 0.36,
-      bevelSize: 0.28,
-      bevelSegments: 12
-    });
+    const mainBodyGeo = new THREE.ExtrudeGeometry(bodyShape, { depth: 1.25, bevelEnabled: true, bevelThickness: 0.36, bevelSize: 0.28, bevelSegments: 12 });
     mainBodyGeo.rotateX(Math.PI / 2);
     const mainBodyMesh = new THREE.Mesh(mainBodyGeo, carOrangeMat);
-    // O topo do bevel fica exatamente em y = 2.02 + 0.36 = 2.38, e a frente em z = 1.48 + 0.28 = 1.76
-    mainBodyMesh.position.set(0, 2.02, 0);
-    mainBodyMesh.castShadow = true;
-    mainBodyMesh.receiveShadow = true;
+    mainBodyMesh.position.set(0, 2.02, 0); mainBodyMesh.castShadow = true;
     carBodyGroup.add(mainBodyMesh);
 
-    // 3. Painéis Laterais com a Janela Amarela, 3 Barras e "//Fire Engine//"
-    // Lateral externa do corpo fica em x = +- (0.96 + 0.28) = +- 1.24
-    const sideTexL = createCarSideTexture(false);
-    const sideTexR = createCarSideTexture(true);
+    const sideTexL = createCarSideTexture(false), sideTexR = createCarSideTexture(true);
+    const sidePanelL = new THREE.Mesh(new THREE.PlaneGeometry(2.55, 1.32), new THREE.MeshStandardMaterial({ map: sideTexL, roughness: 0.16, polygonOffset: true, polygonOffsetFactor: -1 }));
+    sidePanelL.rotation.y = Math.PI / 2; sidePanelL.position.set(1.255, 1.38, 0); carBodyGroup.add(sidePanelL);
+    const sidePanelR = new THREE.Mesh(new THREE.PlaneGeometry(2.55, 1.32), new THREE.MeshStandardMaterial({ map: sideTexR, roughness: 0.16, polygonOffset: true, polygonOffsetFactor: -1 }));
+    sidePanelR.rotation.y = -Math.PI / 2; sidePanelR.position.set(-1.255, 1.38, 0); carBodyGroup.add(sidePanelR);
 
-    const sidePanelL = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.55, 1.32),
-      new THREE.MeshStandardMaterial({ map: sideTexL, roughness: 0.16, polygonOffset: true, polygonOffsetFactor: -1 })
-    );
-    sidePanelL.rotation.y = Math.PI / 2;
-    sidePanelL.position.set(1.255, 1.38, 0);
-    carBodyGroup.add(sidePanelL);
+    const windshieldFrame = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.88, 0.1), new THREE.MeshStandardMaterial({ color: 0x26a6c9, roughness: 0.15 }));
+    windshieldFrame.position.set(0, 1.66, 1.73); windshieldFrame.rotation.x = -0.18; carBodyGroup.add(windshieldFrame);
+    const windshieldMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.68, 0.82), new THREE.MeshStandardMaterial({ map: createWindshieldTexture(), roughness: 0.1 }));
+    windshieldMesh.position.set(0, 1.66, 1.79); windshieldMesh.rotation.x = -0.18; carBodyGroup.add(windshieldMesh);
 
-    const sidePanelR = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.55, 1.32),
-      new THREE.MeshStandardMaterial({ map: sideTexR, roughness: 0.16, polygonOffset: true, polygonOffsetFactor: -1 })
-    );
-    sidePanelR.rotation.y = -Math.PI / 2;
-    sidePanelR.position.set(-1.255, 1.38, 0);
-    carBodyGroup.add(sidePanelR);
-
-    // 4. Para-brisa Azul-Turquesa com os Óculos Escuros, Reflexos Brancos e Sorrisinho!
-    // Posicionado totalmente à frente da curvatura frontal (z = 1.78) para visibilidade 100% livre!
-    const windshieldFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(1.76, 0.88, 0.1),
-      new THREE.MeshStandardMaterial({ color: 0x26a6c9, roughness: 0.15 })
-    );
-    windshieldFrame.position.set(0, 1.66, 1.73);
-    windshieldFrame.rotation.x = -0.18;
-    carBodyGroup.add(windshieldFrame);
-
-    const windshieldMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.68, 0.82),
-      new THREE.MeshStandardMaterial({
-        map: createWindshieldTexture(),
-        roughness: 0.1,
-        metalness: 0.05
-      })
-    );
-    windshieldMesh.position.set(0, 1.66, 1.79);
-    windshieldMesh.rotation.x = -0.18;
-    carBodyGroup.add(windshieldMesh);
-
-    // 5. Grade Frontal Branca com 3 Frisos Vermelhos e Faróis Ovais (exatamente como na foto!)
-    const grilleBox = new THREE.Mesh(
-      new THREE.BoxGeometry(0.76, 0.32, 0.12),
-      new THREE.MeshStandardMaterial({ color: 0xf4f6f7, roughness: 0.22 })
-    );
-    grilleBox.position.set(0, 0.86, 1.77);
-    carBodyGroup.add(grilleBox);
-
+    const grilleBox = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.32, 0.12), new THREE.MeshStandardMaterial({ color: 0xf4f6f7 }));
+    grilleBox.position.set(0, 0.86, 1.77); carBodyGroup.add(grilleBox);
     for (let i = -1; i <= 1; i++) {
-      const slot = new THREE.Mesh(
-        new THREE.BoxGeometry(0.60, 0.045, 0.14),
-        new THREE.MeshBasicMaterial({ color: 0xff4518 })
-      );
-      slot.position.set(0, 0.86 + i * 0.085, 1.78);
-      carBodyGroup.add(slot);
+      const slot = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.045, 0.14), new THREE.MeshBasicMaterial({ color: 0xff4518 }));
+      slot.position.set(0, 0.86 + i * 0.085, 1.78); carBodyGroup.add(slot);
     }
 
-    // Faróis Ovais com Aro Branco e Miolo Laranja
     [-0.72, 0.72].forEach((hx) => {
-      const hlOuter = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.20, 0.20, 0.1, 20),
-        new THREE.MeshBasicMaterial({ color: 0xffffff })
-      );
-      hlOuter.rotation.x = Math.PI / 2;
-      hlOuter.scale.set(1.25, 1, 0.78);
-      hlOuter.position.set(hx, 0.94, 1.74);
-      hlOuter.rotation.y = hx > 0 ? 0.22 : -0.22;
-
-      const hlInner = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.12, 0.12, 0.12, 16),
-        new THREE.MeshBasicMaterial({ color: 0xff5722 })
-      );
-      hlInner.rotation.x = Math.PI / 2;
-      hlInner.scale.set(1.25, 1, 0.78);
-      hlInner.position.set(hx, 0.94, 1.75);
-      hlInner.rotation.y = hx > 0 ? 0.22 : -0.22;
-
+      const hlOuter = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.1, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      hlOuter.rotation.x = Math.PI / 2; hlOuter.scale.set(1.25, 1, 0.78); hlOuter.position.set(hx, 0.94, 1.74); hlOuter.rotation.y = hx > 0 ? 0.22 : -0.22;
+      const hlInner = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.12, 16), new THREE.MeshBasicMaterial({ color: 0xff5722 }));
+      hlInner.rotation.x = Math.PI / 2; hlInner.scale.set(1.25, 1, 0.78); hlInner.position.set(hx, 0.94, 1.75); hlInner.rotation.y = hx > 0 ? 0.22 : -0.22;
       carBodyGroup.add(hlOuter, hlInner);
     });
 
-    // 6. Detalhes do Teto (y = 2.38): Botão Redondo Amarelo + Torreta / Canhão de Água Giratório!
-    const roofButtonRim = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.32, 0.36, 0.12, 24),
-      carOrangeMat
-    );
-    roofButtonRim.position.set(0, 2.42, 0.55);
-    carBodyGroup.add(roofButtonRim);
+    const roofButtonRim = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.12, 24), carOrangeMat);
+    roofButtonRim.position.set(0, 2.42, 0.55); carBodyGroup.add(roofButtonRim);
+    const yellowRoofButton = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.16, 24), yellowDetailMat);
+    yellowRoofButton.position.set(0, 2.48, 0.55); carBodyGroup.add(yellowRoofButton);
 
-    const yellowRoofButton = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.23, 0.23, 0.16, 24),
-      yellowDetailMat
-    );
-    yellowRoofButton.position.set(0, 2.48, 0.55);
-    carBodyGroup.add(yellowRoofButton);
-
-    // Domo e Canhão de Água de Bombeiro no teto traseiro (bem visível acima do teto!)
     const turretGroup = new THREE.Group();
     turretGroup.position.set(0, 2.38, -0.45);
-
-    const turretDome = new THREE.Mesh(
-      new THREE.SphereGeometry(0.56, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.62),
-      carOrangeMat
-    );
-    turretDome.castShadow = true;
+    const turretDome = new THREE.Mesh(new THREE.SphereGeometry(0.56, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.62), carOrangeMat);
     turretGroup.add(turretDome);
-
-    const nozzleBarrel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.10, 0.13, 0.75, 16),
-      carOrangeMat
-    );
-    nozzleBarrel.rotation.x = Math.PI / 2.8;
-    nozzleBarrel.position.set(0, 0.45, 0.32);
+    const nozzleBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.75, 16), carOrangeMat);
+    nozzleBarrel.rotation.x = Math.PI / 2.8; nozzleBarrel.position.set(0, 0.45, 0.32);
     turretGroup.add(nozzleBarrel);
-
     carBodyGroup.add(turretGroup);
 
-    // 7. As 4 Rodinhas com Calotas Azul-Turquesa (Ciano)
-    const wheelPositions = [
-      [-1.18, 0.44, 0.98],
-      [1.18, 0.44, 0.98],
-      [-1.18, 0.44, -0.98],
-      [1.18, 0.44, -0.98]
-    ];
+    const wheelPositions = [[-1.18, 0.44, 0.98], [1.18, 0.44, 0.98], [-1.18, 0.44, -0.98], [1.18, 0.44, -0.98]];
     const wheels = [];
-
     wheelPositions.forEach((pos) => {
-      const wGroup = new THREE.Group();
-      wGroup.position.set(...pos);
-
-      // Pneu escuro
+      const wGroup = new THREE.Group(); wGroup.position.set(...pos);
       const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.30, 24), tireDarkMat);
-      tire.rotation.z = Math.PI / 2;
-      tire.castShadow = true;
-      wGroup.add(tire);
-
-      // Calota Ciano/Turquesa característica do brinquedo!
+      tire.rotation.z = Math.PI / 2; tire.castShadow = true; wGroup.add(tire);
       const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.33, 24), cyanWheelMat);
-      rim.rotation.z = Math.PI / 2;
-      wGroup.add(rim);
-
-      vehicle.add(wGroup);
-      wheels.push(wGroup);
+      rim.rotation.z = Math.PI / 2; wGroup.add(rim);
+      vehicle.add(wGroup); wheels.push(wGroup);
     });
 
-    // Posicionar o carrinho no Deskmat virado em 3/4 para a câmera (igual ao ângulo da foto!)
     vehicle.position.set(11.5, 0.14, 11.5);
     vehicle.rotation.y = -0.55;
     scene.add(vehicle);
 
     // ============================================================================
-    // SISTEMA DE PARTÍCULAS DE ÁGUA (QUANDO APERTA O BOTÃO AMARELO DO CARRINHO!)
+    // SISTEMA DE ÁGUA DO CARRINHO, REGAR PLANTAS E APAGAR INCÊNDIO DO MONITOR
     // ============================================================================
+    let waterLevel = 100.0; // 0 a 100%
+    const waterPctEl = document.getElementById('water-pct');
+    const waterBarEl = document.getElementById('water-bar-fill');
+    const statusBannerEl = document.getElementById('status-banner');
+    const fireAlertEl = document.getElementById('fire-alert');
+    const fireTimerEl = document.getElementById('fire-timer');
+
+    function setStatusBanner(msg, color = '#ffd24c') {
+      statusBannerEl.textContent = msg;
+      statusBannerEl.style.color = color;
+    }
+
+    function updateWaterHUD() {
+      const pct = Math.max(0, Math.min(100, Math.round(waterLevel)));
+      waterPctEl.textContent = pct + '%';
+      waterBarEl.style.width = pct + '%';
+      waterBarEl.style.background = pct <= 15
+        ? 'linear-gradient(90deg, #ff3d00, #ff9100)'
+        : 'linear-gradient(90deg, #0099ff, #35e0ff)';
+    }
+
     const waterDrops = [];
-    const dropGeo = new THREE.SphereGeometry(0.16, 8, 8);
+    const dropGeo = new THREE.SphereGeometry(0.18, 8, 8);
     const dropMat = new THREE.MeshBasicMaterial({ color: 0x35e0ff });
 
     function spawnWaterJet() {
-      // Anima o botão amarelo afundando
-      yellowRoofButton.position.y = 2.42;
-      setTimeout(() => { yellowRoofButton.position.y = 2.48; }, 150);
+      if (isModalOpen) return;
+      if (waterLevel <= 0) {
+        setStatusBanner('⚠️ SEM ÁGUA! Derrube o copo branco e pare na poça!', '#ff5252');
+        return;
+      }
 
-      for (let i = 0; i < 4; i++) {
+      waterLevel = Math.max(0, waterLevel - 0.85);
+      updateWaterHUD();
+
+      yellowRoofButton.position.y = 2.42;
+      setTimeout(() => { yellowRoofButton.position.y = 2.48; }, 120);
+
+      for (let i = 0; i < 3; i++) {
         const drop = new THREE.Mesh(dropGeo, dropMat);
-        const forward = new THREE.Vector3(Math.sin(carAngle), 0.42 + Math.random() * 0.15, Math.cos(carAngle));
+        const forward = new THREE.Vector3(Math.sin(carAngle), 0.45 + Math.random() * 0.16, Math.cos(carAngle));
         drop.position.copy(vehicle.position).add(new THREE.Vector3(0, 2.95, 0));
         scene.add(drop);
         waterDrops.push({
           mesh: drop,
-          vel: forward.multiplyScalar(0.42 + Math.random() * 0.12).add(
-            new THREE.Vector3((Math.random() - 0.5) * 0.08, 0, (Math.random() - 0.5) * 0.08)
+          vel: forward.multiplyScalar(0.55 + Math.random() * 0.15).add(
+            new THREE.Vector3((Math.random() - 0.5) * 0.1, 0, (Math.random() - 0.5) * 0.1)
           ),
-          life: 45
+          life: 52
         });
       }
     }
 
     // ============================================================================
-    // CONTROLES E FÍSICA SUAVE DO CARRINHO SOBRE A MESA
+    // MODAL DE REINÍCIO DE JOGO (QUEDA DA MESA OU RAMPA DE PAPELÃO)
+    // ============================================================================
+    let isModalOpen = false;
+    let isFallingOff = false;
+    let fallVelocityY = 0;
+
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDesc = document.getElementById('modal-desc');
+    const modalBtn = document.getElementById('modal-btn');
+
+    function openModal(title, desc) {
+      isModalOpen = true;
+      modalTitle.textContent = title;
+      modalDesc.textContent = desc;
+      modalBackdrop.style.display = 'flex';
+    }
+
+    function resetAllGameState() {
+      isModalOpen = false;
+      isFallingOff = false;
+      fallVelocityY = 0;
+      modalBackdrop.style.display = 'none';
+
+      // Resetar Carrinho e Água
+      vehicle.position.set(11.5, 0.14, 11.5);
+      vehicle.rotation.set(0, -0.55, 0);
+      carBodyGroup.rotation.set(0, 0, 0);
+      carSpeed = 0;
+      carAngle = -0.55;
+      waterLevel = 100.0;
+      updateWaterHUD();
+      setStatusBanner('🔄 Jogo reiniciado! Todos os objetos restaurados.', '#7ee787');
+
+      // Resetar Copo de Água e Poça
+      cupSpilled = false;
+      tumblerPivot.rotation.set(0, 0, 0);
+      cupWaterInside.visible = true;
+      puddleMesh.visible = false;
+      puddleScale = 0.001;
+      puddleMesh.scale.set(0.001, 0.001, 0.001);
+      cupObstacle.name = 'COPO COM ÁGUA (BATA PARA DERRAMAR E ABASTECER!)';
+
+      // Resetar Plantas para o Nível 1
+      growablePlants.forEach((p) => {
+        p.waterHits = 0;
+        p.level = 1;
+        p.targetScale = 1.0;
+        p.foliageGroup.scale.set(1, 1, 1);
+        p.flowersGroup.visible = false;
+        p.obs.name = `${p.name} (NÍVEL 1 — REGUE COM ÁGUA PARA CRESCER!)`;
+      });
+
+      // Resetar Controles e limpar pedacinhos quebrados
+      controllerDebrisList.forEach(m => deskWorld.remove(m));
+      controllerDebrisList.length = 0;
+      breakableControllers.forEach((c) => {
+        c.hits = 0;
+        c.stage = 0;
+        c.group.position.set(c.initX, 0.14, c.initZ);
+        c.group.rotation.set(0, c.initRotY, 0);
+        c.bodyMat.color.setHex(c.origColor);
+        c.centerBody.scale.set(1, 1, 1);
+        c.centerBody.rotation.set(0, 0, 0);
+        c.gripL.visible = true; c.gripL.rotation.set(Math.PI / 2.3, 0, 0.22); c.gripL.position.set(-1.18, 0.38, 0.38);
+        c.gripR.visible = true; c.gripR.rotation.set(Math.PI / 2.3, 0, -0.22); c.gripR.position.set(1.18, 0.38, 0.38);
+        c.stickL.visible = true; c.stickL.rotation.set(0, 0, 0);
+        c.stickR.visible = true; c.stickR.rotation.set(0, 0, 0);
+        c.obs.name = `${c.name} (INTACTO - BATA ATÉ 20X PARA QUEBRAR!)`;
+      });
+
+      // Resetar Teclado, Autodestruição e Monitor
+      typedTextLines = ['> terminal ready...'];
+      selfDestructProgress = 0;
+      monitorState = 'normal';
+      fireTimer = 15.0;
+      monitorFireGroup.visible = false;
+      fireLight.intensity = 0;
+      fireAlertEl.style.display = 'none';
+      monitorHeadGroup.rotation.set(0, 0, 0);
+      curvedBackMat.color.setHex(0x16181c);
+      updateMonitorScreen();
+    }
+
+    modalBtn.addEventListener('click', resetAllGameState);
+
+    // ============================================================================
+    // CONTROLES (TECLADO + TOUCH VIRTUAL MOBILE)
     // ============================================================================
     const keys = { forward: false, backward: false, left: false, right: false, spray: false };
 
     window.addEventListener('keydown', (e) => {
+      if (isModalOpen && e.code === 'Enter') {
+        resetAllGameState();
+        return;
+      }
       if (['KeyW', 'ArrowUp'].includes(e.code)) keys.forward = true;
       if (['KeyS', 'ArrowDown'].includes(e.code)) keys.backward = true;
       if (['KeyA', 'ArrowLeft'].includes(e.code)) keys.left = true;
@@ -1313,12 +1726,47 @@
       if (e.code === 'Space') keys.spray = false;
     });
 
+    // Bindings Touch & Mouse para os botões virtuais esmaecidos
+    function bindTouchButton(id, keyName, isSpray = false) {
+      const btn = document.getElementById(id);
+      const start = (e) => {
+        e.preventDefault();
+        keys[keyName] = true;
+        btn.classList.add('pressed');
+        if (isSpray) spawnWaterJet();
+      };
+      const end = (e) => {
+        e.preventDefault();
+        keys[keyName] = false;
+        btn.classList.remove('pressed');
+      };
+      btn.addEventListener('pointerdown', start);
+      btn.addEventListener('pointerup', end);
+      btn.addEventListener('pointerleave', end);
+      btn.addEventListener('pointercancel', end);
+    }
+    bindTouchButton('t-up', 'forward');
+    bindTouchButton('t-down', 'backward');
+    bindTouchButton('t-left', 'left');
+    bindTouchButton('t-right', 'right');
+    bindTouchButton('t-water', 'spray', true);
+
     let carSpeed = 0;
     let carAngle = -0.55;
-    const maxSpeed = 0.28;
-    const acceleration = 0.014;
-    const friction = 0.92;
+    const maxSpeed = 0.36;
+    const acceleration = 0.016;
+    const friction = 0.93;
     const turnSpeed = 0.048;
+
+    let lastTypeTime = 0;
+    const codeSnippets = [
+      'sudo rm -rf /system/core --no-preserve-root',
+      'override_safety_locks(TRUE);',
+      'INIT_SELF_DESTRUCT_SEQUENCE(0x99F);',
+      'voltage_multiplier = 9999.9;',
+      'CRITICAL_OVERHEAT_WARNING();',
+      'disabling_cooling_fans()...'
+    ];
 
     const promptEl = document.getElementById('interaction-prompt');
     const promptTitleEl = document.getElementById('prompt-title');
@@ -1333,124 +1781,300 @@
     });
 
     const clock = new THREE.Clock();
+    let prevTime = 0;
 
     function animate() {
       requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
+      const dt = Math.min(0.1, elapsedTime - prevTime);
+      prevTime = elapsedTime;
 
-      // Aceleração e direção
-      if (keys.forward) carSpeed = Math.min(carSpeed + acceleration, maxSpeed);
-      else if (keys.backward) carSpeed = Math.max(carSpeed - acceleration, -maxSpeed * 0.65);
-      else carSpeed *= friction;
+      // 1. Animação dos Peixinhos no Aquário
+      fishes.forEach((f, idx) => {
+        const t = elapsedTime * f.speed + f.phase;
+        const fx = Math.cos(t) * f.radiusX;
+        const fz = Math.sin(t * 1.3) * f.radiusZ;
+        const nextFx = Math.cos(t + 0.05) * f.radiusX;
+        const nextFz = Math.sin((t + 0.05) * 1.3) * f.radiusZ;
+        f.group.position.set(fx, f.y + Math.sin(t * 2) * 0.25, fz);
+        f.group.rotation.y = Math.atan2(-(nextFz - fz), nextFx - fx);
+      });
 
-      if (Math.abs(carSpeed) > 0.004) {
-        const dir = carSpeed > 0 ? 1 : -1;
-        if (keys.left) carAngle += turnSpeed * dir;
-        if (keys.right) carAngle -= turnSpeed * dir;
+      // 2. Expansão da Poça de Água se o Copo foi derrubado
+      if (cupSpilled) {
+        if (tumblerPivot.rotation.z < Math.PI / 2.15) {
+          tumblerPivot.rotation.z = Math.min(Math.PI / 2.15, tumblerPivot.rotation.z + dt * 5.5);
+        }
+        if (puddleScale < 1.0) {
+          puddleScale = Math.min(1.0, puddleScale + dt * 1.6);
+          puddleMesh.scale.set(puddleScale, puddleScale, 1);
+        }
       }
 
-      // Próxima posição candidata
-      let nextX = vehicle.position.x + Math.sin(carAngle) * carSpeed;
-      let nextZ = vehicle.position.z + Math.cos(carAngle) * carSpeed;
-
-      // Limites seguros da mesa (para o carrinho não cair da borda)
-      nextX = Math.max(-29, Math.min(29, nextX));
-      nextZ = Math.max(-16, Math.min(16.5, nextZ));
-
-      // Colisão suave com objetos redondos da mesa + detecção de proximidade
-      let nearestItem = null;
-      let minDist = Infinity;
-
-      obstacles.forEach((obs) => {
-        const dx = nextX - obs.x;
-        const dz = nextZ - obs.z;
-        const dist = Math.hypot(dx, dz);
-        const minAllowed = obs.r + 1.45;
-        if (dist < minAllowed && dist > 0.001) {
-          const pushFactor = (minAllowed - dist) / dist;
-          nextX += dx * pushFactor;
-          nextZ += dz * pushFactor;
-          carSpeed *= 0.85;
-        }
-        if (dist < obs.r + 4.8 && dist < minDist) {
-          minDist = dist;
-          nearestItem = obs.name;
+      // 3. Crescimento Suave das Plantas Regadas
+      growablePlants.forEach((p) => {
+        const curr = p.foliageGroup.scale.x;
+        if (Math.abs(p.targetScale - curr) > 0.01) {
+          const nextS = curr + (p.targetScale - curr) * 0.08;
+          p.foliageGroup.scale.set(nextS, nextS, nextS);
         }
       });
 
-      // Subir de forma divertida sobre o teclado mecânico e o deskmat!
-      let targetY = 0;
-      // Verifica se está sobre o Deskmat
-      if (nextX > -13 && nextX < 27 && nextZ > -6.5 && nextZ < 15.5) {
-        targetY = 0.14;
-      }
-      // Verifica se está passando por cima do Teclado Mecânico (rampa divertida!)
-      if (nextX > -3.2 && nextX < 12.2 && nextZ > 0.8 && nextZ < 7.2) {
-        targetY = 0.78 + Math.sin(nextX * 4) * 0.05; // Trepidação gostosa passando pelas teclas!
-        if (!nearestItem) nearestItem = 'TECLADO MECÂNICO (PASSANDO POR CIMA DAS TECLAS!)';
-      }
+      // 4. Lógica de Incêndio e Autodestruição do Monitor Ultrawide
+      if (monitorState === 'burning' && !isModalOpen) {
+        fireTimer -= dt;
+        fireTimerEl.textContent = Math.max(0, fireTimer).toFixed(1);
+        fireLight.intensity = 2.2 + Math.sin(elapsedTime * 18) * 0.9;
+        fireCones.forEach((c, idx) => {
+          c.scale.y = 0.8 + Math.sin(elapsedTime * 14 + idx) * 0.35;
+        });
+        updateMonitorScreen();
 
-      vehicle.position.x = nextX;
-      vehicle.position.z = nextZ;
-      vehicle.position.y += (targetY - vehicle.position.y) * 0.25;
-      vehicle.rotation.y = carAngle;
+        if (fireTimer <= 0) {
+          // EXPLOSÃO DO MONITOR!
+          monitorState = 'exploded';
+          monitorFireGroup.visible = false;
+          fireLight.intensity = 0;
+          fireAlertEl.style.display = 'none';
+          monitorHeadGroup.rotation.z = -0.14;
+          monitorHeadGroup.rotation.x = 0.12;
+          curvedBackMat.color.setHex(0x090a0c);
+          updateMonitorScreen();
+          setStatusBanner('💥 BOOM! O monitor explodiu! Jogue o carro fora da mesa para resetar.', '#ff5252');
 
-      // Balanço fofo da carroceria ao acelerar/virar (estilo brinquedo)
-      carBodyGroup.rotation.x = -carSpeed * 0.28;
-      carBodyGroup.rotation.z = (keys.left ? 0.06 : keys.right ? -0.06 : 0) * (Math.abs(carSpeed) / maxSpeed);
-
-      // Giro das rodinhas ciano
-      wheels.forEach((w, idx) => {
-        w.rotation.x += carSpeed * 1.9;
-        if (idx < 2) {
-          const steer = keys.left ? 0.35 : keys.right ? -0.35 : 0;
-          w.rotation.y = steer;
+          // Estilhaços da explosão do monitor
+          for (let i = 0; i < 16; i++) {
+            const shard = new THREE.Mesh(
+              new THREE.BoxGeometry(0.5, 0.2, 0.5),
+              new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x111111 : 0x35e0ff })
+            );
+            shard.position.set(7.5 + (Math.random() - 0.5) * 14, 0.2, -5 + Math.random() * 8);
+            shard.rotation.set(Math.random(), Math.random(), Math.random());
+            deskWorld.add(shard);
+            controllerDebrisList.push(shard);
+          }
         }
-      });
+      }
 
-      // Atualiza gotinhas do canhão de água
-      if (keys.spray && Math.random() > 0.5) spawnWaterJet();
+      // 5. Movimentação do Carrinho
+      if (!isModalOpen) {
+        if (isFallingOff) {
+          // Caindo para fora da mesa!
+          fallVelocityY -= 0.025;
+          vehicle.position.y += fallVelocityY;
+          vehicle.position.x += Math.sin(carAngle) * carSpeed;
+          vehicle.position.z += Math.cos(carAngle) * carSpeed;
+          vehicle.rotation.x += 0.06;
+          vehicle.rotation.z += 0.04;
+
+          if (vehicle.position.y < -18) {
+            openModal(
+              '🚨 O Carrinho Caiu da Mesa!',
+              'Você se jogou para fora da mesa! Deseja reiniciar o jogo e restaurar todos os objetos ao estado original?'
+            );
+          }
+        } else {
+          if (keys.forward) carSpeed = Math.min(carSpeed + acceleration, maxSpeed);
+          else if (keys.backward) carSpeed = Math.max(carSpeed - acceleration, -maxSpeed * 0.65);
+          else carSpeed *= friction;
+
+          if (Math.abs(carSpeed) > 0.004) {
+            const dir = carSpeed > 0 ? 1 : -1;
+            if (keys.left) carAngle += turnSpeed * dir;
+            if (keys.right) carAngle -= turnSpeed * dir;
+          }
+
+          let nextX = vehicle.position.x + Math.sin(carAngle) * carSpeed;
+          let nextZ = vehicle.position.z + Math.cos(carAngle) * carSpeed;
+
+          // Verificar se entrou na RAMPA DE PAPELÃO na lateral esquerda (x < -DESK_HALF_W e z entre 10 e 26)
+          if (nextX < -DESK_HALF_W + 1.5 && nextZ > 9 && nextZ < 27) {
+            openModal(
+              '🚧 Cenário em Construção!',
+              'Esta rampa de papelão leva ao cenário do Escritório / Quarto, que ainda não está pronto! A descida foi bloqueada e o jogo será reiniciado.'
+            );
+          }
+          // Verificar se saiu das bordas da mesa (queda livre para resetar!)
+          else if (Math.abs(nextX) > DESK_HALF_W + 1.2 || Math.abs(nextZ) > DESK_HALF_D + 1.2) {
+            isFallingOff = true;
+            fallVelocityY = -0.15;
+          }
+
+          // Colisões e Interações com Objetos da Mesa
+          let nearestItem = null;
+          let minDist = Infinity;
+
+          obstacles.forEach((obs) => {
+            const dx = nextX - obs.x;
+            const dz = nextZ - obs.z;
+            const dist = Math.hypot(dx, dz);
+            const minAllowed = obs.r + 1.45;
+
+            if (dist < minAllowed && dist > 0.001) {
+              // Se bateu no Copo com Água -> Derrama a água!
+              if (obs.type === 'water_cup' && !cupSpilled) {
+                cupSpilled = true;
+                cupWaterInside.visible = false;
+                puddleMesh.visible = true;
+                obs.name = 'COPO DERRAMADO (PARE SOBRE A POÇA AZUL PARA ABASTECER!)';
+                setStatusBanner('🌊 Você derrubou o copo! Pare sobre a poça azul para encher o tanque!', '#35e0ff');
+              }
+
+              // Se bateu em um Controle de Videogame -> Quebra em até 20 batidas (5 estágios)!
+              if (obs.type === 'controller' && Math.abs(carSpeed) > 0.04) {
+                hitController(obs.ctrlRef, Math.abs(carSpeed));
+              }
+
+              const pushFactor = (minAllowed - dist) / dist;
+              nextX += dx * pushFactor;
+              nextZ += dz * pushFactor;
+              carSpeed *= -0.35; // Pequeno rebote físico ao bater!
+            }
+
+            if (dist < obs.r + 5.5 && dist < minDist) {
+              minDist = dist;
+              nearestItem = obs.name;
+            }
+          });
+
+          // Verificar se o carrinho está sobre a POÇA DE ÁGUA DERRAMADA para recarregar o tanque!
+          if (cupSpilled) {
+            const distToPuddle = Math.hypot(nextX - puddleMesh.position.x, nextZ - puddleMesh.position.z);
+            if (distToPuddle < 7.5 * puddleScale) {
+              nearestItem = '💧 POÇA DE ÁGUA — RECARREGANDO TANQUE DO CARRINHO!';
+              if (waterLevel < 100) {
+                waterLevel = Math.min(100, waterLevel + dt * 38);
+                updateWaterHUD();
+                setStatusBanner(`⚡ Abastecendo tanque na poça d'água: ${Math.round(waterLevel)}%`, '#35e0ff');
+              }
+            }
+          }
+
+          // Altura do carrinho sobre o Deskmat e sobre o Teclado Mecânico
+          let targetY = 0;
+          if (nextX > -26 && nextX < 42 && nextZ > -11 && nextZ < 23) {
+            targetY = 0.14;
+          }
+
+          // Passando por cima do Teclado Mecânico -> Digita na tela e acumula Autodestruição!
+          if (nextX > -3.2 && nextX < 12.2 && nextZ > 0.8 && nextZ < 7.2) {
+            targetY = 0.78 + Math.sin(nextX * 5 + nextZ * 5) * 0.06;
+            nearestItem = `⌨️ DIGITANDO NO TECLADO! (AUTODESTRUIÇÃO: ${Math.floor(selfDestructProgress)}%)`;
+
+            if (Math.abs(carSpeed) > 0.02 && monitorState === 'normal') {
+              selfDestructProgress = Math.min(100, selfDestructProgress + dt * 24);
+              if (elapsedTime - lastTypeTime > 0.25) {
+                lastTypeTime = elapsedTime;
+                const cmd = codeSnippets[Math.floor(Math.random() * codeSnippets.length)];
+                typedTextLines.push('> ' + cmd);
+                updateMonitorScreen();
+              }
+
+              if (selfDestructProgress >= 100 && monitorState === 'normal') {
+                monitorState = 'burning';
+                fireTimer = 15.0;
+                monitorFireGroup.visible = true;
+                fireAlertEl.style.display = 'block';
+                updateMonitorScreen();
+                setStatusBanner('🔥 CÓDIGO DE AUTODESTRUIÇÃO ATIVADO! APAGUE O FOGO DO MONITOR!', '#ff5252');
+              }
+            }
+          }
+
+          vehicle.position.x = nextX;
+          vehicle.position.z = nextZ;
+          if (!isFallingOff) {
+            vehicle.position.y += (targetY - vehicle.position.y) * 0.25;
+            vehicle.rotation.y = carAngle;
+          }
+
+          carBodyGroup.rotation.x = -carSpeed * 0.25;
+          carBodyGroup.rotation.z = (keys.left ? 0.06 : keys.right ? -0.06 : 0) * (Math.abs(carSpeed) / maxSpeed);
+
+          wheels.forEach((w, idx) => {
+            w.rotation.x += carSpeed * 1.9;
+            if (idx < 2) w.rotation.y = keys.left ? 0.35 : keys.right ? -0.35 : 0;
+          });
+
+          if (nearestItem) {
+            promptTitleEl.textContent = nearestItem;
+            promptEl.style.display = 'flex';
+          } else {
+            promptEl.style.display = 'none';
+          }
+        }
+      }
+
+      // 6. Atualização das Gotas de Água (Regar Plantas + Apagar Fogo do Monitor!)
+      if (keys.spray && !isModalOpen && Math.random() > 0.45) spawnWaterJet();
+
       for (let i = waterDrops.length - 1; i >= 0; i--) {
         const d = waterDrops[i];
         d.mesh.position.add(d.vel);
-        d.vel.y -= 0.022; // Gravidade
+        d.vel.y -= 0.02;
         d.life--;
-        if (d.mesh.position.y < 0.2 || d.life <= 0) {
+
+        // Verifica se a gota atingiu alguma Planta -> Faz crescer para o Nível 2!
+        growablePlants.forEach((p) => {
+          if (p.level < 2) {
+            const distP = Math.hypot(d.mesh.position.x - p.x, d.mesh.position.z - p.z);
+            if (distP < 3.4) {
+              p.waterHits++;
+              p.targetScale = 1.0 + Math.min(0.85, (p.waterHits / 18) * 0.85);
+              if (p.waterHits >= 18) {
+                p.level = 2;
+                p.targetScale = 1.85;
+                p.flowersGroup.visible = true;
+                p.obs.name = `🌸 ${p.name} — NÍVEL 2 MÁXIMO (FLORIDA!)`;
+                setStatusBanner(`🌱 ${p.name} cresceu para o Nível 2 e floresceu!`, '#7ee787');
+              }
+            }
+          }
+        });
+
+        // Verifica se a gota atingiu o Monitor em Chamas -> Apaga o Incêndio!
+        if (monitorState === 'burning') {
+          const distMon = Math.hypot(d.mesh.position.x - 7.5, d.mesh.position.z - (-11.5));
+          if (distMon < 12.5) {
+            selfDestructProgress = Math.max(0, selfDestructProgress - 3.5);
+            if (selfDestructProgress <= 0) {
+              monitorState = 'normal';
+              monitorFireGroup.visible = false;
+              fireLight.intensity = 0;
+              fireAlertEl.style.display = 'none';
+              typedTextLines.push('> FIRE EXTINGUISHED! SYSTEM SAVED.');
+              updateMonitorScreen();
+              setStatusBanner('🧯 INCÊNDIO APAGADO! Você salvou o monitor a tempo!', '#35e0ff');
+            }
+          }
+        }
+
+        if (d.mesh.position.y < 0.1 || d.life <= 0) {
           scene.remove(d.mesh);
           waterDrops.splice(i, 1);
         }
       }
 
-      // Exibir badge interativo quando perto de algum item da sua mesa
-      if (nearestItem) {
-        promptTitleEl.textContent = nearestItem;
-        promptEl.style.display = 'flex';
-      } else {
-        promptEl.style.display = 'none';
-      }
-
-      // Câmera dinâmica conforme o modo escolhido
+      // 7. Câmera Dinâmica
       let camOffset, lookTarget;
       if (camMode === 'close') {
-        // Ângulo 3/4 frontal-lateral idêntico à foto do brinquedo!
         const viewAngle = carAngle - 0.52;
         camOffset = new THREE.Vector3(
-          Math.sin(viewAngle) * 8.2 * zoomFactor,
-          4.8 * zoomFactor,
-          Math.cos(viewAngle) * 8.2 * zoomFactor
+          Math.sin(viewAngle) * 8.5 * zoomFactor,
+          5.0 * zoomFactor,
+          Math.cos(viewAngle) * 8.5 * zoomFactor
         );
         lookTarget = new THREE.Vector3(vehicle.position.x, vehicle.position.y + 1.25, vehicle.position.z);
       } else if (camMode === 'wide') {
-        camOffset = new THREE.Vector3(0, 32 * zoomFactor, 48 * zoomFactor);
-        lookTarget = new THREE.Vector3(0, 2, -1);
+        camOffset = new THREE.Vector3(0, 68 * zoomFactor, 95 * zoomFactor);
+        lookTarget = new THREE.Vector3(0, 2, 0);
       } else {
-        // Visão Mesa Isométrica seguindo o carrinho suavemente
-        camOffset = new THREE.Vector3(16 * zoomFactor, 22 * zoomFactor, 28 * zoomFactor);
-        lookTarget = new THREE.Vector3(vehicle.position.x * 0.65, 1.0, vehicle.position.z * 0.65);
+        camOffset = new THREE.Vector3(18 * zoomFactor, 26 * zoomFactor, 32 * zoomFactor);
+        lookTarget = new THREE.Vector3(vehicle.position.x * 0.78, Math.max(-4, vehicle.position.y + 1.0), vehicle.position.z * 0.78);
       }
 
       const desiredCamPos = lookTarget.clone().add(camOffset);
-      camera.position.lerp(desiredCamPos, 0.08);
+      camera.position.lerp(desiredCamPos, 0.09);
       camera.lookAt(lookTarget);
 
       renderer.render(scene, camera);
