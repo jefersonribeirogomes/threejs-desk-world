@@ -78,7 +78,14 @@
       position: absolute; inset: 4px; background: var(--ds-peach);
       transform-origin: 0 0; transition: transform .15s, background .3s;
     }
-    .hud-water.is-low .fill { background: var(--ds-danger); }
+    .hud-water.is-low .bar:not(.battery) .fill { background: var(--ds-danger); }
+    .hud-water .battery-head { margin-top: 6px; }
+    .hud-water .battery-head .title { color: var(--ds-success); }
+    .hud-water .bar.battery .fill { background: var(--ds-success); }
+    .hud-water .bar.battery.is-turbo .fill { background: linear-gradient(90deg, var(--ds-success), #fff6a8); }
+    .hud-water .bar.battery.is-low .fill { background: var(--ds-danger); animation: ds-pulse-fill .6s ease-in-out infinite alternate; }
+    .hud-water .bar.battery .mark-60 { position: absolute; top: 2px; bottom: 2px; left: 60%; width: 2px; background: #fff; opacity: .55; }
+    @keyframes ds-pulse-fill { from { opacity: 1; } to { opacity: .45; } }
     .hud-water.is-low .pct { color: var(--ds-danger); }
     .hud-water .status { margin-top: 8px; font-size: .7rem; line-height: 1.35; color: var(--ds-text-soft); min-height: 1.35em; }
     .hud-water .status.is-success { color: var(--ds-success); }
@@ -151,6 +158,23 @@
     html.is-mode-touch .interact-prompt .key { display: none; }
     html.is-mode-touch .grab-prompt .key { display: inline-block; }
     .modals .modal.island .island-actions { flex-wrap: wrap; }
+
+    /* Foco de navegação pelo controle (DS: contorno pêssego) */
+    .gp-focus { outline: 3px solid var(--ds-peach) !important; outline-offset: 3px; }
+    .menu .navigation .item.gp-focus { outline-offset: -1px; }
+    .menu .navigation .item.gp-focus .button-inner { transform: translateY(-4px); }
+    .map .location.is-hover .name { transition-timing-function: cubic-bezier(.49, 2.2, .53, .75); transform: scale(1); }
+    .map .location.gp-focus { outline: none !important; }
+    .map .location.gp-focus .pin { background: var(--ds-peach); }
+
+    /* Celular: sempre deitado (paisagem) */
+    .rotate-hint {
+      position: fixed; inset: 0; z-index: 70; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      background: radial-gradient(farthest-side at 0 0, var(--ds-plum-1), var(--ds-plum-2)); color: #fff; text-align: center; padding: 24px;
+    }
+    .rotate-hint .phone { width: 54px; height: 90px; border: 3px solid var(--ds-peach); border-radius: 10px; animation: ds-rotate-phone 1.8s ease-in-out infinite; }
+    @keyframes ds-rotate-phone { 0%, 20% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
+    @media (orientation: portrait) { html.is-mode-touch .rotate-hint { display: flex; } }
 
     /* Mini player do rádio (superfície ameixa + moldura do DS) */
     .radio-player {
@@ -281,28 +305,41 @@
     /* ==========================================================================
        CONTROLES TOUCH (barra de ações do DS + direcional)
        ========================================================================== */
-    html.is-mode-touch .touch-buttons { display: block; }
-    .touch-buttons { z-index: 6; position: fixed; }
-    .touch-buttons .list { justify-content: flex-end; padding-right: 8px; height: 110px; min-height: 0; }
-    .touch-buttons .list button { padding-left: 3vw; padding-right: 3vw; }
-    .touch-buttons .list button.is-pressed, .touch-buttons .list button.is-holding { color: var(--ds-peach); }
-    .touch-dpad {
-      position: fixed; left: 14px; bottom: 14px; z-index: 7; display: none;
-      grid-template-columns: repeat(3, 54px); grid-template-rows: repeat(2, 54px); gap: 6px;
+    .touch-buttons { display: none !important; z-index: 5; position: fixed; }
+    html.is-mode-touch .touch-buttons { display: block !important; }
+    .touch-steer, .touch-pad { position: fixed; bottom: 14px; z-index: 7; display: none; }
+    html.is-mode-touch .touch-steer, html.is-mode-touch .touch-pad { display: flex; }
+    .touch-steer { left: 18px; gap: 14px; }
+    .touch-pad { right: 16px; align-items: flex-end; gap: 14px; }
+    .pad-btn, .pad-trigger {
+      position: relative; color: #fff; background: var(--ds-surface);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      touch-action: none; -webkit-user-select: none; user-select: none;
     }
-    html.is-mode-touch .touch-dpad { display: grid; }
-    .touch-dpad button {
-      position: relative; background: var(--ds-surface); color: #fff; font-size: 20px;
-      display: flex; align-items: center; justify-content: center;
+    .pad-btn::after, .pad-trigger::after { content: ""; position: absolute; inset: 3px; border: 1px solid #fff; opacity: .35; pointer-events: none; border-radius: inherit; }
+    .touch-steer .pad-btn { width: 78px; height: 78px; border-radius: 50%; font-size: 30px; }
+    .pad-btn.pressed, .pad-trigger.pressed { background: var(--ds-trigger); }
+    .touch-pad .triggers { display: flex; gap: 10px; align-items: flex-end; }
+    .pad-trigger { width: 64px; height: 92px; border-radius: 14px 14px 22px 22px; }
+    .pad-trigger.is-gas { height: 112px; width: 72px; }
+    .pad-trigger.is-hop { height: 64px; width: 56px; }
+    .pad-trigger span { font-weight: 900; font-size: 22px; line-height: 1; }
+    .pad-trigger small, .face-btn small { font-size: 10px; font-weight: 700; opacity: .8; margin-top: 4px; }
+    .touch-pad .face { position: relative; width: 168px; height: 168px; }
+    .face-btn { position: absolute; width: 58px; height: 58px; border-radius: 50%; }
+    .face-btn i { width: 18px; height: 18px; background: center / contain no-repeat; }
+    .face-btn.triangle { left: 55px; top: 0; } .face-btn.triangle i { background-image: url(./assets/ui/controls/gamepad-triangle.webp); }
+    .face-btn.square { left: 0; top: 55px; } .face-btn.square i { background-image: url(./assets/ui/controls/gamepad-square.webp); }
+    .face-btn.circle { right: 0; top: 55px; } .face-btn.circle i { background-image: url(./assets/ui/controls/gamepad-circle.webp); }
+    .face-btn.cross { left: 55px; bottom: 0; } .face-btn.cross i { background-image: url(./assets/ui/controls/gamepad-cross.webp); }
+    .face-btn.cross:not(.is-visible) { opacity: .4; }
+    .face-btn.square.is-holding { background: var(--ds-trigger); }
+    @media only screen and (height <= 420px) {
+      .touch-steer .pad-btn { width: 64px; height: 64px; }
+      .touch-pad .face { transform: scale(.85); transform-origin: bottom right; }
+      .pad-trigger { height: 78px; } .pad-trigger.is-gas { height: 92px; }
     }
-    .touch-dpad button::after { content: ""; position: absolute; inset: 3px; border: 1px solid #fff; opacity: .35; pointer-events: none; }
-    .touch-dpad button.pressed { background: var(--ds-trigger); }
-    .touch-dpad .t-up { grid-column: 2; grid-row: 1; }
-    .touch-dpad .t-left { grid-column: 1; grid-row: 2; }
-    .touch-dpad .t-down { grid-column: 2; grid-row: 2; }
-    .touch-dpad .t-right { grid-column: 3; grid-row: 2; }
     @media only screen and (width <= 520px) {
-      .touch-dpad { grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(2, 48px); }
       .hud-water { top: 10px; left: 10px; padding: 6px 12px 10px; }
       .hud-water .title { font-size: 1.4rem; }
     }
@@ -336,6 +373,11 @@
       <span class="pct" id="water-pct">100%</span>
     </div>
     <div class="bar"><div class="fill" id="water-bar-fill"></div></div>
+    <div class="head battery-head">
+      <div class="title">Bateria</div>
+      <span class="pct" id="battery-pct">100%</span>
+    </div>
+    <div class="bar battery" id="battery-bar"><div class="fill" id="battery-bar-fill"></div><div class="mark-60"></div></div>
     <div class="status" id="status-banner">Pronto para patrulhar a mesa!</div>
     <div class="keys-hint">
       <span class="key">WASD</span> dirigir · <span class="key">ESPAÇO</span> água · <span class="key">F</span> pular · <span class="key">E</span> pegar · <span class="key">V</span> câmera · <span class="key">M</span> mapa · <span class="key">ENTER</span> interagir · <span class="key">R</span> largada
@@ -469,6 +511,7 @@
               <div class="button-grid" style="align-self:stretch">
                 <button class="button btn-cam is-active" id="btn-cam-iso" type="button">Isométrica</button>
                 <button class="button btn-cam" id="btn-cam-close" type="button">Atrás do carrinho</button>
+                <button class="button btn-cam" id="btn-cam-fps" type="button">Primeira pessoa</button>
                 <button class="button btn-cam" id="btn-cam-room" type="button">Quarto</button>
                 <button class="button btn-cam" id="btn-cam-wide" type="button">Mesa completa</button>
               </div>
@@ -502,7 +545,9 @@
                       <table><tbody>
                         <tr><td><span class="key">WASD</span> ou <span class="key">SETAS</span></td><td>Dirigir</td></tr>
                         <tr><td><span class="key">ESPAÇO</span></td><td>Jato d'água</td></tr>
-                        <tr><td><span class="key">F</span></td><td>Pular</td></tr>
+                        <tr><td><span class="key">F</span></td><td>Pular · 2x rápido: pulo duplo (−10% bateria)</td></tr>
+                        <tr><td><span class="key">Q</span></td><td>Pulinho</td></tr>
+                        <tr><td><span class="key">W</span> 2x</td><td>Mini turbo (−10% bateria)</td></tr>
                         <tr><td><span class="key">E</span></td><td>Pegar / soltar objeto</td></tr>
                         <tr><td><span class="key">ENTER</span></td><td>Interagir com as ilhas</td></tr>
                         <tr><td><span class="key">SHIFT</span></td><td>Boost</td></tr>
@@ -531,19 +576,19 @@
                     <div class="list">
                       <table><tbody>
                         <tr><td><span class="is-gamepad-button is-playstation is-icon circle"></span><span class="is-gamepad-button is-xbox key">B</span></td><td>Boost</td></tr>
-                        <tr><td><span class="is-gamepad-button is-playstation is-icon triangle"></span><span class="is-gamepad-button is-xbox key">Y</span></td><td>Pular</td></tr>
+                        <tr><td><span class="is-gamepad-button is-playstation is-icon triangle"></span><span class="is-gamepad-button is-xbox key">Y</span></td><td>Pular · 2x: pulo duplo (−10%)</td></tr>
                         <tr><td><span class="is-gamepad-button is-playstation is-icon square"></span><span class="is-gamepad-button is-xbox key">X</span></td><td>Freio</td></tr>
                         <tr><td><span class="is-gamepad-button is-playstation is-icon cross"></span><span class="is-gamepad-button is-xbox key">A</span></td><td>Interagir / sair</td></tr>
-                        <tr><td><span class="key">L2</span></td><td>Acelerar</td></tr>
-                        <tr><td><span class="key">R2</span></td><td>Ré</td></tr>
-                        <tr><td><span class="key">L1</span></td><td>Hidráulica</td></tr>
+                        <tr><td><span class="key">R2</span></td><td>Acelerar · 2x rápido: mini turbo (−10%)</td></tr>
+                        <tr><td><span class="key">L2</span></td><td>Ré</td></tr>
+                        <tr><td><span class="key">L1</span></td><td>Pulinho</td></tr>
                         <tr><td><span class="key">R1</span></td><td>Jato d'água</td></tr>
                         <tr><td><span class="key">Analógico esq.</span></td><td>Direção</td></tr>
                         <tr><td><span class="key">L3</span></td><td>Buzina</td></tr>
                         <tr><td><span class="key">Analógico dir.</span></td><td>Câmera · <span class="key">R3</span> zoom</td></tr>
                         <tr><td><span class="key">D-pad</span></td><td>↑ câmera · ↓ pegar · → mapa</td></tr>
                         <tr><td><span class="key">Create</span></td><td>Voltar para a largada</td></tr>
-                        <tr><td><span class="key">Options</span></td><td>Menu</td></tr>
+                        <tr><td><span class="key">Options</span></td><td>Menu (analógico navega, ✕ seleciona, ○ volta, L1/R1 troca aba)</td></tr>
                       </tbody></table>
                     </div>
                   </div>
@@ -658,20 +703,29 @@
   </div>
 
   <!-- ===== CONTROLES TOUCH ===== -->
-  <div class="touch-dpad" id="touch-dpad">
-    <button class="t-up" id="t-up" type="button" aria-label="Frente">▲</button>
-    <button class="t-left" id="t-left" type="button" aria-label="Esquerda">◀</button>
-    <button class="t-down" id="t-down" type="button" aria-label="Ré">▼</button>
-    <button class="t-right" id="t-right" type="button" aria-label="Direita">▶</button>
+  <!-- Celular: direção à esquerda; gatilhos e botões de controle à direita -->
+  <div class="touch-buttons is-active" id="touch-buttons"><div class="overlay is-visible"></div></div>
+  <div class="touch-steer" id="touch-dpad">
+    <button class="pad-btn" id="t-left" type="button" aria-label="Virar à esquerda">◀</button>
+    <button class="pad-btn" id="t-right" type="button" aria-label="Virar à direita">▶</button>
   </div>
-  <div class="touch-buttons" id="touch-buttons">
-    <div class="overlay is-visible"></div>
-    <div class="list">
-      <button class="interact" id="t-interact" type="button">Interagir</button>
-      <button class="is-visible" id="t-jump" type="button">Pular</button>
-      <button class="is-visible" id="t-grab" type="button"><span id="t-grab-label">Pegar</span></button>
-      <button class="is-visible" id="t-water" type="button">Água</button>
+  <div class="touch-pad" id="touch-pad">
+    <div class="triggers">
+      <button class="pad-trigger is-hop" id="t-hop" type="button" aria-label="Pulinho"><span>L1</span><small>pulinho</small></button>
+      <button class="pad-trigger" id="t-down" type="button" aria-label="Ré"><span>L2</span><small>ré</small></button>
+      <button class="pad-trigger is-gas" id="t-up" type="button" aria-label="Acelerar"><span>R2</span><small>acelerar</small></button>
     </div>
+    <div class="face">
+      <button class="pad-btn face-btn triangle" id="t-jump" type="button" aria-label="Pular"><i></i><small>pular</small></button>
+      <button class="pad-btn face-btn square" id="t-grab" type="button" aria-label="Pegar ou soltar"><i></i><small id="t-grab-label">pegar</small></button>
+      <button class="pad-btn face-btn circle" id="t-water" type="button" aria-label="Jato d'água"><i></i><small>água</small></button>
+      <button class="pad-btn face-btn cross" id="t-interact" type="button" aria-label="Interagir"><i></i><small>interagir</small></button>
+    </div>
+  </div>
+  <div class="rotate-hint" id="rotate-hint">
+    <div class="phone"></div>
+    <div class="title">Deite o celular</div>
+    <p class="text">O mundo do Ravi é melhor na horizontal!</p>
   </div>
 
   <script>
@@ -698,23 +752,26 @@
     const CAMERA_PRESETS = {
       iso: { zoom: 1.0, btn: 'btn-cam-iso', label: 'Isométrica' },
       close: { zoom: 1.0, btn: 'btn-cam-close', label: 'Atrás do carrinho' },
+      fps: { zoom: 1.0, btn: 'btn-cam-fps', label: 'Primeira pessoa' },
       room: { zoom: 1.0, btn: 'btn-cam-room', label: 'Quarto' },
       wide: { zoom: 1.65, btn: 'btn-cam-wide', label: 'Mesa completa' }
     };
     function setCameraMode(mode) {
       if (!CAMERA_PRESETS[mode]) return;
+      if ((mode === 'close' || mode === 'fps') && camMode !== mode && typeof carAngle !== 'undefined') closeCamAngle = carAngle;
       camMode = mode;
       zoomFactor = CAMERA_PRESETS[mode].zoom;
       setActiveBtn(document.getElementById(CAMERA_PRESETS[mode].btn));
     }
     Object.keys(CAMERA_PRESETS).forEach((mode) => {
-      document.getElementById(CAMERA_PRESETS[mode].btn).addEventListener('click', () => setCameraMode(mode));
+      document.getElementById(CAMERA_PRESETS[mode].btn).addEventListener('click', () => {
+        setCameraMode(mode);
+        if (typeof closeMenu === 'function') closeMenu(); // mostra a cena após escolher
+      });
     });
     function setActiveBtn(btn) {
       document.querySelectorAll('.btn-cam').forEach(b => b.classList.remove('is-active'));
       btn.classList.add('is-active');
-      // Ao escolher uma câmera pelo menu, fecha o menu para mostrar a cena
-      if (typeof closeMenu === 'function' && btn.closest && btn.closest('#menu')) closeMenu();
     }
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -889,6 +946,17 @@
     const monitorTexture = new THREE.CanvasTexture(monitorCanvas);
     monitorTexture.encoding = THREE.sRGBEncoding; // cores fiéis ao canvas (sem desbotar)
 
+    // Tela do notebook espelha o monitor (recorte central com a proporção da tela do notebook)
+    const laptopScreenCanvas = document.createElement('canvas');
+    laptopScreenCanvas.width = 512; laptopScreenCanvas.height = 316;
+    const laptopScreenCtx = laptopScreenCanvas.getContext('2d');
+    const laptopScreenTexture = new THREE.CanvasTexture(laptopScreenCanvas);
+    laptopScreenTexture.encoding = THREE.sRGBEncoding;
+    function mirrorMonitorToLaptop() {
+      laptopScreenCtx.drawImage(monitorCanvas, 172, 0, 680, 420, 0, 0, 512, 316);
+      laptopScreenTexture.needsUpdate = true;
+    }
+
     let typedTextLines = ['> terminal ready...'];
     let selfDestructProgress = 0; // 0 a 100
     let monitorState = 'normal'; // 'normal', 'burning', 'exploded'
@@ -988,6 +1056,7 @@
       if (monitorProfileMode && monitorState === 'normal') {
         drawProfileScreen(ctx, monitorProfileMode);
         monitorTexture.needsUpdate = true;
+        mirrorMonitorToLaptop();
         return;
       }
       if (monitorState === 'exploded') {
@@ -1006,6 +1075,7 @@
         ctx.font = 'bold 34px monospace';
         ctx.fillText('SYSTEM DESTROYED // NO SIGNAL', 210, 220);
         monitorTexture.needsUpdate = true;
+        mirrorMonitorToLaptop();
         return;
       }
 
@@ -1021,100 +1091,63 @@
         ctx.fillStyle = '#ff5722';
         ctx.fillRect(150, 260, 724 * (fireTimer / 15.0), 40);
         monitorTexture.needsUpdate = true;
+        mirrorMonitorToLaptop();
         return;
       }
 
-      // Estado Normal: Metade Esquerda Terminal Dark Mode (com texto digitado pelo carrinho!)
-      ctx.fillStyle = '#141619';
-      ctx.fillRect(0, 0, 480, 420);
-      ctx.fillStyle = '#1c1f24';
-      ctx.fillRect(0, 0, 85, 420);
-
-      ctx.fillStyle = '#35e0ff';
-      ctx.font = 'bold 15px monospace';
-      ctx.fillText('ANTIGRAVITY TERMINAL (PASSE NO TECLADO)', 100, 42);
-
-      // Barra de risco de autodestruição
-      ctx.fillStyle = '#2b303c';
-      ctx.fillRect(100, 56, 350, 14);
-      ctx.fillStyle = selfDestructProgress > 70 ? '#ff3d00' : '#ffab00';
-      ctx.fillRect(100, 56, 3.5 * selfDestructProgress, 14);
-      ctx.fillStyle = '#fff';
-      ctx.font = '11px monospace';
-      ctx.fillText(`AUTO-DESTRUCT CODE: ${Math.floor(selfDestructProgress)}%`, 105, 67);
-
-      ctx.fillStyle = '#7ee787';
-      ctx.font = '14px monospace';
-      const recent = typedTextLines.slice(-12);
-      recent.forEach((line, idx) => {
-        ctx.fillText(line, 100, 98 + idx * 24);
-      });
-
-      // Metade Direita: LG UltraGear OLED 45" 800R Wallpaper Oficial + Winged UG Logo!
-      const ugGrad = ctx.createRadialGradient(752, 210, 15, 752, 210, 310);
-      ugGrad.addColorStop(0, '#3a0ca3');
-      ugGrad.addColorStop(0.45, '#19052c');
-      ugGrad.addColorStop(1, '#050308');
-      ctx.fillStyle = ugGrad;
-      ctx.fillRect(480, 0, 544, 420);
-
-      // Feixes de luz neon magenta/roxo/azul em X (estilo LG UltraGear OLED)
-      const beams = [
-        { x1: 480, y1: 30, x2: 1024, y2: 370, col: 'rgba(247, 37, 133, 0.55)', w: 28 },
-        { x1: 480, y1: 380, x2: 1024, y2: 40, col: 'rgba(181, 23, 158, 0.55)', w: 26 },
-        { x1: 530, y1: 0, x2: 960, y2: 420, col: 'rgba(76, 201, 240, 0.45)', w: 14 },
-        { x1: 520, y1: 420, x2: 990, y2: 0, col: 'rgba(255, 110, 199, 0.5)', w: 14 }
-      ];
-      beams.forEach(b => {
-        ctx.strokeStyle = b.col;
-        ctx.lineWidth = b.w;
-        ctx.beginPath();
-        ctx.moveTo(b.x1, b.y1);
-        ctx.lineTo(b.x2, b.y2);
-        ctx.stroke();
-      });
-
-      // Emblema Alado "UG" (UltraGear) branco/lilás brilhante no centro
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = '#f72585';
-      ctx.shadowBlur = 18;
-      // Asa esquerda do U
-      ctx.beginPath();
-      ctx.moveTo(695, 125);
-      ctx.lineTo(725, 165);
-      ctx.lineTo(745, 255);
-      ctx.lineTo(718, 225);
-      ctx.closePath();
-      ctx.fill();
-      // Asa direita do G
-      ctx.beginPath();
-      ctx.moveTo(810, 125);
-      ctx.lineTo(780, 165);
-      ctx.lineTo(752, 260);
-      ctx.lineTo(790, 210);
-      ctx.lineTo(770, 205);
-      ctx.lineTo(798, 170);
-      ctx.closePath();
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // Cabeçalho "LG UltraGear™ OLED" e "45""
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 26px "Segoe UI", sans-serif';
-      ctx.fillText('LG UltraGear™ OLED', 502, 62);
-      ctx.font = '900 54px "Segoe UI", sans-serif';
-      ctx.fillText('45"', 910, 74);
-
-      // Rodapé de especificações do LG UltraGear 45"
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-      ctx.fillRect(490, 345, 524, 52);
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = 'bold 11px "Segoe UI", sans-serif';
-      ctx.fillText('OLED curva 45"  |  Curvatura 800R  |  Dual Mode 165Hz-330Hz  |  0.03ms (GtG)  |  G-SYNC', 505, 376);
-
-      ctx.fillStyle = '#20232a';
-      ctx.fillRect(0, 0, 1024, 20);
+      // Estado normal: tela do Antigravity carregando ("passe o carrinho pelo teclado")
+      // e, quando o carrinho digita, o terminal com as linhas digitadas. Conteúdo centralizado
+      // (x 172..852) para que o notebook mostre exatamente a mesma tela recortada.
+      const t = performance.now() / 1000;
+      const bg = ctx.createLinearGradient(0, 0, 0, 420);
+      bg.addColorStop(0, '#0e1118'); bg.addColorStop(1, '#151a26');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, 1024, 420);
+      const glow = ctx.createRadialGradient(512, 150, 10, 512, 150, 340);
+      glow.addColorStop(0, 'rgba(120, 110, 255, 0.28)'); glow.addColorStop(1, 'rgba(120, 110, 255, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, 1024, 420);
+      ctx.textAlign = 'center';
+      const typing = typedTextLines.length > 1 || selfDestructProgress > 0;
+      if (!typing) {
+        // Logo: anel com órbita + nome
+        ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(512, 140, 46, 0, Math.PI * 2); ctx.stroke();
+        for (let i = 0; i < 3; i++) {
+          const a = t * 2.4 + i * (Math.PI * 2 / 3);
+          ctx.fillStyle = ['#8b7bff', '#4cc9f0', '#ffceca'][i];
+          ctx.beginPath(); ctx.arc(512 + Math.cos(a) * 46, 140 + Math.sin(a) * 46, 8, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.moveTo(512, 112); ctx.lineTo(536, 160); ctx.lineTo(488, 160); ctx.closePath(); ctx.fill();
+        ctx.font = '800 44px Nunito, sans-serif';
+        ctx.fillText('Antigravity', 512, 245);
+        ctx.fillStyle = '#9aa4b8'; ctx.font = '600 22px Nunito, sans-serif';
+        const dots = '.'.repeat(1 + Math.floor(t * 2) % 3);
+        ctx.fillText(`Carregando${dots}  passe o carrinho pelo teclado ⌨️`, 512, 290);
+        // Barra indeterminada
+        ctx.fillStyle = '#232a3a'; ctx.fillRect(312, 320, 400, 10);
+        const sx = 312 + ((t * 180) % 520) - 120;
+        const bar = ctx.createLinearGradient(sx, 0, sx + 120, 0);
+        bar.addColorStop(0, 'rgba(139,123,255,0)'); bar.addColorStop(0.5, '#8b7bff'); bar.addColorStop(1, 'rgba(76,201,240,0)');
+        ctx.fillStyle = bar;
+        ctx.fillRect(Math.max(312, sx), 320, Math.min(120, 712 - Math.max(312, sx)), 10);
+      } else {
+        ctx.fillStyle = '#ffffff'; ctx.font = '800 26px Nunito, sans-serif';
+        ctx.fillText('Antigravity · terminal', 512, 52);
+        ctx.fillStyle = '#232a3a'; ctx.fillRect(262, 70, 500, 14);
+        ctx.fillStyle = selfDestructProgress > 70 ? '#ff3d00' : '#ffab00';
+        ctx.fillRect(262, 70, 5 * selfDestructProgress, 14);
+        ctx.fillStyle = '#e2e8f0'; ctx.font = '700 13px monospace';
+        ctx.fillText(`AUTO-DESTRUCT CODE: ${Math.floor(selfDestructProgress)}%`, 512, 104);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#7ee787'; ctx.font = '17px monospace';
+        typedTextLines.slice(-11).forEach((line, idx) => ctx.fillText(line.slice(0, 52), 196, 140 + idx * 25));
+        if (Math.floor(t * 2) % 2) ctx.fillRect(196, 140 + Math.min(10, typedTextLines.length) * 25 - 14, 10, 18);
+      }
+      ctx.textAlign = 'left';
       monitorTexture.needsUpdate = true;
+      mirrorMonitorToLaptop();
     }
     updateMonitorScreen();
 
@@ -1521,29 +1554,52 @@
       return new THREE.CanvasTexture(c);
     }
 
-        function createTileFloorTexture() {
+    // Piso no estilo do mundo do DS (Bruno Simon): lajotas laranja-pêssego com juntas,
+    // leves variações de tom e folhinhas vermelhas caídas.
+    function createTileFloorTexture() {
+      const S = 1024, N = 8, T = S / N;
       const c = document.createElement('canvas');
-      c.width = 512; c.height = 512;
+      c.width = S; c.height = S;
       const ctx = c.getContext('2d');
-      ctx.fillStyle = '#eae7e1';
-      ctx.fillRect(0, 0, 512, 512);
-      ctx.strokeStyle = '#b8b4ab';
-      ctx.lineWidth = 3;
-      for (let i = 0; i <= 512; i += 128) {
-        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(512, i); ctx.stroke();
-      }
-      ctx.fillStyle = 'rgba(255,255,255,0.4)';
-      for (let x = 0; x < 512; x += 128) {
-        for (let y = 0; y < 512; y += 128) {
-          ctx.fillRect(x + 4, y + 4, 120, 3);
-          ctx.fillRect(x + 4, y + 4, 3, 120);
+      let seed = 11;
+      const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+      ctx.fillStyle = '#d9853f';
+      ctx.fillRect(0, 0, S, S);
+      const tones = ['#f2a45e', '#efa058', '#f4ab66', '#ec9a50', '#f6b06c'];
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const px = x * T + 3, py = y * T + 3, w = T - 6;
+          ctx.fillStyle = tones[Math.floor(rnd() * tones.length)];
+          ctx.fillRect(px, py, w, w);
+          // Bisel: luz no topo/esquerda e sombra embaixo/direita
+          ctx.fillStyle = 'rgba(255, 230, 190, 0.35)';
+          ctx.fillRect(px, py, w, 4); ctx.fillRect(px, py, 4, w);
+          ctx.fillStyle = 'rgba(150, 70, 20, 0.22)';
+          ctx.fillRect(px, py + w - 4, w, 4); ctx.fillRect(px + w - 4, py, 4, w);
+          // Manchinhas de textura de pedra
+          for (let k = 0; k < 6; k++) {
+            ctx.fillStyle = `rgba(190, 100, 40, ${0.06 + rnd() * 0.08})`;
+            ctx.beginPath();
+            ctx.arc(px + rnd() * w, py + rnd() * w, 3 + rnd() * 9, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
+      }
+      // Folhinhas vermelhas e alaranjadas caídas (como no mundo do DS)
+      for (let i = 0; i < 70; i++) {
+        ctx.save();
+        ctx.translate(rnd() * S, rnd() * S);
+        ctx.rotate(rnd() * Math.PI);
+        ctx.fillStyle = ['#c0392b', '#d35400', '#a8322a', '#e67e22'][Math.floor(rnd() * 4)];
+        ctx.fillRect(-5, -3, 10, 6);
+        ctx.restore();
       }
       const tex = new THREE.CanvasTexture(c);
       tex.wrapS = THREE.RepeatWrapping;
       tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(8, 6);
+      tex.repeat.set(7.5, 5.4);
+      tex.encoding = THREE.sRGBEncoding;
+      tex.anisotropy = 8;
       return tex;
     }
 
@@ -1702,6 +1758,18 @@
     const dynamicObstacles = []; // Objetos que sofrem impulso físico, tombam e colidem entre si
     const occluderMeshes = [];   // Objetos grandes que ficam translúcidos (80-85%) quando obstruem a visão do carrinho
     const occludedMeshesSet = new Set();
+    // Registra um objeto fixo grande como "oclusor": fica 90% transparente quando tapa o carrinho.
+    // Cada malha ganha material próprio para que só o objeto da frente fique transparente.
+    function registerOccluderTree(root) {
+      if (!root) return;
+      root.traverse((m) => {
+        if (!m.isMesh || m.isSprite || m.userData.occluderRegistered) return;
+        if (m.material && m.material.isShaderMaterial) return;
+        m.material = Array.isArray(m.material) ? m.material.map(x => x.clone()) : m.material.clone();
+        m.userData.occluderRegistered = true;
+        occluderMeshes.push(m);
+      });
+    }
     const occlusionRaycaster = new THREE.Raycaster();
     const growablePlants = [];
     const grabbableItems = [];
@@ -1852,8 +1920,10 @@
     const floorGeo = new THREE.PlaneGeometry(360, 260);
     const floorMat = new THREE.MeshStandardMaterial({
       map: createTileFloorTexture(),
-      roughness: 0.38,
-      metalness: 0.05
+      roughness: 0.62,
+      metalness: 0.0,
+      envMap: envMapTexture,
+      envMapIntensity: 0.25
     });
     const bedroomFloor = new THREE.Mesh(floorGeo, floorMat);
     bedroomFloor.rotation.x = -Math.PI / 2;
@@ -1874,6 +1944,10 @@
       const baseboard = new THREE.Mesh(new THREE.BoxGeometry(w > d ? w : 1.2, 2.5, d > w ? d : 1.2), baseboardMat);
       baseboard.position.set(px, py - h / 2 + 1.25, pz);
       bedroomWorld.add(baseboard);
+      // Paredes ficam 90% transparentes quando estão entre a câmera e o carrinho
+      registerOccluderTree(wall);
+      registerOccluderTree(baseboard);
+      wall.material.userData.isWall = true;
       return wall;
     }
 
@@ -1896,6 +1970,7 @@
     stripedRug.position.set(-18, -35.92, 58);
     stripedRug.receiveShadow = true;
     bedroomWorld.add(stripedRug);
+    stripedRug.visible = false; // o piso inteiro agora segue o estilo do mundo do DS (lajotas + gramados)
 
     // 3. ESTRUTURA METÁLICA MOTORIZADA DA MESA STANDING DESK (Colunas Telescópicas em T)
     const deskLegMat = new THREE.MeshStandardMaterial({ color: 0x111215, roughness: 0.32, metalness: 0.7 });
@@ -1908,11 +1983,14 @@
       bedroomWorld.add(foot);
 
       // Colunas telescópicas duplas motorizadas
-      const col = new THREE.Mesh(new THREE.BoxGeometry(4.8, 35.0, 4.8), deskLegMat);
-      col.position.set(lx, -17.5, 0);
+      // Coluna termina embaixo do tampo (y -1.8). Antes ia até y = 0 e o topo dela aparecia
+      // como um quadrado preto "piscando" em cima da mesa (z-fighting com o tampo).
+      const col = new THREE.Mesh(new THREE.BoxGeometry(4.8, 33.1, 4.8), deskLegMat);
+      col.position.set(lx, -35.0 + 33.1 / 2, 0);
       col.castShadow = true;
       bedroomWorld.add(col);
 
+      registerOccluderTree(col);
       // Registra obstáculos para as colunas no chão
       obstacles.push({ x: lx, z: 0, r: 4.8, name: 'COLUNA STANDING DESK MOTORIZADA', isStatic: true, level: 'floor' });
     });
@@ -1921,6 +1999,7 @@
     const crossbeam = new THREE.Mesh(new THREE.BoxGeometry(136, 2.4, 3.2), deskLegMat);
     crossbeam.position.set(0, -2.1, 0);
     bedroomWorld.add(crossbeam);
+    registerOccluderTree(crossbeam);
 
     // Controlador Digital com Display LED da Standing Desk
     const deskCtrlMesh = new THREE.Mesh(
@@ -2384,6 +2463,49 @@
     dualArmGroup.add(arm2Swivel, arm2Lower, arm2Elbow, arm2Upper, laptopTray);
     deskWorld.add(dualArmGroup);
 
+    // Correção de design: os segmentos do braço atravessavam a tela do monitor e o corpo do notebook.
+    // Agora cada segmento é alinhado entre dois pontos que ficam ATRÁS da tela e ABAIXO da bandeja.
+    function alignBoxBetween(mesh, a, b) {
+      const len = a.distanceTo(b);
+      mesh.geometry.dispose();
+      const p = mesh.userData.size || [1.3, 1.1];
+      mesh.geometry = new THREE.BoxGeometry(p[0], p[1], len);
+      mesh.position.copy(a).add(b).multiplyScalar(0.5);
+      mesh.rotation.set(0, 0, 0);
+      mesh.lookAt(b);
+    }
+    function alignCylinderBetween(mesh, a, b) {
+      const dir = b.clone().sub(a);
+      const len = dir.length();
+      mesh.scale.set(1, len / mesh.geometry.parameters.height, 1);
+      mesh.position.copy(a).add(b).multiplyScalar(0.5);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    }
+    (function fixMonitorArms() {
+      const V = (x, y, z) => new THREE.Vector3(x, y, z);
+      // Braço 1 → monitor: base da morsa → cotovelo atrás → placa VESA nas costas da tela
+      const a1 = V(-4.5, 4.6, -20.2), e1 = V(1.8, 5.4, -20.8), v1 = V(6.5, 9.2, -16.0);
+      arm1Lower.userData.size = [1.4, 1.1]; alignBoxBetween(arm1Lower, a1, e1);
+      arm1Elbow.position.copy(e1);
+      arm1Upper.userData.size = [1.35, 1.3]; alignBoxBetween(arm1Upper, e1, v1);
+      vesaHead.position.set(6.5, 9.2, -14.95);           // atrás da traseira curva (z ≈ -14.35)
+      const vesaNeck = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 1.1), armGlossMat);
+      vesaNeck.position.set(6.5, 9.2, -15.6);
+      dualArmGroup.add(vesaNeck);
+      warningMesh.position.copy(a1.clone().lerp(e1, 0.5)).add(V(0, 0.62, 0));
+      warningMesh.rotation.set(-Math.PI / 2, 0, 0);
+      alignCylinderBetween(monCable1, e1.clone().add(V(0, -0.75, 0)), v1.clone().add(V(0, -0.8, 0)));
+      alignCylinderBetween(monCable2, a1.clone().add(V(0, -0.65, 0)), e1.clone().add(V(0, -0.65, 0)));
+      // Braço 2 → notebook: passa por baixo da bandeja e sobe por um poste até ela
+      const a2 = V(-4.5, 3.0, -20.2), e2 = V(-13.5, 1.6, -18.6), t2 = V(-18.6, 1.3, -11.2);
+      arm2Lower.userData.size = [1.3, 1.0]; alignBoxBetween(arm2Lower, a2, e2);
+      arm2Elbow.position.copy(e2);
+      arm2Upper.userData.size = [1.25, 1.0]; alignBoxBetween(arm2Upper, e2, t2);
+      const trayPost = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 16), armGlossMat);
+      alignCylinderBetween(trayPost, t2, V(-18.6, 3.0, -11.2));
+      dualArmGroup.add(trayPost);
+    })();
+
     // --- NOTEBOOK ACER NITRO V 15 (Instalado na Bandeja Inclinada do Braço com Cabos Reais!) ---
     const laptopGroup = new THREE.Group();
     const laptopChassisMat = new THREE.MeshStandardMaterial({ color: 0x1e2024, roughness: 0.35, metalness: 0.3 });
@@ -2431,7 +2553,7 @@
     lapScreenGroup.position.set(0, 0.25, -4.9); lapScreenGroup.rotation.x = -0.38;
     const lapLid = new THREE.Mesh(new THREE.BoxGeometry(14.4, 9.4, 0.35), laptopChassisMat);
     lapLid.position.set(0, 4.7, 0); lapLid.castShadow = true; lapScreenGroup.add(lapLid);
-    const lapDisplay = new THREE.Mesh(new THREE.PlaneGeometry(13.6, 8.4), new THREE.MeshBasicMaterial({ map: createLaptopScreenTexture() }));
+    const lapDisplay = new THREE.Mesh(new THREE.PlaneGeometry(13.6, 8.4), new THREE.MeshBasicMaterial({ map: laptopScreenTexture }));
     lapDisplay.position.set(0, 4.7, 0.19); lapScreenGroup.add(lapDisplay);
     // Webcam no topo da moldura
     const lapWebcam = new THREE.Mesh(new THREE.CircleGeometry(0.09, 12), new THREE.MeshBasicMaterial({ color: 0x111111 }));
@@ -2445,8 +2567,30 @@
     laptopGroup.position.set(-19, 2.5, -8);
     laptopGroup.rotation.x = 0.32;
     laptopGroup.rotation.y = 0.24;
+
+    // Teclas de verdade no notebook (teclado ABNT com teclas individuais + barra de espaço)
+    (function addLaptopKeycaps() {
+      const capGeo = new THREE.BoxGeometry(0.66, 0.1, 0.56);
+      const capMat = new THREE.MeshStandardMaterial({ color: 0x2a2e36, roughness: 0.55 });
+      const cols = 15, rows = 5;
+      const caps = new THREE.InstancedMesh(capGeo, capMat, cols * rows);
+      const m = new THREE.Object3D();
+      let n = 0;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          m.position.set(-6.1 + c * 0.86 + (r % 2) * 0.2, 0.37, -3.3 + r * 0.82);
+          m.updateMatrix();
+          caps.setMatrixAt(n++, m.matrix);
+        }
+      }
+      caps.instanceMatrix.needsUpdate = true;
+      const space = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.1, 0.56), capMat);
+      space.position.set(-0.6, 0.37, 0.9);
+      lapBaseGroup.add(caps, space);
+      wasdAccent.position.y = 0.44;
+    })();
     deskWorld.add(laptopGroup);
-    obstacles.push({ x: -19, z: -8, r: 7.2, name: 'NOTEBOOK ACER NITRO V 15 NO BRAÇO ARTICULADO' });
+    obstacles.push({ x: -19, z: -8, r: 6.4, box: { hx: 7.6, hz: 5.4 }, boxRot: 0.24, name: 'NOTEBOOK ACER NITRO V 15 NO BRAÇO ARTICULADO' });
 
     // --- MONITOR LG ULTRAGEAR™ OLED 45" CURVO 800R (Suspenso pelo Braço Articulado a Gás!) ---
     const monitorGroup = new THREE.Group();
@@ -3019,19 +3163,19 @@
     // CIRCUITO DO RAVI — PISTA TÉCNICA ORIGINAL (chicanes, grampos e "S" em sequência)
     // Mesa → rampa de papelão → circuito embaixo da mesa → rampa de retorno → mesa
     // ============================================================================
-    const TRACK_WIDTH = 7.2;
+    const TRACK_WIDTH = 9.2;
     // [x, z, nível]  d = mesa · r = rampa · f = chão do quarto (sentido da volta)
     const TRACK_POINTS = [
       [-79, 0, 'd'], [-77, 12, 'd'], [-83, 18, 'd'], [-88, 18, 'd'],
       [-91, 18, 'r'], [-134, 18, 'r'],
       [-142, 17, 'f'], [-152, 8, 'f'], [-155, -8, 'f'], [-150, -24, 'f'], [-136, -34, 'f'],
       [-110, -38, 'f'], [-70, -38, 'f'], [-30, -35, 'f'], [10, -40, 'f'], [40, -36, 'f'],
-      [55, -26, 'f'], [58, -10, 'f'], [57, 8, 'f'], [50, 22, 'f'], [36, 30, 'f'],
+      [54, -26, 'f'], [54, -10, 'f'], [53, 8, 'f'], [48, 22, 'f'], [36, 30, 'f'],
       [18, 25, 'f'], [0, 33, 'f'], [-18, 25, 'f'], [-36, 33, 'f'], [-54, 27, 'f'], [-72, 36, 'f'],
       [-90, 52, 'f'], [-112, 58, 'f'], [-140, 60, 'f'], [-156, 54, 'f'], [-158, 44, 'f'], [-150, 38, 'f'],
       [-142, 38, 'f'], [-135, 38, 'r'], [-91, 38, 'r'],
       [-86, 38, 'd'], [-72, 44, 'd'], [-50, 46, 'd'], [-30, 43, 'd'], [-10, 46, 'd'], [10, 43, 'd'],
-      [30, 46, 'd'], [50, 45, 'd'], [62, 38, 'd'], [68, 22, 'd'], [68, 0, 'd'], [68, -20, 'd'],
+      [30, 46, 'd'], [50, 45, 'd'], [61, 38, 'd'], [66, 22, 'd'], [66, 0, 'd'], [66, -20, 'd'],
       [62, -36, 'd'], [48, -44, 'd'], [20, -42, 'd'], [-10, -46, 'd'], [-40, -42, 'd'], [-62, -44, 'd'],
       [-76, -34, 'd'], [-80, -16, 'd']
     ];
@@ -3045,11 +3189,21 @@
       return 'floor';
     }
     // Altura da superfície da pista (acompanha mesa, rampa e chão, sempre um fio acima)
-    function trackSurfaceY(x, level) {
-      if (level === 'desk') return 0.165;
+    // Topo exato da caixa da rampa de papelão: centro (-112.5, -17.925), espessura 0.35, inclinação 0.6728 rad
+    const RAMP_TOP_SLOPE = Math.tan(Math.atan2(35.85, 45));
+    const RAMP_TOP_X0 = -112.5 - 0.175 * Math.sin(Math.atan2(35.85, 45));
+    const RAMP_TOP_Y0 = -17.925 + 0.175 * Math.cos(Math.atan2(35.85, 45));
+    function trackSurfaceY(x, level, z = 0) {
+      if (level === 'desk') {
+        // Já passou da borda da mesa: segue o topo da rampa
+        if (x < -90) return THREE.MathUtils.clamp(RAMP_TOP_Y0 + (x - RAMP_TOP_X0) * RAMP_TOP_SLOPE + 0.04, -35.78, 0.29);
+        // Em cima da aba de papelão (x -90..-80) a pista sobe para não ficar escondida embaixo dela
+        const onLip = x < -79.6 && ((z > 9.8 && z < 26.2) || (z > 29.8 && z < 46.2));
+        return onLip ? 0.27 : 0.165;
+      }
       if (level === 'floor') return -35.815;
-      const p = THREE.MathUtils.clamp((-DESK_HALF_W - x) / 45, 0, 1);
-      return 0.14 - p * 35.85 + THREE.MathUtils.lerp(0.025, -0.105, p) + 0.09 * Math.sin(Math.PI * p);
+      const top = RAMP_TOP_Y0 + (x - RAMP_TOP_X0) * RAMP_TOP_SLOPE;
+      return THREE.MathUtils.clamp(top + 0.04, -35.78, 0.29);
     }
 
     // Amostras ao longo da pista (posição, nível e distância acumulada)
@@ -3063,7 +3217,7 @@
         const steps = Math.max(4, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.7));
         for (let s = 0; s < steps; s++) {
           const p = trackCurve.getPoint((i + s / steps) / n);
-          trackSamples.push({ x: p.x, z: p.z, y: trackSurfaceY(p.x, level), level: level === 'ramp' ? 'ramp' : level, seg: i, dist: 0 });
+          trackSamples.push({ x: p.x, z: p.z, y: trackSurfaceY(p.x, level, p.z), level: level === 'ramp' ? 'ramp' : level, seg: i, dist: 0 });
         }
       }
       for (let k = 1; k < trackSamples.length; k++) {
@@ -3153,6 +3307,41 @@
       return mesh;
     })();
 
+    // Atalho escondido embaixo da mesa: sai da reta de trás, sobe a rampa do apoio de pés,
+    // salta e reencontra a pista no "S". Mesma textura, pista um pouco mais estreita.
+    function buildTrackRibbon(points, width) {
+      const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(p[0], p[1], p[2])), false, 'centripetal');
+      const N = Math.max(8, Math.ceil(curve.getLength() / 0.6));
+      const pts = curve.getSpacedPoints(N);
+      const positions = [], uvs = [], idx = [];
+      let dist = 0;
+      for (let k = 0; k <= N; k++) {
+        const p = pts[k], a = pts[Math.max(0, k - 1)], b = pts[Math.min(N, k + 1)];
+        let tx = b.x - a.x, tz = b.z - a.z;
+        const len = Math.hypot(tx, tz) || 1; tx /= len; tz /= len;
+        const nx = -tz, nz = tx, half = width / 2;
+        if (k > 0) dist += p.distanceTo(pts[k - 1]);
+        positions.push(p.x + nx * half, p.y, p.z + nz * half, p.x - nx * half, p.y, p.z - nz * half);
+        uvs.push(0, dist / 8, 1, dist / 8);
+        if (k < N) { const i0 = k * 2; idx.push(i0, i0 + 2, i0 + 1, i0 + 1, i0 + 2, i0 + 3); }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+      const mesh = new THREE.Mesh(geo, trackMesh.material);
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+      return mesh;
+    }
+    (function createHiddenShortcut() {
+      const FY = -35.815, ramp = (z) => -36 + footrestTopAt(z) + 0.04;
+      buildTrackRibbon([[0, FY, -37.5], [2, FY, -30], [4, FY, -22], [4, FY, -16.6]], 7);
+      buildTrackRibbon([[4, ramp(-15.3), -15.3], [4, ramp(-10), -10], [4, ramp(-4.7), -4.7]], 7);
+      buildTrackRibbon([[4, FY, 4], [5, FY, 11], [7, FY, 19], [9, FY, 25], [11, FY, 28.5]], 7);
+    })();
+
     // Faixa quadriculada de largada
     const START_SAMPLE = nearestTrackSample(-10, 46, 'desk');
     (function createStartLine() {
@@ -3235,10 +3424,10 @@
       return gate;
     }
     createRaceGate(-10, 46, 'desk', 'LARGADA', true);
-    createRaceGate(68, 0, 'desk', 'PORTAL 1');
+    createRaceGate(66, 0, 'desk', 'PORTAL 1');
     createRaceGate(-40, -42, 'desk', 'PORTAL 2');
     createRaceGate(-155, -8, 'floor', 'PORTAL 3');
-    createRaceGate(40, -36, 'floor', 'PORTAL 4');
+    createRaceGate(-40, -35, 'floor', 'PORTAL 4'); // antes do atalho do apoio de pés
     createRaceGate(0, 33, 'floor', 'PORTAL 5');
     createRaceGate(-140, 60, 'floor', 'PORTAL 6');
 
@@ -3642,7 +3831,7 @@
     });
 
     deskWorld.add(aquariumGroup);
-    obstacles.push({ x: AQ_X, z: AQ_Z, r: 8.5, name: 'AQUÁRIO AQUASCAPE COM 3 PEIXES TROPICAIS (A 10CM DA BORDA)' });
+    obstacles.push({ x: AQ_X, z: AQ_Z, r: 8.5, box: { hx: 9.4, hz: 5.8 }, boxRot: 0, name: 'AQUÁRIO AQUASCAPE COM 3 PEIXES TROPICAIS (A 10CM DA BORDA)' });
 
     // 9. SEGUNDO MONITOR DESLIGADO (MONITOR 2 — AO LADO DO MONITOR 1, LIGA COM O CABO HDMI DO PS5!)
     const monitor2Canvas = document.createElement('canvas');
@@ -3769,7 +3958,7 @@
     ps5ConsoleGroup.add(usbPortA, powerBtnPs5);
 
     deskWorld.add(ps5ConsoleGroup);
-    obstacles.push({ x: PS5_X, z: PS5_Z, r: 4.5, name: 'CONSOLE PLAYSTATION 5 (PS5)' });
+    obstacles.push({ x: PS5_X, z: PS5_Z, r: 4.5, box: { hx: 3, hz: 3.8 }, boxRot: 0, name: 'CONSOLE PLAYSTATION 5 (PS5)' });
 
     // ============================================================================
     // CABOS HDMI INTERATIVOS (NOTEBOOK -> MONITOR 1 & PS5 -> MONITOR 2)
@@ -3964,7 +4153,7 @@
 
     deskWorld.add(radioGroup);
     // Rádio é o item central de uma "ilha" da mesa: fixo, mas interativo (toca as músicas do canal)
-    const radioObs = { x: -54, z: -18, r: 6.2, name: 'RÁDIO RETRÔ BOOMBOX FM 📻', isStatic: true };
+    const radioObs = { x: -54, z: -18, r: 5.2, box: { hx: 5.9, hz: 2.3 }, boxRot: 0.42, name: 'RÁDIO RETRÔ BOOMBOX FM 📻', isStatic: true };
     obstacles.push(radioObs);
     const radioParts = { tunerNeedle, antenna };
 
@@ -3972,13 +4161,21 @@
     // Coordenadas exatas distribuídas ao longo das retas e curvas do circuito da pista de corrida!
     const turboBatteries = [];
     // Pilhas distribuídas sobre o circuito (4 na mesa e 4 embaixo dela): [x, z, rotY, y, nível]
+    // Pilhas na pista (deslocadas para as bordas e giradas) + pilhas escondidas fora da pista
     const trackBatteryCoords = [
-      [30, 46, 'desk'], [68, -20, 'desk'], [20, -42, 'desk'], [-79, -28, 'desk'],
-      [-110, -38, 'floor'], [57, 8, 'floor'], [-36, 33, 'floor'], [-112, 58, 'floor']
-    ].map(([x, z, level]) => {
+      // [x, z, nível, deslocamento lateral, giro extra]
+      [30, 46, 'desk', 2.6, 0.5], [66, -20, 'desk', -2.4, 1.1], [20, -42, 'desk', 2.2, -0.4], [-79, -28, 'desk', -2.0, 0.9],
+      [-110, -38, 'floor', 2.5, -0.7], [53, 8, 'floor', -2.6, 0.6], [-36, 33, 'floor', 2.4, 1.3], [-112, 58, 'floor', -2.2, -1.0]
+    ].map(([x, z, level, off, rot]) => {
       const f = trackFrameAt(nearestTrackSample(x, z, level));
-      return [f.s.x, f.s.z, Math.atan2(-f.tz, f.tx), f.s.y, level];
-    });
+      return [f.s.x + f.nx * off, f.s.z + f.nz * off, Math.atan2(-f.tz, f.tx) + rot, f.s.y, level];
+    }).concat([
+      // Escondidas: atrás do aquário, canto da luminária, ao lado do pódio (mesa)
+      [86, -14, 0.8, 0.165, 'desk'], [-76, -50, -0.6, 0.165, 'desk'], [-1, 51, 1.6, 0.165, 'desk'],
+      // Topo da rampa do atalho, atrás da estante, atrás da cômoda e atrás do posto (chão)
+      [4, -7.5, 0.2, -36 + footrestTopAt(-7.5) + 0.05, 'floor'], [88, -58, 2.4, -35.84, 'floor'],
+      [-88, -66, -1.2, -35.84, 'floor'], [-138, 90, 0.9, -35.84, 'floor']
+    ]);
 
     const batBlackMat = new THREE.MeshStandardMaterial({ color: 0x16181c, roughness: 0.25, metalness: 0.3 });
     const batCopperMat = new THREE.MeshStandardMaterial({ color: 0xd9822b, metalness: 0.75, roughness: 0.2 });
@@ -4031,7 +4228,8 @@
       usbPlug.position.set(2.5, 0.1, 0.8);
       cableGroup.add(usbPlug);
       deskWorld.add(cableGroup);
-      const usbObs = { x, z, r: 2.6, name: 'CABO USB-C ENROLADO' };
+      // Cabo enrolado é baixinho: o carrinho passa por cima (h pequeno), mas ainda dá para pegá-lo
+      const usbObs = { x, z, r: 2.6, h: 0.1, name: 'CABO USB-C ENROLADO' };
       obstacles.push(usbObs);
       registerGrabbable({
         id: 'usb_' + x, name: 'Cabo USB-C Enrolado', group: cableGroup, obs: usbObs,
@@ -4043,39 +4241,48 @@
 
     // 13. CAIXINHAS DE GUARDAR CLIPS (COM CLIPS COLORIDOS DENTRO E ESPALHADOS!)
     const clipGeometry = new THREE.TorusGeometry(0.35, 0.05, 8, 16);
-    // Clipes caem da caixinha enquanto ela é arrastada (1 a 2 por trecho, até esvaziar)
+    const CLIP_COLORS = [0x00e5ff, 0xff4081, 0xffeb3b, 0x76ff03, 0xd0d7de];
+    const clipMaterials = CLIP_COLORS.map(c => new THREE.MeshStandardMaterial({ color: c, metalness: 0.6, roughness: 0.2 }));
+    const CLIPS_PER_BOX = 100;
+    const CLIPS_SHOWN_INSIDE = 24; // clipes visíveis na pilha (representam os 100)
+    // Clipes caem da caixinha enquanto ela é arrastada (1 a 2 por trecho, até esvaziar os 100)
+    function updateClipPile(cb) {
+      const shown = Math.ceil((cb.count / CLIPS_PER_BOX) * CLIPS_SHOWN_INSIDE);
+      cb.inside.forEach((c, i) => { c.visible = i < shown; });
+    }
     function dropClipsWhileDragging(item) {
       const cb = item.clipBox;
       const gp = item.group.position;
       cb.travel += Math.hypot(gp.x - cb.lastX, gp.z - cb.lastZ);
       cb.lastX = gp.x; cb.lastZ = gp.z;
-      if (cb.travel < 6) return;
+      if (cb.travel < 2.2 || cb.count <= 0) return;
       cb.travel = 0;
-      const remaining = cb.inside.filter(c => c.visible);
-      if (!remaining.length) return;
-      const count = Math.min(remaining.length, 1 + Math.round(Math.random()));
+      const count = Math.min(cb.count, 1 + Math.round(Math.random()));
       for (let i = 0; i < count; i++) {
-        const src = remaining[i];
-        src.visible = false;
-        const dropped = new THREE.Mesh(clipGeometry, src.material);
-        dropped.scale.copy(src.scale);
+        const dropped = new THREE.Mesh(clipGeometry, clipMaterials[(cb.count + i) % clipMaterials.length]);
+        dropped.scale.set(1.6, 0.7, 1);
         dropped.rotation.set(Math.PI / 2, 0, Math.random() * Math.PI);
         dropped.position.set(gp.x + (Math.random() - 0.5) * 1.6, surfaceBaseY(gp.y) + 0.08, gp.z + (Math.random() - 0.5) * 1.6);
         (gp.y > -15 ? deskWorld : bedroomWorld).add(dropped);
         cb.dropped.push(dropped);
       }
-      if (count === remaining.length) {
+      cb.count -= count;
+      updateClipPile(cb);
+      if (cb.count === 0) {
         showCarSpeech('A caixinha esvaziou!', 1800);
-        logInteractionEvent('📎 A caixinha de clipes ficou vazia de tanto arrastar!');
+        logInteractionEvent('📎 Os 100 clipes caíram da caixinha!');
+      } else if (cb.count % 25 === 0 || cb.count % 25 === 1) {
+        setStatusBanner(`📎 Caixinha de clipes: ${cb.count} restantes`);
       }
     }
     function resetClipBox(item) {
       const cb = item.clipBox;
-      cb.inside.forEach(c => { c.visible = true; });
+      cb.count = CLIPS_PER_BOX;
       cb.dropped.forEach(c => { if (c.parent) c.parent.remove(c); });
       cb.dropped.length = 0;
       cb.travel = 0;
       cb.lastX = item.initX; cb.lastZ = item.initZ;
+      updateClipPile(cb);
     }
 
     function createClipBox(x, z) {
@@ -4097,36 +4304,25 @@
       magRim.position.y = 1.4;
       cbGroup.add(magRim);
 
-      // Clips metálicos coloridos dentro da caixinha e ao redor na mesa!
-      const clipColors = [0x00e5ff, 0xff4081, 0xffeb3b, 0x76ff03, 0xd0d7de];
+      // Pilha de clipes coloridos (100 clipes por caixa, representados pela pilha visível)
       const insideClips = [];
-      for (let i = 0; i < 18; i++) {
-        const clip = new THREE.Mesh(
-          clipGeometry,
-          new THREE.MeshStandardMaterial({ color: clipColors[i % clipColors.length], metalness: 0.6, roughness: 0.2 })
-        );
+      for (let i = 0; i < CLIPS_SHOWN_INSIDE; i++) {
+        const clip = new THREE.Mesh(clipGeometry, clipMaterials[i % clipMaterials.length]);
         clip.scale.set(1.6, 0.7, 1);
         clip.rotation.x = Math.PI / 2 + (Math.random() - 0.5) * 0.4;
         clip.rotation.z = Math.random() * Math.PI;
-        if (i < 11) {
-          // Dentro/no topo da caixinha (caem pelo caminho quando a caixa é arrastada)
-          clip.position.set((Math.random() - 0.5) * 2.2, 1.55 + (i % 3) * 0.05, (Math.random() - 0.5) * 2.2);
-          cbGroup.add(clip);
-          insideClips.push(clip);
-        } else {
-          // Espalhados ao redor na mesa (ficam no lugar; antes andavam junto com a caixa)
-          clip.position.set(x + 2.5 + (Math.random() - 0.5) * 3.5, 0.08, z + (Math.random() - 0.5) * 4.5);
-          deskWorld.add(clip);
-        }
+        clip.position.set((Math.random() - 0.5) * 2.4, 0.4 + (i / CLIPS_SHOWN_INSIDE) * 1.2, (Math.random() - 0.5) * 2.4);
+        cbGroup.add(clip);
+        insideClips.push(clip);
       }
 
       deskWorld.add(cbGroup);
       const clipObs = { x, z, r: 2.4, name: 'CAIXINHA ORGANIZADORA DE CLIPS 📎' };
       obstacles.push(clipObs);
       registerGrabbable({
-        id: 'clipbox_' + x, name: 'Caixinha de Clips', group: cbGroup, obs: clipObs,
+        id: 'clipbox_' + x, name: 'Caixinha de Clips (100)', group: cbGroup, obs: clipObs,
         initX: x, initY: 0, initZ: z, initRotY: 0, grabRadius: 5.5,
-        clipBox: { inside: insideClips, dropped: [], travel: 0, lastX: x, lastZ: z }
+        clipBox: { inside: insideClips, dropped: [], travel: 0, lastX: x, lastZ: z, count: CLIPS_PER_BOX }
       });
     }
     createClipBox(-16, 24);
@@ -4396,7 +4592,8 @@
         p.z = size.z ? (mz - box.min.z) / size.z : 0.5;
         p.rxz = Math.hypot(mx - cx, mz - cz) / halfXZ;
         p.rxy = Math.hypot(mx - cx, my - cy) / halfXY;
-        col.setHex(spec.paint(p, n, opts || {}));
+        // Cor em sRGB convertida para linear: o tom final na tela fica igual ao planejado (antes clareava/lavava)
+        col.setHex(spec.paint(p, n, opts || {})).convertSRGBToLinear();
         if (!spec.noAO) col.multiplyScalar(0.8 + 0.2 * THREE.MathUtils.smoothstep(p.y, 0, 0.22));
         for (let k = 0; k < 3; k++) {
           colors[(i + k) * 3] = col.r; colors[(i + k) * 3 + 1] = col.g; colors[(i + k) * 3 + 2] = col.b;
@@ -4485,7 +4682,11 @@
 
         const x = opts.x || 0, z = opts.z || 0;
         const onFloor = opts.floor === true;
-        const y = opts.y !== undefined ? opts.y : (onFloor ? FLOOR_SURFACE_Y : deskY(x, z));
+        let y = opts.y !== undefined ? opts.y : (onFloor ? FLOOR_SURFACE_Y : deskY(x, z));
+        // Objetos no chão do quarto assentam na superfície real (gramado da ilha ou piso), sem flutuar
+        if (!opts.parent && Math.abs(y - FLOOR_SURFACE_Y) < 0.7 && typeof floorExtraHeight === 'function') {
+          try { y = FLOOR_SURFACE_Y + Math.max(0, floorExtraHeight(x, z)); } catch (e) { /* ilhas ainda não criadas */ }
+        }
         container.position.set(x, y, z);
         container.rotation.y = opts.rotY || 0;
         container.name = opts.name || spec.name;
@@ -4500,7 +4701,8 @@
         if (opts.physics !== false) {
           const r = opts.r !== undefined ? opts.r : Math.max(0.6, Math.max(dims.w, dims.d) * 0.45);
           const obs = registerDynamicObstacle({
-            obs: { x, z, r, h: dims.h, name: (opts.name || spec.name).toUpperCase() },
+            obs: Object.assign({ x, z, r, h: dims.h, name: (opts.name || spec.name).toUpperCase() },
+              spec.collider === 'circle' ? {} : { box: { hx: dims.w / 2, hz: dims.d / 2 } }),
             group: container,
             mass: opts.mass || spec.mass || 0.8,
             canTopple: opts.canTopple !== undefined ? opts.canTopple : true,
@@ -4519,7 +4721,8 @@
           }
         }
         if (opts.breakable && container.userData.obs) setupBreakable(container.userData.obs, container, opts.breakable);
-        if (opts.occluder) container.traverse((ch) => { if (ch.isMesh) occluderMeshes.push(ch); });
+        // Fixos altos (estante, cômoda, piano, postes...) ficam transparentes se taparem o carrinho
+        if (opts.occluder || (opts.isStatic && dims.h > 5)) registerOccluderTree(container);
         loaded3DModels.push({ model: container, key, opts });
         if (opts.onLoad) opts.onLoad(container);
         return container;
@@ -4554,7 +4757,7 @@
     placeModel('sticky_note', { x: -64, z: 27, rotY: 0.5, physics: false, tint: 0x8ecae6 });
 
     // Raios turbo flutuando sobre cada pilha palito
-    trackBatteryCoords.forEach(([bx, bz, , by]) => {
+    trackBatteryCoords.slice(0, 8).forEach(([bx, bz, , by]) => { // as escondidas não têm raio sinalizando
       placeModel('lightning_bolt', {
         x: bx, z: bz, y: by + 2.4, physics: false,
         onLoad: (bolt) => floatingProps.push({ obj: bolt, baseY: by + 2.4, spin: 1.6, bob: 0.25, phase: bx * 0.1 + bz * 0.07 })
@@ -5213,14 +5416,14 @@
     });
 
     // Árvores (folhagem com shader de vento)
-    createTree(-128, 84, ISLAND_Y, 0.9, 0);
+    createTree(-110, 80, ISLAND_Y, 0.9, 0); // fora do prédio do posto
     createTree(-148, -64, ISLAND_Y, 0.8, 2);
     createTree(112, -54, ISLAND_Y, 0.85, 1);
     createTree(-60, 86, ISLAND_Y, 0.9, 1);
     createTree(-43, 87, ISLAND_Y, 0.7, 0);
     createTree(81, 76, ISLAND_Y, 0.75, 0);
     createTree(-150, 70, FLOOR_SURFACE_Y, 0.8, 2);
-    createTree(52, 86, FLOOR_SURFACE_Y, 0.85, 1);
+    createTree(108, 64, FLOOR_SURFACE_Y, 0.85, 1);
 
     // Grama solta na margem do lago e perto das árvores do chão
     (function shoreGrass() {
@@ -5252,13 +5455,13 @@
       sign.position.set(0, 6.6, 3.52);
       g.add(body, roof, door, sign);
       scene.add(g);
-      obstacles.push({ x: -124, z: 82, r: 6, h: 9, name: 'POSTO DO BOMBEIRO', isStatic: true, level: 'floor' });
+      obstacles.push({ x: -124, z: 82, r: 5, box: { hx: 5.6, hz: 3.6 }, boxRot: 0.35, h: 9, name: 'POSTO DO BOMBEIRO', isStatic: true, level: 'floor' });
       return g;
     })();
-    placeModel('brick_flemish_bond', { x: -112, z: 86, y: ISLAND_Y, rotY: -0.3, isStatic: true, r: 4.2, name: 'Muro de Tijolos' });
+    placeModel('brick_flemish_bond', { x: -114, z: 88, y: ISLAND_Y, rotY: -0.3, isStatic: true, r: 4.2, name: 'Muro de Tijolos' });
     placeModel('health_pickup', { x: -116, z: 74, y: ISLAND_Y + 2.2, physics: false, name: 'Kit de Primeiros Socorros',
       onLoad: (m) => floatingProps.push({ obj: m, baseY: ISLAND_Y + 2.2, spin: 1.1, bob: 0.3, phase: 2 }) });
-    placeModel('traffic_cone_01', { x: -106, z: 80, y: ISLAND_Y, name: 'Cone do Posto', scale: 1.3 });
+    placeModel('traffic_cone_01', { x: -112, z: 74, y: ISLAND_Y, name: 'Cone do Posto', scale: 1.3 });
     placeModel('rounded_picket_fence', { x: -131, z: 69, y: ISLAND_Y, rotY: 0.6, isStatic: true, r: 2, name: 'Cerquinha do Posto' });
 
     // --- Ilha Espacial ---
@@ -5280,7 +5483,7 @@
     placeModel('electric_guitar', { x: 101, z: -52.4, y: ISLAND_Y + 1.6, rotY: 0.4, innerRot: [-0.18, 0, 0], isStatic: true, r: 1.6, name: 'Guitarra' });
     placeModel('computer_speaker_01', { x: 108, z: -37, y: ISLAND_Y, rotY: -2.4, isStatic: true, r: 1.2 });
     placeModel('computer_speaker_01', { x: 113, z: -40, y: ISLAND_Y, rotY: -2.1, isStatic: true, r: 1.2 });
-    placeModel('japanese_stone_lantern_01', { x: 95, z: -54, y: ISLAND_Y, isStatic: true, r: 1.4 });
+    placeModel('japanese_stone_lantern_01', { x: 97, z: -53, y: ISLAND_Y, isStatic: true, r: 1.4 });
 
     // --- Ilha dos Brinquedos ---
     [[-58, 72, 0xe63946, 0.3], [-54, 69, 0x3a86ff, 1.2], [-60, 76, 0xffc300, 2.1]].forEach(([dx, dz, tint, rot]) => {
@@ -5293,15 +5496,28 @@
     [[-62, 80, 0xe63946, 0.4], [-52, 88, 0x2a9d8f, 1.7], [-41, 76, 0xffb703, 2.6]].forEach(([jx, jz, tint, rot]) => {
       placeModel('jigsaw_piece', { x: jx, z: jz, y: ISLAND_Y + 0.02, rotY: rot, physics: false, tint });
     });
-    placeModel('volleyball', { x: -30, z: 66, floor: true, name: 'Bola do Ravi', mass: 0.5, onLoad: (m) => { m.userData.rolls = true; } });
+    placeModel('volleyball', {
+      x: -30, z: 66, floor: true, name: 'Bola do Ravi', mass: 0.5,
+      onLoad: (m) => {
+        // Pivô no centro da bola para ela rolar em vez de balançar pela base
+        const inner = m.children[0], half = m.userData.dims.h / 2;
+        inner.position.y = half;
+        inner.children.forEach(c => { c.position.y -= half; });
+        m.userData.rolls = true;
+        const o = m.userData.obs;
+        if (o) { o.ball = true; o.friction = 0.988; o.canTopple = false; }
+        // Bolas não são "pegáveis": só rolam e quicam quando empurradas (como o boliche do DS)
+        for (let i = grabbableItems.length - 1; i >= 0; i--) if (grabbableItems[i].group === m) grabbableItems.splice(i, 1);
+      }
+    });
 
     // --- Lago e Ilha do Lago ---
     placeModel('flower_pot_01', { x: 77, z: 75, y: ISLAND_Y, scale: 0.45, isStatic: true, r: 1.3, name: 'Vasinho' });
-    placeModel('mushroom_01', { x: 83, z: 71, y: ISLAND_Y, isStatic: true, r: 0.9 });
-    placeModel('mushroom_03', { x: 75, z: 70, y: ISLAND_Y, isStatic: true, r: 0.9, rotY: 1 });
-    placeModel('mushroom_02', { x: -38, z: 86, y: ISLAND_Y, isStatic: true, r: 0.8 });
-    placeModel('mushroom_01', { x: -135, z: 88, y: ISLAND_Y, isStatic: true, r: 0.9, rotY: 2 });
-    placeModel('park_bench', { x: 50, z: 70, floor: true, rotY: Math.PI / 2, isStatic: true, r: 3.5, name: 'Banco do Lago' });
+    placeModel('mushroom_01', { x: 83, z: 71, y: ISLAND_Y, isStatic: true, r: 1.5 });
+    placeModel('mushroom_03', { x: 75, z: 70, y: ISLAND_Y, isStatic: true, r: 1.5, rotY: 1 });
+    placeModel('mushroom_02', { x: -52, z: 90, y: ISLAND_Y, isStatic: true, r: 1.3 });
+    placeModel('mushroom_01', { x: -126, z: 70, y: ISLAND_Y, isStatic: true, r: 1.5, rotY: 2 });
+    placeModel('park_bench', { x: 100, z: 52, floor: true, rotY: Math.PI, isStatic: true, r: 3.5, name: 'Banco do Lago' });
     placeModel('japanese_stone_lantern_01', { x: 98, z: 58, floor: true, isStatic: true, r: 1.4 });
     placeModel('rock_01', { x: 95, z: 86, floor: true, isStatic: true, r: 3 });
     placeModel('rock_02', { x: 58, z: 56, floor: true, rotY: 0.8, isStatic: true, r: 3.2 });
@@ -5347,7 +5563,7 @@
       [frame, head, foot, mattress, blanket, pillow].forEach((m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); });
       scene.add(g);
       g.traverse((m) => { if (m.isMesh) occluderMeshes.push(m); });
-      [-13, 2, 17, 32].forEach(dz => obstacles.push({ x: 109, z: dz + 0, r: 12.5, h: 11, name: 'CAMA DO RAVI', isStatic: true, level: 'floor' }));
+      obstacles.push({ x: 109, z: 15, r: 12, box: { hx: 13.2, hz: 28 }, boxRot: 0, h: 11, name: 'CAMA DO RAVI', isStatic: true, level: 'floor' });
       return g;
     })();
     placeModel('cushion_01', { x: 103, z: -3, y: FLOOR_SURFACE_Y + 11, physics: false, tint: 0xffd166, rotY: 0.4 });
@@ -5434,7 +5650,7 @@
     placeModel('traffic_cone_01', { x: -146, z: 28, floor: true, name: 'Cone Quarto 1', scale: 1.35 });
     placeModel('traffic_cone_02', { x: -128, z: 4, floor: true, name: 'Cone Quarto 2', scale: 1.35 });
     placeModel('finger_post_sign_01', { x: -128, z: 48, floor: true, rotY: 0.9, isStatic: true, r: 1.2, name: 'Placa: Rampa da Mesa' });
-    placeModel('championship_podium', { x: -10, z: 51.5, y: 0, physics: false, name: 'Pódio do Circuito' });
+    placeModel('championship_podium', { x: -10, z: 52.6, y: 0, physics: false, name: 'Pódio do Circuito' });
 
     // Alarme de incêndio e interruptor na parede do fundo
     placeModel('fire_alarm_bell', {
@@ -5446,9 +5662,9 @@
     placeModel('guitar_wall_hanger_02', { x: -120, z: -72.4, y: -8.6, physics: false, name: 'Suporte de Violão' });
 
     // Postes de luz ao longo do circuito embaixo da mesa (iluminam a pista do chão)
-    [[-126, -28], [-48, -45], [48, -30], [10, 22], [-82, 48]].forEach(([lx, lz], i) => {
+    [[-126, -28], [-48, -45], [62, -38], [-14, 8], [-76, 54]].forEach(([lx, lz], i) => {
       placeModel('lamp_post_01', {
-        x: lx, z: lz, floor: true, isStatic: true, r: 0.8, rotY: i * 1.3, name: 'Poste de Luz',
+        x: lx, z: lz, floor: true, isStatic: true, r: 1.4, rotY: i * 1.3, name: 'Poste de Luz',
         onLoad: (post) => {
           const light = new THREE.PointLight(0xffd49a, 0.85, 46, 2);
           light.position.set(0, post.userData.dims.h * 0.92, 0);
@@ -5531,6 +5747,7 @@
       if (isl.id === 'fire') {
         waterLevel = 100;
         updateWaterHUD();
+        chargeBattery(100);
         splashAt(-118, ISLAND_Y + 4, 76, 30, 1.6);
         showCarSpeech('Tanque cheio! Pronto pra missão!', 2600);
         notify({ type: 'success', title: 'Tanque cheio!', description: 'O caminhãozinho está pronto para apagar incêndios.' });
@@ -5635,6 +5852,323 @@
         inner.rotateOnWorldAxis(axis, speed / Math.max(0.5, o.r));
       });
     }
+
+
+    // Objetos fixos grandes da mesa e do quarto que podem tapar a visão do carrinho
+    [monitorGroup, monitor2Group, ps5ConsoleGroup, radioGroup, laptopGroup, dualArmGroup, fireStation, aquariumGroup]
+      .forEach(registerOccluderTree);
+
+    // Modelos arredondados usam colisor circular; todos os demais usam caixa orientada (OBB)
+    ['traffic_cone_01', 'traffic_cone_02', 'apple', 'cheeseburger', 'rocket_toy_01', 'rocket_toy_02', 'desk_lamp', 'mesh_bin',
+      'flower_pot_01', 'mushroom_01', 'mushroom_02', 'mushroom_03', 'globe', 'volleyball', 'crystal', 'mug', 'office_chair',
+      'japanese_stone_lantern_01', 'lamp_post_01', 'pacifier_01', 'rock_01', 'rock_02'
+    ].forEach((k) => { if (MODEL_LIBRARY[k]) MODEL_LIBRARY[k].collider = 'circle'; });
+
+    // ============================================================================
+    // MAIS FOLHAGEM PELO QUARTO (arbustos com shader de vento + tufos de grama)
+    // ============================================================================
+    function createBush(x, z, y, scale = 1, variant = 0) {
+      const R = 2.6 * scale, count = Math.round(150 * scale);
+      const pos = [], uv = [], centers = [], shade = [], idx = [];
+      const right = new THREE.Vector3(), up = new THREE.Vector3(), nrm = new THREE.Vector3();
+      for (let i = 0; i < count; i++) {
+        const th = Math.random() * Math.PI * 2, ph = Math.acos(Math.random()); // meia esfera
+        const rr = R * Math.cbrt(0.3 + Math.random() * 0.7);
+        const c = new THREE.Vector3(Math.sin(ph) * Math.cos(th) * rr * 1.25, Math.cos(ph) * rr * 0.8 + 0.4, Math.sin(ph) * Math.sin(th) * rr * 1.25);
+        nrm.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+        right.set(0, 1, 0).cross(nrm).normalize();
+        if (right.lengthSq() < 0.01) right.set(1, 0, 0);
+        up.crossVectors(nrm, right).normalize();
+        const s = 0.75 * scale, base = pos.length / 3;
+        [[-1, -1, 0, 0], [1, -1, 1, 0], [1, 1, 1, 1], [-1, 1, 0, 1]].forEach(([a, b, uu, vv]) => {
+          pos.push(x + c.x + (right.x * a + up.x * b) * s, y + c.y + (right.y * a + up.y * b) * s, z + c.z + (right.z * a + up.z * b) * s);
+          uv.push(uu, vv);
+          centers.push(x + c.x, y + c.y, z + c.z);
+          shade.push(THREE.MathUtils.clamp(c.y / (R * 0.9), 0, 1));
+        });
+        idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      g.setAttribute('aCenter', new THREE.Float32BufferAttribute(centers, 3));
+      g.setAttribute('aShade', new THREE.Float32BufferAttribute(shade, 1));
+      g.setIndex(idx);
+      g.computeBoundingSphere();
+      scene.add(new THREE.Mesh(g, foliageMaterials[variant % foliageMaterials.length]));
+      treeCrowns.push({ x, z, y: y + R * 0.6, r: R, groundY: y, variant });
+      obstacles.push({ x, z, r: R * 0.9, h: R * 0.9, name: 'ARBUSTO', isStatic: true, level: levelOfY(y) });
+    }
+    function scatterGrass(cx, cz, radius, count, y = FLOOR_SURFACE_Y) {
+      const pts = [];
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * radius;
+        pts.push({ x: cx + Math.cos(a) * rr, y, z: cz + Math.sin(a) * rr, h: 0.45 + Math.random() * 0.8 });
+      }
+      createGrassPatch(pts);
+    }
+    [
+      [-10, -64, 1.1, 0], [12, -66, 0.9, 2], [-78, -63, 1.0, 1], [88, -66, 0.9, 0],
+      [-162, 64, 1.0, 0], [-162, 88, 1.1, 2], [-72, 89, 0.9, 0], [0, 89, 1.0, 1],
+      [30, 89, 0.8, 2], [98, 90, 0.9, 0], [118, 50, 1.0, 1], [-60, 8, 0.9, 0],
+      [78, 12, 0.9, 2], [-150, -70, 0.9, 1]
+    ].forEach(([x, z, s, v]) => {
+      createBush(x, z, FLOOR_SURFACE_Y, s, v);
+      scatterGrass(x, z, 4.2 * s, Math.round(220 * s));
+    });
+    // Gramados maiores (o chão vira o terreno do mundo do DS: lajotas, grama e água)
+    [[-25, -8, 13], [26, -2, 9], [-86, 80, 7], [-118, 4, 8], [86, 48, 5]].forEach(([x, z, r]) => scatterGrass(x, z, r, Math.round(r * r * 13)));
+
+    // Colunas de pedra hexagonais lilás (como as rochas basálticas do mundo do DS)
+    const basaltMat = new THREE.MeshStandardMaterial({ color: 0x8f7fe0, roughness: 0.75, flatShading: true });
+    const basaltTopMat = new THREE.MeshStandardMaterial({ color: 0xb6abf5, roughness: 0.6, flatShading: true });
+    function createBasaltCluster(cx, cz, count = 5) {
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * Math.PI * 2 + Math.random() * 0.6, d = i === 0 ? 0 : 2.4 + Math.random() * 1.2;
+        const r = 1.4 + Math.random() * 0.8, h = 3 + Math.random() * 7 * (i === 0 ? 1.3 : 1);
+        const x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d;
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 6), [basaltMat, basaltTopMat, basaltMat]);
+        col.position.set(x, FLOOR_SURFACE_Y + h / 2, z);
+        col.rotation.y = Math.random();
+        col.castShadow = true; col.receiveShadow = true;
+        scene.add(col);
+        registerOccluderTree(col);
+        obstacles.push({ x, z, r: r * 0.95, h, name: 'COLUNA DE PEDRA', isStatic: true, level: 'floor' });
+      }
+    }
+    createBasaltCluster(53, 86, 4);
+    createBasaltCluster(-122, -67, 5);
+    createBasaltCluster(-163, -52, 4);
+
+    // Tufos soltos ao longo das paredes e perto das colunas da mesa
+    [[-40, -68, 5], [40, -68, 4], [-130, -68, 4], [-165, 10, 3], [-120, 91, 3], [60, 91, 3], [120, -10, 3], [-68, 26, 3], [68, -26, 3]]
+      .forEach(([x, z, r]) => scatterGrass(x, z, r, Math.round(r * r * 14)));
+
+    // ============================================================================
+    // OBJETOS DO MUNDO DO DS: CAIXAS-SURPRESA, MUROS DE TIJOLINHOS, CONES E BOLICHE
+    // ============================================================================
+    const surpriseCrates = [];
+    const crateTexture = (() => {
+      const c = document.createElement('canvas');
+      c.width = c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#c0392b'; ctx.fillRect(0, 0, 128, 128);
+      ctx.fillStyle = '#e74c3c';
+      for (let i = 0; i < 4; i++) ctx.fillRect(6, 6 + i * 30, 116, 24);
+      ctx.strokeStyle = '#7b1e16'; ctx.lineWidth = 8; ctx.strokeRect(4, 4, 120, 120);
+      ctx.beginPath(); ctx.moveTo(8, 8); ctx.lineTo(120, 120); ctx.stroke();
+      ctx.fillStyle = '#ffd166'; ctx.font = '900 56px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('?', 64, 68);
+      const t = new THREE.CanvasTexture(c);
+      t.encoding = THREE.sRGBEncoding;
+      return t;
+    })();
+    const crateMaterial = new THREE.MeshStandardMaterial({ map: crateTexture, roughness: 0.7 });
+    function createSurpriseCrate(x, z, y, size = 3) {
+      const group = new THREE.Group();
+      const box = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), crateMaterial);
+      box.position.y = size / 2;
+      box.castShadow = true; box.receiveShadow = true;
+      group.add(box);
+      group.position.set(x, y, z);
+      group.rotation.y = Math.random() * Math.PI;
+      group.name = 'Caixa-Surpresa';
+      scene.add(group);
+      const obs = registerDynamicObstacle({ obs: { x, z, r: size * 0.62, box: { hx: size / 2, hz: size / 2 }, h: size, name: 'CAIXA-SURPRESA' }, group, mass: 1.3, canTopple: true });
+      obs.crate = true;
+      surpriseCrates.push(obs);
+      return obs;
+    }
+    // Explosão de confete que empurra tudo em volta (como as caixas explosivas do mundo do Bruno)
+    function explodeCrate(obs) {
+      if (obs.exploded) return;
+      obs.exploded = true;
+      obs.group.visible = false;
+      obs.savedR = obs.r;
+      obs.r = 0.001;
+      const p = obs.group.position;
+      confettiBurst(p.x, p.y + 1.5, p.z, 80);
+      for (let i = 0; i < 8; i++) {
+        const a = Math.random() * Math.PI * 2;
+        spawnFx(p.x, p.y + 1.5, p.z, Math.cos(a) * 9, 8 + Math.random() * 6, Math.sin(a) * 9, 0xc0392b, 1.4, 20, 1.8);
+      }
+      playTone(140, 0, 0.35, 'sawtooth', 0.09);
+      playTone(90, 0.05, 0.4, 'square', 0.07);
+      rumble(0.8, 1, 260);
+      dynamicObstacles.forEach((o) => {
+        if (o === obs || o.level !== obs.level) return;
+        const dx = o.x - obs.x, dz = o.z - obs.z, d = Math.hypot(dx, dz);
+        if (d > 11 || d < 1e-3) return;
+        const f = (1 - d / 11) * 1.1 / (o.mass || 1);
+        o.vx += (dx / d) * f; o.vz += (dz / d) * f;
+        if (o.ball) o.hopV = Math.max(o.hopV || 0, 0.35 * (1 - d / 11));
+        if (o.pin) knockPin(o, dx / d, dz / d);
+      });
+      const v = vehicle.position, dv = Math.hypot(v.x - obs.x, v.z - obs.z);
+      if (dv < 9 && Math.abs(v.y - p.y) < 4 && !carAirborne) launchVehicle(0.3 * (1 - dv / 9) + 0.12);
+      showCarSpeech('BUM! Surpresa!', 1800);
+      logInteractionEvent('🎁 Caixa-surpresa explodiu em confete!');
+      progressAchievement('crates', 1);
+    }
+    [[-160, -30], [-118, -48], [30, -50], [66, -30], [-60, 44], [-160, 20]].forEach(([x, z]) => createSurpriseCrate(x, z, FLOOR_SURFACE_Y));
+    [[-84, 30], [80, -30], [-30, 52]].forEach(([x, z]) => createSurpriseCrate(x, z, 0, 2.4));
+
+    // Muros de tijolinhos (cada tijolo é um objeto que cai e desliza)
+    const brickMat = new THREE.MeshStandardMaterial({ color: 0xb5523b, roughness: 0.85 });
+    const brickGeo = new THREE.BoxGeometry(1.8, 0.9, 0.9);
+    function createBrickWall(x, z, y, rotY, cols = 4, rows = 3) {
+      const dirX = Math.cos(rotY), dirZ = -Math.sin(rotY);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const off = (c - (cols - 1) / 2) * 1.85 + (r % 2 ? 0.9 : 0);
+          const bx = x + dirX * off, bz = z + dirZ * off;
+          const group = new THREE.Group();
+          const brick = new THREE.Mesh(brickGeo, brickMat);
+          brick.position.y = 0.45;
+          brick.castShadow = true; brick.receiveShadow = true;
+          group.add(brick);
+          group.position.set(bx, y + r * 0.92, bz);
+          group.rotation.y = rotY;
+          scene.add(group);
+          const obs = registerDynamicObstacle({ obs: { x: bx, z: bz, r: 0.8, box: { hx: 0.9, hz: 0.45 }, h: 0.9, name: 'TIJOLINHO' }, group, mass: 0.45, canTopple: true });
+          obs.stackOffset = r * 0.92;     // tijolos de cima caem quando o muro é atingido
+          obs.initStack = obs.stackOffset;
+          obs.restOffset = (y - surfaceBaseY(y));
+          obs.brickWall = { x, z };
+        }
+      }
+    }
+    createBrickWall(-100, -24, FLOOR_SURFACE_Y, 0.2);
+    createBrickWall(22, 42, FLOOR_SURFACE_Y, -0.3, 5, 3);
+    createBrickWall(52, 52.2, 0, 0, 3, 2);
+
+    // Cones marcando os ápices das chicanes (mesa e chão)
+    [[-40, 51.5], [-20, 51.8], [0, 51.5], [20, 51.8], [74, 22], [74, -20]].forEach(([x, z], i) => {
+      placeModel(i % 2 ? 'traffic_cone_02' : 'traffic_cone_01', { x, z, scale: 0.75, name: 'Cone da Pista' });
+    });
+    [[18, 18.5], [0, 39.5], [-18, 18.5], [-36, 39.5], [-54, 20.5], [-150, -42], [68, -13]].forEach(([x, z], i) => {
+      placeModel(i % 2 ? 'traffic_cone_02' : 'traffic_cone_01', { x, z, floor: true, name: 'Cone da Pista' });
+    });
+
+    // ---------- Boliche (bola pesada que rola e pinos que tombam) ----------
+    const BOWLING = { x: 42, zStart: 58, zEnd: 92, pinsZ: 80 };
+    (function createBowlingLane() {
+      const c = document.createElement('canvas');
+      c.width = 128; c.height = 512;
+      const ctx = c.getContext('2d');
+      for (let i = 0; i < 8; i++) { ctx.fillStyle = i % 2 ? '#d9a066' : '#e3ad74'; ctx.fillRect(i * 16, 0, 16, 512); }
+      ctx.fillStyle = '#5b3a1e'; ctx.fillRect(0, 0, 10, 512); ctx.fillRect(118, 0, 10, 512);
+      ctx.fillStyle = '#c21515';
+      [[40, 330], [64, 310], [88, 330]].forEach(([x, y]) => { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 7, y + 18); ctx.lineTo(x + 7, y + 18); ctx.fill(); });
+      const tex = new THREE.CanvasTexture(c);
+      tex.encoding = THREE.sRGBEncoding;
+      const lane = new THREE.Mesh(
+        new THREE.PlaneGeometry(12, BOWLING.zEnd - BOWLING.zStart),
+        new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, polygonOffset: true, polygonOffsetFactor: -2 })
+      );
+      lane.rotation.x = -Math.PI / 2;
+      lane.position.set(BOWLING.x, FLOOR_SURFACE_Y + 0.04, (BOWLING.zStart + BOWLING.zEnd) / 2);
+      lane.receiveShadow = true;
+      scene.add(lane);
+      const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: createDsLabelTexture('Boliche', { width: 512, height: 128 }), depthWrite: false }));
+      sign.scale.set(9, 2.25, 1);
+      sign.position.set(BOWLING.x, FLOOR_SURFACE_Y + 12, BOWLING.zEnd - 2);
+      scene.add(sign);
+    })();
+
+    const bowlingPins = [];
+    const pinGeometry = (() => {
+      const pts = [[0, 0], [0.55, 0], [0.72, 0.6], [0.78, 1.4], [0.6, 2.4], [0.36, 3.1], [0.42, 3.7], [0.36, 4.2], [0.12, 4.45], [0, 4.5]]
+        .map(([r, y]) => new THREE.Vector2(r, y));
+      return new THREE.LatheGeometry(pts, 16);
+    })();
+    const pinMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+    const pinStripeMaterial = new THREE.MeshStandardMaterial({ color: 0xc21515, roughness: 0.3 });
+    function createBowlingPin(x, z) {
+      const group = new THREE.Group();
+      const body = new THREE.Mesh(pinGeometry, pinMaterial);
+      body.castShadow = true;
+      const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.22, 16), pinStripeMaterial);
+      stripe.position.y = 3.35;
+      group.add(body, stripe);
+      group.position.set(x, FLOOR_SURFACE_Y, z);
+      scene.add(group);
+      const obs = registerDynamicObstacle({ obs: { x, z, r: 0.72, h: 4.5, name: 'PINO DE BOLICHE' }, group, mass: 0.35, canTopple: false });
+      obs.pin = true;
+      obs.knockT = 0;
+      bowlingPins.push(obs);
+    }
+    for (let row = 0; row < 4; row++) {
+      for (let i = 0; i <= row; i++) createBowlingPin(BOWLING.x + (i - row / 2) * 2.1, BOWLING.pinsZ + row * 1.9);
+    }
+    let bowlingCheckTimer = null;
+    function knockPin(obs, dx, dz) {
+      if (!obs.pin || obs.knocked) return;
+      const len = Math.hypot(dx, dz) || 1;
+      obs.knocked = true;
+      obs.knockT = 0;
+      obs.knockAxis = new THREE.Vector3(dz / len, 0, -dx / len);
+      obs.r = 0.6;
+      playTone(300 + Math.random() * 200, 0, 0.08, 'square', 0.05);
+      clearTimeout(bowlingCheckTimer);
+      bowlingCheckTimer = setTimeout(() => {
+        const down = bowlingPins.filter(p => p.knocked).length;
+        if (down === bowlingPins.length) {
+          notify({ type: 'achievement', title: 'STRIKE!', description: 'Todos os 10 pinos derrubados!', progress: '10 / 10', duration: 5000 });
+          confettiBurst(BOWLING.x, FLOOR_SURFACE_Y + 3, BOWLING.pinsZ + 3, 90);
+          unlockAchievement('bowling');
+        } else if (down > 0) {
+          notify({ type: 'info', title: `${down} pino${down > 1 ? 's' : ''} derrubado${down > 1 ? 's' : ''}!`, description: 'Arrume os pinos no ponto do boliche', duration: 3000 });
+        }
+      }, 2200);
+    }
+    // Bola de boliche (pesada, rola longe e quica)
+    const bowlingBall = (() => {
+      const group = new THREE.Group();
+      const ball = new THREE.Mesh(
+        new THREE.SphereGeometry(1.5, 32, 24),
+        new THREE.MeshStandardMaterial({ color: 0x5b2a86, roughness: 0.18, metalness: 0.1, envMap: envMapTexture, envMapIntensity: 0.8 })
+      );
+      ball.position.y = 1.5;
+      ball.castShadow = true;
+      const holeMat = new THREE.MeshBasicMaterial({ color: 0x14081f });
+      [[0, 0.2], [-0.35, -0.18], [0.35, -0.18]].forEach(([a, b]) => {
+        const hole = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), holeMat);
+        const n = new THREE.Vector3(a, 0.85 + b, 0.5).normalize();
+        hole.position.copy(n.clone().multiplyScalar(1.505));
+        hole.lookAt(n.clone().multiplyScalar(3));
+        ball.add(hole);
+      });
+      group.add(ball);
+      group.position.set(BOWLING.x, FLOOR_SURFACE_Y, BOWLING.zStart + 5);
+      group.userData.rolls = true;
+      scene.add(group);
+      const obs = registerDynamicObstacle({ obs: { x: BOWLING.x, z: BOWLING.zStart + 5, r: 1.5, h: 3, name: 'BOLA DE BOLICHE' }, group, mass: 1.3, canTopple: false });
+      obs.ball = true;
+      obs.friction = 0.993;
+      return obs;
+    })();
+    function resetBowling() {
+      bowlingPins.forEach((p) => {
+        p.knocked = false; p.knockT = 0; p.r = 0.72;
+        p.vx = p.vz = p.vRotY = 0;
+        p.x = p.initX; p.z = p.initZ;
+        p.group.position.set(p.initX, FLOOR_SURFACE_Y, p.initZ);
+        p.group.rotation.set(0, 0, 0);
+        p.group.quaternion.identity();
+        p.level = 'floor';
+      });
+      const b = bowlingBall;
+      b.vx = b.vz = 0; b.hop = 0; b.hopV = 0;
+      b.x = b.initX; b.z = b.initZ;
+      b.group.position.set(b.initX, FLOOR_SURFACE_Y, b.initZ);
+      b.level = 'floor';
+    }
+    const bowlingInteractive = {
+      id: 'bowling', name: 'Boliche', point: [BOWLING.x - 8, BOWLING.zStart + 3], y: FLOOR_SURFACE_Y,
+      text: 'Empurre a bola de boliche com o carrinho e tente derrubar os 10 pinos de uma vez. STRIKE!',
+      actions: [{ label: 'Arrumar os pinos', run: () => { resetBowling(); showCarSpeech('Pinos arrumados!', 1600); } }]
+    };
 
     // ============================================================================
     // CARRINHO DO RAVI: //Fire Engine// (MODELO 3D FIEL AOS 4 ÂNGULOS REAIS!)
@@ -5957,44 +6491,54 @@
     yellowRoofButton.add(yellowBtnDome, yellowBtnCenterIcon);
     carBodyGroup.add(yellowRoofButton);
 
-    // 6b. Torreta com Domo Bipartido (Fenda Central de Articulação) + Canhão Horizontal com Ponta Alargada!
+    // 6b. Canhão d'água estilo caminhão de bombeiro (monitor de incêndio): base quadrada,
+    //     prato giratório metálico, garfo vermelho, cano de aço inclinado e bico amarelo.
     const turretGroup = new THREE.Group();
     turretGroup.position.set(0, 2.54, -0.22);
+    const cannonSteelMat = new THREE.MeshStandardMaterial({ color: 0xc9ced6, metalness: 0.75, roughness: 0.28 });
+    const cannonRedMat = new THREE.MeshStandardMaterial({ color: 0xd62828, roughness: 0.45 });
+    const cannonDarkMat = new THREE.MeshStandardMaterial({ color: 0x2b2e35, roughness: 0.6 });
 
-    // Duas metades laterais do domo deixando a fenda central para o canhão (exatamente como nas fotos de topo e traseira!)
-    [-0.16, 0.16].forEach((dx) => {
-      const halfDome = new THREE.Mesh(
-        new THREE.SphereGeometry(0.44, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.58),
-        carOrangeMat
-      );
-      halfDome.scale.set(0.72, 0.92, 1.0);
-      halfDome.position.set(dx, 0, 0);
-      halfDome.castShadow = true;
-      turretGroup.add(halfDome);
+    const cannonBase = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.08, 0.74), cannonDarkMat);
+    cannonBase.position.y = 0.04;
+    const cannonTurntable = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.32, 0.12, 6), cannonSteelMat);
+    cannonTurntable.position.y = 0.14;
+    turretGroup.add(cannonBase, cannonTurntable);
+
+    // Garfo (duas chapas laterais retas) segurando o eixo do cano
+    [-0.17, 0.17].forEach((dx) => {
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.34, 0.26), cannonRedMat);
+      plate.position.set(dx, 0.36, 0);
+      plate.castShadow = true;
+      turretGroup.add(plate);
     });
+    const cannonAxle = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.44, 10), cannonSteelMat);
+    cannonAxle.rotation.z = Math.PI / 2;
+    cannonAxle.position.set(0, 0.44, 0);
+    turretGroup.add(cannonAxle);
 
-    // Base de encaixe central na fenda do domo
-    const hingeBlock = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.36, 0.36),
-      carOrangeMat
-    );
-    hingeBlock.position.set(0, 0.18, 0);
-    turretGroup.add(hingeBlock);
-
-    // Tubo horizontal do canhão apontando para frente + bocal cônico na ponta (foto lateral!)
-    const nozzleTube = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.095, 0.115, 0.54, 16),
-      carOrangeMat
-    );
+    // Cano inclinado ~20° para cima, apontando para a frente
+    const cannonPitch = new THREE.Group();
+    cannonPitch.position.set(0, 0.44, 0);
+    cannonPitch.rotation.x = -0.35;
+    const nozzleTube = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.9, 12), cannonSteelMat);
     nozzleTube.rotation.x = Math.PI / 2;
-    nozzleTube.position.set(0, 0.28, 0.27);
-    const nozzleTip = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.12, 0.145, 0.20, 16),
-      carOrangeMat
-    );
+    nozzleTube.position.set(0, 0, 0.32);
+    nozzleTube.castShadow = true;
+    const cannonClamp = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.16), cannonRedMat);
+    cannonClamp.position.set(0, 0, 0);
+    // Bico de jato em leque (abre para a ponta) + alça de mira em cima
+    const nozzleTip = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.08, 0.24, 6), yellowDetailMat);
     nozzleTip.rotation.x = Math.PI / 2;
-    nozzleTip.position.set(0, 0.28, 0.60);
-    turretGroup.add(nozzleTube, nozzleTip);
+    nozzleTip.position.set(0, 0, 0.88);
+    const cannonHandle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.36), cannonDarkMat);
+    cannonHandle.position.set(0, 0.13, 0.22);
+    const handlePostA = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.12, 0.05), cannonDarkMat);
+    handlePostA.position.set(0, 0.08, 0.08);
+    const handlePostB = handlePostA.clone();
+    handlePostB.position.z = 0.36;
+    cannonPitch.add(nozzleTube, cannonClamp, nozzleTip, cannonHandle, handlePostA, handlePostB);
+    turretGroup.add(cannonPitch);
     carBodyGroup.add(turretGroup);
 
     // 6c. Os 9 Furos Circulares do Alto-Falante no Teto Traseiro (nivelados na superfície atrás do canhão!)
@@ -6071,31 +6615,76 @@
     });
 
     // 8. AS 4 RODAS PRETAS LARGAS COM CALOTAS ABAULADAS AZUL-TURQUESA (CIANO)
+    // Rodas no estilo off-road do mundo do DS: pneus grandes e grossos com cravos, aro escuro e calota ciano
     const wheelPositions = [
-      [-1.12, 0.46, 0.92],
-      [1.12, 0.46, 0.92],
-      [-1.12, 0.46, -0.92],
-      [1.12, 0.46, -0.92]
+      [-1.18, 0.56, 0.95],
+      [1.18, 0.56, 0.95],
+      [-1.18, 0.56, -0.95],
+      [1.18, 0.56, -0.95]
     ];
+    const tireChunkyMat = new THREE.MeshStandardMaterial({ color: 0x1b1e23, roughness: 0.8, flatShading: true });
+    const rimDarkMat = new THREE.MeshStandardMaterial({ color: 0x2b2e35, roughness: 0.45, metalness: 0.3, flatShading: true });
+    const treadGeo = new THREE.BoxGeometry(0.46, 0.12, 0.16);
     const wheels = [];
     wheelPositions.forEach((pos) => {
       const wGroup = new THREE.Group();
       wGroup.position.set(...pos);
+      const side = pos[0] > 0 ? 1 : -1;
 
-      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.34, 28), tireDarkMat);
+      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.44, 14), tireChunkyMat);
       tire.rotation.z = Math.PI / 2;
       tire.castShadow = true;
       wGroup.add(tire);
-
-      // Calota ciano levemente abaulada para fora
-      const rim = new THREE.Mesh(new THREE.SphereGeometry(0.33, 24, 16), cyanWheelMat);
-      rim.scale.set(0.58, 1, 1);
-      rim.position.x = pos[0] > 0 ? 0.04 : -0.04;
+      // Cravos do pneu
+      for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * Math.PI * 2;
+        const knob = new THREE.Mesh(treadGeo, tireChunkyMat);
+        knob.position.set(0, Math.cos(a) * 0.53, Math.sin(a) * 0.53);
+        knob.rotation.x = -a;
+        wGroup.add(knob);
+      }
+      const rimDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.46, 8), rimDarkMat);
+      rimDisc.rotation.z = Math.PI / 2;
+      wGroup.add(rimDisc);
+      // Calota ciano (identidade do caminhãozinho do Ravi)
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.08, 8), cyanWheelMat);
+      rim.rotation.z = Math.PI / 2;
+      rim.position.x = side * 0.25;
       wGroup.add(rim);
 
       vehicle.add(wGroup);
       wheels.push(wGroup);
     });
+
+    // Para-choques pretos robustos (frente com "dentes" e traseira)
+    const bumperMat = new THREE.MeshStandardMaterial({ color: 0x22252b, roughness: 0.6, flatShading: true });
+    const frontBumper = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.3, 0.34), bumperMat);
+    frontBumper.position.set(0, 0.5, 2.12);
+    const rearBumper = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.28, 0.3), bumperMat);
+    rearBumper.position.set(0, 0.5, -2.0);
+    [-0.75, 0.75].forEach((bx) => {
+      const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.36, 0.22), bumperMat);
+      tooth.position.set(bx, 0.62, 2.22);
+      carBodyGroup.add(tooth);
+    });
+    carBodyGroup.add(frontBumper, rearBumper);
+
+    // Barra de sirene no teto (vermelho/azul piscando) — luzes de teto como no carro do mundo do DS
+    const sirenBase = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.12, 0.34), bumperMat);
+    sirenBase.position.set(0, 2.6, 1.18);
+    const sirenRedMat = new THREE.MeshStandardMaterial({ color: 0xff2a2a, emissive: 0xff2a2a, emissiveIntensity: 0.6, roughness: 0.3 });
+    const sirenBlueMat = new THREE.MeshStandardMaterial({ color: 0x2a7bff, emissive: 0x2a7bff, emissiveIntensity: 0.6, roughness: 0.3 });
+    const sirenRed = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.2, 0.28), sirenRedMat);
+    sirenRed.position.set(-0.36, 2.76, 1.18);
+    const sirenBlue = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.2, 0.28), sirenBlueMat);
+    sirenBlue.position.set(0.36, 2.76, 1.18);
+    carBodyGroup.add(sirenBase, sirenRed, sirenBlue);
+    function updateSiren(time) {
+      const fast = (typeof keys !== 'undefined' && keys.spray) || (typeof monitorState !== 'undefined' && monitorState === 'burning');
+      const phase = Math.floor(time * (fast ? 8 : 2.5)) % 2;
+      sirenRedMat.emissiveIntensity = phase ? 1.4 : 0.15;
+      sirenBlueMat.emissiveIntensity = phase ? 0.15 : 1.4;
+    }
 
     vehicle.position.set(11.5, 0.14, 11.5);
     vehicle.rotation.y = -0.55;
@@ -6257,12 +6846,15 @@
       { id: 'firefighter', title: 'Bombeiro mirim', description: 'Apague o incêndio do monitor', total: 1 },
       { id: 'oops', title: 'Ops!', description: "Derrube o copo d'água", total: 1 },
       { id: 'gardener', title: 'Jardineiro', description: 'Regue as 3 plantas da mesa', total: 3 },
-      { id: 'turbo', title: 'Turbinado', description: 'Passe pelas 8 pilhas palito', total: 8 },
+      { id: 'turbo', title: 'Caçador de pilhas', description: 'Encontre as 15 pilhas palito (algumas estão escondidas!)', total: 15 },
       { id: 'artist', title: 'Artista', description: 'Rabisque a mesa com o lápis de cor', total: 1 },
       { id: 'racer', title: 'Piloto', description: 'Complete uma volta no circuito', total: 1 },
       { id: 'speedster', title: 'Relâmpago', description: 'Faça uma volta em menos de 1min15s', total: 1 },
       { id: 'islands', title: 'Navegador', description: 'Visite as 5 ilhas do quarto', total: 5 },
       { id: 'islandActions', title: 'Aventureiro', description: 'Faça 5 atividades nas ilhas', total: 5 },
+      { id: 'bowling', title: 'Strike!', description: 'Derrube os 10 pinos do boliche', total: 1 },
+      { id: 'shortcut', title: 'Atalho secreto', description: 'Salte da rampa escondida embaixo da mesa', total: 1 },
+      { id: 'crates', title: 'Surpresa!', description: 'Exploda 5 caixas-surpresa', total: 5 },
       { id: 'hdmi', title: 'Conectado', description: 'Conecte os 2 cabos HDMI', total: 2 },
       { id: 'skydiver', title: 'Paraquedista', description: 'Caia da mesa até o chão do quarto', total: 1 },
       { id: 'slide', title: 'Tobogã', description: 'Desça pela rampa de papelão', total: 1 },
@@ -6546,6 +7138,7 @@
       { name: 'Ilha da Música', x: 88, z: -36, angle: 2.2, floor: true },
       { name: 'Ilha dos Brinquedos', x: -36, z: 70, angle: -Math.PI / 2, floor: true },
       { name: 'Lago', x: 52, z: 62, angle: Math.PI / 2, floor: true },
+      { name: 'Boliche', x: 42, z: 52, angle: 0, floor: true },
       { name: 'Cama do Ravi', x: 88, z: 8, angle: Math.PI / 2, floor: true }
     ];
     function worldToMap(x, z) {
@@ -6671,6 +7264,16 @@
       applySavedLayout();
       spawnRevealWave(vehicle.position.x, vehicle.position.y, vehicle.position.z);
       getAudio(); // o áudio só pode iniciar após um gesto do usuário
+      // Celular: tela cheia + travar na horizontal (Android/Chrome; no iOS fica o aviso "deite o celular")
+      if (htmlEl.classList.contains('is-mode-touch')) {
+        const el = document.documentElement;
+        const fs = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (fs) {
+          Promise.resolve(fs.call(el)).then(() => {
+            if (screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape');
+          }).catch(() => {});
+        }
+      }
       logInteractionEvent('🚒 Carrinho do Ravi pronto na mesa!');
       notify({ type: 'info', title: 'Bem-vindo à mesa!', description: 'Abra o menu (☰) ou o mapa para explorar', duration: 4500 });
     }
@@ -6741,6 +7344,32 @@
       hudWaterEl.classList.toggle('is-low', pct <= 15);
     }
 
+    // ---------- Bateria do carrinho (pilha) ----------
+    // Gasta pouco ao acelerar; recarrega nas pilhas palito e no Posto do Bombeiro (ilha do Ravi).
+    // Turbo das pilhas só com mais de 60%; abaixo de 10% o carrinho perde a força.
+    let carBattery = 100;
+    let batteryLowWarned = false;
+    const batteryPctEl = document.getElementById('battery-pct');
+    const batteryBarEl = document.getElementById('battery-bar');
+    const batteryFillEl = document.getElementById('battery-bar-fill');
+    function updateBatteryHUD() {
+      const pct = clamp(Math.round(carBattery), 0, 100);
+      batteryPctEl.textContent = pct + '%';
+      batteryFillEl.style.transform = `scaleX(${pct / 100})`;
+      batteryBarEl.classList.toggle('is-low', carBattery < 10);
+      batteryBarEl.classList.toggle('is-turbo', carBattery > 60);
+    }
+    function chargeBattery(amount, source) {
+      const before = carBattery;
+      carBattery = Math.min(100, carBattery + amount);
+      if (before < 10 && carBattery >= 10) {
+        batteryLowWarned = false;
+        showCarSpeech('Energia de volta!', 1600);
+      }
+      updateBatteryHUD();
+      return before;
+    }
+
     const waterDrops = [];
     const dropGeo = new THREE.SphereGeometry(0.18, 8, 8);
     const dropMat = new THREE.MeshBasicMaterial({ color: 0x35e0ff });
@@ -6803,6 +7432,7 @@
       carAngle = -0.55;
       waterLevel = 100.0;
       updateWaterHUD();
+      carBattery = 100; batteryLowWarned = false; updateBatteryHUD();
       setStatusBanner('🔄 Jogo reiniciado! Todos os objetos restaurados.', '#7ee787');
       logInteractionEvent('🔄 Jogo reiniciado e objetos restaurados!');
 
@@ -6865,6 +7495,15 @@
 
       // Alimentos e plantinhas quebrados voltam inteiros; monitor sai do modo currículo
       resetBreakables();
+      // Caixas-surpresa, muros de tijolinhos e boliche voltam ao estado original
+      surpriseCrates.forEach((c) => {
+        if (c.exploded) { c.exploded = false; c.group.visible = true; c.r = c.savedR; }
+      });
+      dynamicObstacles.forEach((o) => {
+        if (o.initStack !== undefined) { o.stackOffset = o.initStack; o.stackDropping = false; }
+        o.hop = 0; o.hopV = 0;
+      });
+      resetBowling();
       monitorProfileMode = null;
 
       // Controles e detritos
@@ -6897,7 +7536,7 @@
       fireLight.intensity = 0;
       htmlEl.classList.remove('is-fire');
       monitorHeadGroup.rotation.set(0, 0, 0);
-      curvedBackMat.color.setHex(0x131519);
+      curvedBack.material.color.setHex(0x131519);
       updateMonitorScreen();
     }
 
@@ -6945,12 +7584,14 @@
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.boost = true;
 
       if (e.repeat) return;
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') tapAccelerator();
       if (e.code === 'Enter') { e.preventDefault(); interactWithNearest(); }
       if (e.code === 'KeyH') playHonk();
       if (e.code === 'KeyR' && !devModeActive) respawnAtStart();
       if (e.code === 'KeyE') toggleGrabItem();
       if (e.code === 'KeyV') cycleCameraMode();
-      if (e.code === 'KeyF') triggerCarJump();
+      if (e.code === 'KeyF') handleJumpPress();
+      if (e.code === 'KeyQ') triggerSmallHop();
       if (e.code === 'KeyM') openMap();
       if (e.code === 'Space') {
         if (devModeActive) {
@@ -6990,9 +7631,11 @@
       bindTouchButton(id, () => { if (!inputBlocked()) keys[k] = true; }, () => { keys[k] = false; });
     });
     bindTouchButton('t-water', () => { if (!inputBlocked()) { keys.spray = true; spawnWaterJet(); } }, () => { keys.spray = false; });
-    bindTouchButton('t-jump', () => triggerCarJump());
+    bindTouchButton('t-jump', () => handleJumpPress());
+    bindTouchButton('t-hop', () => triggerSmallHop());
     bindTouchButton('t-grab', () => toggleGrabItem());
     bindTouchButton('t-interact', () => interactWithNearest());
+    document.getElementById('t-up').addEventListener('pointerdown', () => tapAccelerator());
 
     // ============================================================================
     // PONTOS INTERATIVOS: ILHAS DO QUARTO + ITENS CENTRAIS DA MESA (RÁDIO E NOTEBOOK)
@@ -7130,7 +7773,7 @@
       if (!inputBlocked()) {
         const onFloor = vehicle.position.y < -15;
         let best = 4.6;
-        (onFloor ? islands : deskInteractives).forEach((it) => {
+        (onFloor ? islands.concat([bowlingInteractive]) : deskInteractives).forEach((it) => {
           const d = Math.hypot(vehicle.position.x - it.point[0], vehicle.position.z - it.point[1]);
           if (d < best) { best = d; nearestInteractive = it; }
         });
@@ -7431,6 +8074,73 @@
       notify({ type: 'success', title: 'Recorde salvo!', description: `${entry.name} · ${formatRaceTime(entry.time)}` });
     });
 
+    // Pulos: L1/Q = pulinho; △/F = pulo; △/F duas vezes rápido = pulo duplo para a frente (−10% de bateria)
+    let lastJumpPressAt = 0;
+    let doubleJumpUsed = false;
+    function handleJumpPress() {
+      const now = performance.now();
+      if (carAirborne && !doubleJumpUsed && now - lastJumpPressAt < 420) {
+        lastJumpPressAt = 0;
+        triggerDoubleJump();
+        return;
+      }
+      lastJumpPressAt = now;
+      if (!carAirborne) { doubleJumpUsed = false; triggerCarJump(); }
+    }
+    function triggerSmallHop() {
+      if (carAirborne || isSomersaulting || isFallingOff || inputBlocked()) return;
+      launchVehicle(0.2);
+      doubleJumpUsed = false;
+      rumble(0.2, 0.2, 80);
+      playTone(420, 0, 0.06, 'triangle', 0.04);
+    }
+    function triggerDoubleJump() {
+      if (inputBlocked() || isFallingOff || isSomersaulting) return;
+      if (carBattery < 10) { showCarSpeech('Sem energia pro pulo duplo!', 1400); return; }
+      carBattery = Math.max(0, carBattery - 10);
+      updateBatteryHUD();
+      doubleJumpUsed = true;
+      // Mesmo efeito do quique, mas para a frente: sobe de novo e ganha embalo
+      fallVelocityY = Math.max(fallVelocityY, 0.3);
+      carAirPeakY = Math.max(carAirPeakY, vehicle.position.y);
+      carSpeed = Math.min(baseMaxSpeed * 1.6, Math.max(carSpeed, 0) + 0.22);
+      carBodyGroup.rotation.x = 0.35;
+      for (let i = 0; i < 6; i++) spawnTurboSpark();
+      showCarSpeech('Pulo duplo!', 1200);
+      setStatusBanner(`🦘 Pulo duplo para a frente (−10% de bateria: ${Math.round(carBattery)}%)`, '#35e0ff');
+      playTone(600, 0, 0.08, 'triangle', 0.06); playTone(900, 0.06, 0.12, 'triangle', 0.05);
+      rumble(0.35, 0.5, 140);
+      progressAchievement('jumper', 1);
+    }
+
+    // Acelerador apertado 2x rápido = mini turbo (gasta 10% da bateria)
+    let lastAccelTapAt = 0;
+    function tapAccelerator() {
+      const now = performance.now();
+      if (now - lastAccelTapAt < 320) {
+        lastAccelTapAt = 0;
+        triggerDoubleTapTurbo();
+      } else {
+        lastAccelTapAt = now;
+      }
+    }
+    function triggerDoubleTapTurbo() {
+      if (inputBlocked() || carAirborne || isFallingOff) return;
+      if (carBattery < 10) {
+        showCarSpeech('Sem energia pro turbo!', 1400);
+        return;
+      }
+      carBattery = Math.max(0, carBattery - 10);
+      updateBatteryHUD();
+      turboBoostTimer = Math.max(turboBoostTimer, 0.9);
+      carSpeed = Math.max(carSpeed, baseMaxSpeed * 1.5);
+      for (let i = 0; i < 6; i++) spawnTurboSpark();
+      showCarSpeech('⚡ Turbo!', 1000);
+      setStatusBanner(`⚡ Mini turbo de toque duplo (−10% de bateria: ${Math.round(carBattery)}%)`, '#35e0ff');
+      playTone(520, 0, 0.08, 'square', 0.05); playTone(780, 0.07, 0.12, 'square', 0.05);
+      rumble(0.3, 0.6, 160);
+    }
+
     // Tecla R / Select: volta para o ponto de largada
     function respawnAtStart() {
       if (introActive || isModalOpen) return;
@@ -7556,16 +8266,21 @@
       if (!gp) {
         for (const p of pads) if (p && p.connected) { gp = p; activeGamepadIndex = p.index; break; }
       }
-      if (!gp) return;
+      if (!gp) {
+        // Sem controle: zera a entrada (antes os últimos valores ficavam "presos" e o carro andava sozinho)
+        Object.assign(padInput, { throttle: 0, reverse: 0, steer: 0, boost: false, brake: false, camX: 0, camY: 0 });
+        padPrevButtons = [];
+        return;
+      }
       const b = (i) => gp.buttons[i] ? gp.buttons[i].value : 0;
       const pressed = (i) => !!(gp.buttons[i] && gp.buttons[i].pressed);
       const justPressed = (i) => pressed(i) && !padPrevButtons[i];
       const anyInput = gp.buttons.some(x => x.pressed) || gp.axes.some(a => Math.abs(a) > 0.3);
       if (anyInput && !htmlEl.classList.contains('is-mode-gamepad')) setGamepadMode(gp);
 
-      // Analógicos (L2 acelera e R2 dá ré, como no DS)
-      padInput.throttle = b(6);
-      padInput.reverse = b(7);
+      // Gatilhos analógicos: R2 acelera, L2 dá ré
+      padInput.throttle = b(7);
+      padInput.reverse = b(6);
       padInput.steer = -deadzone(gp.axes[0] || 0);
       padInput.boost = pressed(1);
       padInput.brake = pressed(2);
@@ -7578,35 +8293,104 @@
       // Botões de ação (borda de subida)
       if (introActive) {
         if (justPressed(0) || justPressed(9)) startExperience();
-      } else if (modalsOpen) {
-        if (justPressed(0)) {
-          if (modalsOpen === 'island') runPrimaryIslandAction();
-          else closeModalFromUser();
+      } else if (modalsOpen || menuOpen) {
+        // Navegação de interface: analógico esquerdo / D-pad move o foco, ✕ seleciona, ○ volta
+        const lx = deadzone(gp.axes[0] || 0, 0.35), ly = deadzone(gp.axes[1] || 0, 0.35);
+        const dirX = (lx > 0.5 || pressed(15)) ? 1 : (lx < -0.5 || pressed(14)) ? -1 : 0;
+        const dirY = (ly > 0.5 || pressed(13)) ? 1 : (ly < -0.5 || pressed(12)) ? -1 : 0;
+        const now = performance.now();
+        if (dirX || dirY) {
+          if (now - uiNavLastMove > (uiNavHeld ? 170 : 320)) {
+            uiNavHeld = uiNavLastMove > 0 && now - uiNavLastMove < 400;
+            uiNavLastMove = now;
+            moveUiFocus(dirX, dirY);
+          }
+        } else {
+          uiNavLastMove = 0;
+          uiNavHeld = false;
         }
-        if (justPressed(1)) closeModalFromUser();
-      } else if (menuOpen) {
-        if (justPressed(0) || justPressed(1) || justPressed(9)) closeMenu();
-        const order = menuNavItems.map(el => el.dataset.name);
-        const idx = order.indexOf(currentMenuSection);
-        if (justPressed(15) || justPressed(5)) selectMenuSection(order[(idx + 1) % order.length]);
-        if (justPressed(14) || justPressed(4)) selectMenuSection(order[(idx - 1 + order.length) % order.length]);
+        if (justPressed(0)) activateUiFocus();
+        if (justPressed(1)) { if (modalsOpen) closeModalFromUser(); else closeMenu(); }
+        if (justPressed(9) && menuOpen) closeMenu();
+        if (menuOpen) {
+          const order = menuNavItems.map(el => el.dataset.name);
+          const idx = order.indexOf(currentMenuSection);
+          if (justPressed(5)) { selectMenuSection(order[(idx + 1) % order.length]); focusUiElement(menuNavItems[(idx + 1) % order.length]); }
+          if (justPressed(4)) { selectMenuSection(order[(idx - 1 + order.length) % order.length]); focusUiElement(menuNavItems[(idx - 1 + order.length) % order.length]); }
+        }
       } else {
+        // R2 apertado duas vezes rápido = mini turbo
+        if (b(7) > 0.6 && padPrevR2 <= 0.6) tapAccelerator();
         if (justPressed(0)) interactWithNearest();
-        if (justPressed(3)) triggerCarJump();
-        if (justPressed(4)) {
-          // Hidráulica: a carroceria dá um pulinho na suspensão
-          if (!carAirborne) launchVehicle(0.2);
-          rumble(0.2, 0.2, 80);
-        }
+        if (justPressed(3)) handleJumpPress();
+        if (justPressed(4)) triggerSmallHop(); // L1: pulinho
         if (justPressed(10)) playHonk();
         if (justPressed(11)) zoomFactor = zoomFactor > 0.85 ? 0.62 : 1.0;
         if (justPressed(8)) respawnAtStart();
-        if (justPressed(9)) openMenu();
+        if (justPressed(9)) { openMenu(); focusUiElement(menuNavItems.find(el => el.classList.contains('is-active'))); }
         if (justPressed(12)) cycleCameraMode();
         if (justPressed(13)) toggleGrabItem();
         if (justPressed(15)) openMap();
       }
       padPrevButtons = gp.buttons.map(x => x.pressed);
+      padPrevR2 = b(7);
+    }
+    let padPrevR2 = 0;
+
+    // ---------- Foco de interface navegável pelo controle (menu, modais e mapa) ----------
+    let uiFocusEl = null, uiNavLastMove = 0, uiNavHeld = false;
+    function uiFocusables() {
+      let root = null;
+      if (modalsOpen) root = document.querySelector('#modals .modal.is-displayed');
+      else if (menuOpen) root = document.querySelector('#menu .inner');
+      if (!root) return [];
+      const list = [...root.querySelectorAll('button, a.button, a.radio-link, .location, input.input-text')];
+      return list.filter((el) => {
+        if (el.disabled || el.closest('.content:not(.is-visible)') || el.closest('.tabs-content-item:not(.is-active)')) return false;
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+      });
+    }
+    function focusUiElement(el) {
+      if (uiFocusEl) uiFocusEl.classList.remove('gp-focus');
+      uiFocusEl = el || null;
+      if (!uiFocusEl) return;
+      uiFocusEl.classList.add('gp-focus');
+      uiFocusEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      // Focar um ícone do topo do menu já abre a seção correspondente
+      if (uiFocusEl.matches('#menu-navigation .item')) selectMenuSection(uiFocusEl.dataset.name);
+      if (uiFocusEl.matches('.location')) uiFocusEl.classList.add('is-hover');
+    }
+    function moveUiFocus(dx, dy) {
+      const items = uiFocusables();
+      if (!items.length) return;
+      if (!uiFocusEl || !items.includes(uiFocusEl)) { focusUiElement(items[0]); return; }
+      document.querySelectorAll('.location.is-hover').forEach(l => l.classList.remove('is-hover'));
+      const a = uiFocusEl.getBoundingClientRect();
+      const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+      let best = null, bestScore = Infinity;
+      items.forEach((el) => {
+        if (el === uiFocusEl) return;
+        const r = el.getBoundingClientRect();
+        const vx = r.left + r.width / 2 - ax, vy = r.top + r.height / 2 - ay;
+        const along = vx * dx + vy * dy;          // distância na direção pedida
+        if (along <= 4) return;
+        const across = Math.abs(dx ? vy : vx);      // desvio lateral pesa mais
+        const score = along + across * 2.2;
+        if (score < bestScore) { bestScore = score; best = el; }
+      });
+      if (best) { focusUiElement(best); playTone(660, 0, 0.04, 'triangle', 0.03); }
+    }
+    function activateUiFocus() {
+      const items = uiFocusables();
+      if (!uiFocusEl || !items.includes(uiFocusEl)) {
+        if (modalsOpen === 'island') { runPrimaryIslandAction(); return; }
+        focusUiElement(items[0]);
+        return;
+      }
+      if (uiFocusEl.matches('input')) { uiFocusEl.focus(); return; }
+      playTone(880, 0, 0.05, 'triangle', 0.04);
+      uiFocusEl.click();
     }
 
     // ============================================================================
@@ -7684,6 +8468,12 @@
       return CAR_DESK_Y - progress * 35.85;
     }
 
+    // Placa do apoio de pés (centro x 4, z -10; 15 x 11; inclinada 0.38 rad subindo para +z)
+    const FOOTREST = { x0: -3.5, x1: 11.5, z0: -15.4, z1: -4.6 };
+    function footrestTopAt(z) {
+      return 2.5 + 0.51 + (z + 10) * Math.tan(0.38);
+    }
+
     // Altura do chão sob o carrinho levando em conta o nível atual (mesa, rampa ou quarto)
     function sampleGround(x, z, curY) {
       const zone = rampZoneAt(x, z);
@@ -7694,9 +8484,12 @@
       if (curY > -15 && Math.abs(x) <= DESK_HALF_W + 1.2 && Math.abs(z) <= DESK_HALF_D + 1.2) {
         return { y: CAR_DESK_Y, ramp: null, level: 'desk' };
       }
-      // Apoio de pés sob a mesa (mini rampa de salto)
-      if (x >= -4 && x <= 12 && z >= -16 && z <= -4) {
-        return { y: FLOOR_CAR_Y + Math.max(0, ((-4 - z) / 12.0) * 2.8), ramp: null, level: 'floor', footrest: true };
+      // Apoio de pés sob a mesa = rampa do atalho escondido (sobe em direção à frente da mesa, +z)
+      if (x >= FOOTREST.x0 && x <= FOOTREST.x1 && z >= FOOTREST.z0 && z <= FOOTREST.z1) {
+        const rampY = FLOOR_SURFACE_Y + footrestTopAt(z) + 0.15;
+        if (curY > rampY - 1.3) return { y: rampY, ramp: null, level: 'floor', footrest: true };
+        // Chegando por baixo (lado ou frente alta): é uma parede, não um teleporte para cima
+        return { y: FLOOR_CAR_Y, ramp: null, level: 'floor', wall: true };
       }
       // Ilhas (gramado elevado) e fundo do lago
       const extra = floorExtraHeight(x, z);
@@ -7717,7 +8510,18 @@
       carAirStartedOnDesk = vehicle.position.y > -15;
     }
 
-    function handleFixedBounce(obstacleOrWallName) {
+    // Som de impacto proporcional à força (toque leve x pancada), sem repetir a cada passo
+    function playImpactSound(obs, impact, mass = 1) {
+      const now = performance.now();
+      if (impact < 0.04 || (obs && now - (obs.lastSoundAt || 0) < 160)) return;
+      if (obs) obs.lastSoundAt = now;
+      const strength = clamp(impact / 0.4, 0, 1);
+      const pitch = 260 / Math.sqrt(Math.max(0.3, mass));
+      playTone(pitch * (0.85 + Math.random() * 0.3), 0, 0.06 + strength * 0.12, strength > 0.5 ? 'square' : 'triangle', 0.02 + strength * 0.08);
+      if (strength > 0.6) playTone(pitch * 0.5, 0.01, 0.18, 'sawtooth', 0.04);
+    }
+
+    function handleFixedBounce(obstacleOrWallName, impact = 0.3) {
       const now = performance.now();
       // Ignora o mesmo contato contínuo (antes contava 1 batida por frame e capotava na hora)
       if (now - lastFixedHitTime < 350) return;
@@ -7736,8 +8540,10 @@
         logInteractionEvent('🤸 O carrinho insistiu na colisão com ' + obstacleOrWallName + ' e capotou!');
         unlockAchievement('acrobat');
       } else {
-        if (!carAirborne) launchVehicle(0.16);
-        carSpeed = -Math.max(0.12, Math.abs(carSpeed) * 0.5);
+        // Quique proporcional à força: batidas médias só recuam, fortes dão um pulinho
+        if (!carAirborne && impact > 0.25) launchVehicle(Math.min(0.24, 0.08 + impact * 0.35));
+        carSpeed = -Math.max(0.06, Math.abs(carSpeed) * (0.25 + impact * 0.6));
+        rumble(0.4, 0.7, 140);
         showCarSpeech('Quicou!', 1300);
         setStatusBanner(`⚡ Bateu em ${obstacleOrWallName} (${fixedHitCount}/3)! Quicou para trás.`);
       }
@@ -7750,6 +8556,88 @@
       setStatusBanner('🦘 Pulo com [F]!', '#35e0ff');
       logInteractionEvent('🦘 Ravi deu um pulo com o carrinho!');
       progressAchievement('jumper', 1);
+    }
+
+    // ============================================================================
+    // COLISOR DO CARRINHO: cápsula ao longo da carroceria (antes era um círculo de raio 1.45,
+    // e o nariz/traseira de ~2.1 entravam nos objetos). Objetos quadrados usam caixa orientada.
+    // ============================================================================
+    const CAR_COL_R = 1.4;      // meia-largura incluindo os pneus grandes
+    const CAR_COL_HALF = 0.82;  // meio-comprimento do "osso" da cápsula (total ≈ 4.4, com para-choques)
+
+    function obstacleBoxRotation(obs) {
+      return obs.group ? obs.group.rotation.y : (obs.boxRot || 0);
+    }
+    // Círculo (px,pz,r) x caixa orientada do obstáculo → { nx, nz, overlap } (normal aponta para o círculo)
+    function circleVsBox(px, pz, r, obs) {
+      const th = obstacleBoxRotation(obs), c = Math.cos(th), s = Math.sin(th);
+      const dx = px - obs.x, dz = pz - obs.z;
+      const lx = dx * c - dz * s, lz = dx * s + dz * c;
+      const hx = obs.box.hx, hz = obs.box.hz;
+      const qx = clamp(lx, -hx, hx), qz = clamp(lz, -hz, hz);
+      const ex = lx - qx, ez = lz - qz;
+      const d = Math.hypot(ex, ez);
+      let nlx, nlz, overlap;
+      if (d > 1e-6) {
+        if (d >= r) return null;
+        nlx = ex / d; nlz = ez / d; overlap = r - d;
+      } else {
+        // Centro dentro da caixa: sai pelo lado mais próximo
+        const px2 = hx - Math.abs(lx), pz2 = hz - Math.abs(lz);
+        if (px2 < pz2) { nlx = Math.sign(lx) || 1; nlz = 0; overlap = r + px2; }
+        else { nlx = 0; nlz = Math.sign(lz) || 1; overlap = r + pz2; }
+      }
+      return { nx: nlx * c + nlz * s, nz: -nlx * s + nlz * c, overlap };
+    }
+    // Contato da cápsula do carrinho (centro cx,cz, ângulo ang) com um obstáculo
+    function carContact(obs, cx, cz, ang) {
+      const fx = Math.sin(ang), fz = Math.cos(ang);
+      if (obs.box) {
+        let best = null;
+        for (const t of [-CAR_COL_HALF, -CAR_COL_HALF / 2, 0, CAR_COL_HALF / 2, CAR_COL_HALF]) {
+          const c = circleVsBox(cx + fx * t, cz + fz * t, CAR_COL_R, obs);
+          if (c && (!best || c.overlap > best.overlap)) best = c;
+        }
+        return best;
+      }
+      const t = clamp((obs.x - cx) * fx + (obs.z - cz) * fz, -CAR_COL_HALF, CAR_COL_HALF);
+      const px = cx + fx * t, pz = cz + fz * t;
+      const dx = px - obs.x, dz = pz - obs.z;
+      const d = Math.hypot(dx, dz);
+      const minD = obs.r + CAR_COL_R;
+      if (d >= minD) return null;
+      if (d < 1e-6) return { nx: -fx, nz: -fz, overlap: minD };
+      return { nx: dx / d, nz: dz / d, overlap: minD - d };
+    }
+    // Um objeto móvel está "preso" se a nova posição invade a parede ou um obstáculo fixo:
+    // nesse caso quem recua é o carrinho (senão o objeto seria empurrado para dentro do carro)
+    function dynamicObjectBlockedAt(obs, ox, oz) {
+      // Mesma métrica usada pela física objeto x fixo (círculos de raio r) e pelas paredes
+      const wallExt = obs.box ? Math.max(obs.box.hx, obs.box.hz) : obs.r;
+      if (obs.level === 'floor' && (ox < -167 + wallExt || ox > 122 - wallExt || oz < -72 + wallExt || oz > 92 - wallExt)) return true;
+      for (let i = 0; i < obstacles.length; i++) {
+        const s = obstacles[i];
+        if (s._dyn || s === obs || (s.level || 'desk') !== obs.level || s.r < 0.01) continue;
+        if (Math.hypot(ox - s.x, oz - s.z) < obs.r + s.r - 0.01) return true;
+      }
+      return false;
+    }
+
+    function dynamicOverlapsOtherDynamic(obs, ox, oz) {
+      for (let i = 0; i < dynamicObstacles.length; i++) {
+        const o = dynamicObstacles[i];
+        if (o === obs || o.isFalling || o.level !== obs.level || o.r < 0.01) continue;
+        if (Math.hypot(ox - o.x, oz - o.z) < obs.r + o.r - 0.05) return true;
+      }
+      return false;
+    }
+
+    function obstacleCollidesWithCar(obs, carLevel, carHeight) {
+      if (heldItem && heldItem.obs === obs) return false;
+      if (obs.isFalling || obs.r < 0.01) return false;
+      if ((obs.level || 'desk') !== carLevel) return false;
+      if (obs.h !== undefined && carHeight > obs.h - 0.15) return false; // pulou por cima
+      return true;
     }
 
     function stepVehicle(time) {
@@ -7794,13 +8682,28 @@
         turboBoostTimer -= dt;
         spawnTurboSpark();
       }
-      const currentMaxSpeed = (turboBoostTimer > 0 ? baseMaxSpeed * 1.9 : baseMaxSpeed) * (boosting ? 1.35 : 1);
-      if (boosting && kF && Math.random() < 0.35) spawnTurboSpark();
+      // Bateria: abaixo de 10% o carrinho perde a força (anda bem devagar até recarregar)
+      const lowPower = carBattery < 10;
+      const boostOn = boosting && !lowPower;
+      const powerK = lowPower ? 0.3 : 1;
+      if ((kF || kB) && !carAirborne) {
+        const prevPct = Math.round(carBattery);
+        carBattery = Math.max(0, carBattery - dt * 0.75 * Math.max(throttle, reverse) * (boostOn ? 2.2 : 1));
+        if (Math.round(carBattery) !== prevPct) updateBatteryHUD();
+        if (carBattery < 10 && !batteryLowWarned) {
+          batteryLowWarned = true;
+          showCarSpeech('Bateria fraca!', 2400);
+          setStatusBanner('🔋 Bateria abaixo de 10%! Passe numa pilha ou no Posto do Bombeiro.', '#ff5252');
+          notify({ type: 'danger', title: 'Bateria fraca', description: 'Recarregue nas pilhas ou no Posto do Bombeiro', duration: 3500 });
+        }
+      }
+      const currentMaxSpeed = (turboBoostTimer > 0 ? baseMaxSpeed * 1.9 : baseMaxSpeed) * (boostOn ? 1.35 : 1) * powerK;
+      if (boostOn && kF && Math.random() < 0.35) spawnTurboSpark();
 
       if (!carAirborne) {
         if (braking) carSpeed *= 0.86;
-        else if (kF) carSpeed = Math.min(carSpeed + acceleration * throttle * (turboBoostTimer > 0 ? 2.4 : 1) * (boosting ? 1.4 : 1), currentMaxSpeed);
-        else if (kB) carSpeed = Math.max(carSpeed - acceleration * reverse, -currentMaxSpeed * 0.65);
+        else if (kF) carSpeed = Math.min(carSpeed + acceleration * powerK * throttle * (turboBoostTimer > 0 ? 2.4 : 1) * (boostOn ? 1.4 : 1), currentMaxSpeed);
+        else if (kB) carSpeed = Math.max(carSpeed - acceleration * powerK * reverse, -currentMaxSpeed * 0.65);
         else if (turboBoostTimer > 0) carSpeed = Math.max(carSpeed, baseMaxSpeed * 1.65);
         else carSpeed *= friction;
         if (carSpeed > currentMaxSpeed) carSpeed += (currentMaxSpeed - carSpeed) * 0.08; // fim do boost: desacelera suave
@@ -7832,7 +8735,7 @@
       if (curY < -15) {
         const wallHit = (name, nx, nz) => {
           const approach = -(velX * nx + velZ * nz);
-          if (approach > 0.08) handleFixedBounce(name);
+          if (approach > 0.08) { handleFixedBounce(name, approach); playImpactSound(null, approach, 8); }
           else carSpeed *= 0.9;
         };
         if (nextX <= -165) { nextX = -164.5; wallHit('Parede esquerda', 1, 0); }
@@ -7849,50 +8752,91 @@
       // Colisões com obstáculos (somente do mesmo nível e na altura do carrinho)
       const carLevel = levelOfY(curY);
       const carHeight = curY - (surfaceBaseY(curY) + CAR_DESK_Y);
+
+      // Varredura em subpassos: em alta velocidade o carrinho para no primeiro contato
+      // (impede "pular" objetos finos como tijolos e cercas entre um passo e outro)
+      const moveLen = Math.hypot(nextX - curX, nextZ - curZ);
+      if (moveLen > 0.3) {
+        const sub = Math.ceil(moveLen / 0.3);
+        for (let s = 1; s < sub; s++) {
+          const tx = curX + (nextX - curX) * (s / sub), tz = curZ + (nextZ - curZ) * (s / sub);
+          if (obstacles.some(o => obstacleCollidesWithCar(o, carLevel, carHeight) && carContact(o, tx, tz, carAngle))) {
+            nextX = tx; nextZ = tz;
+            break;
+          }
+        }
+      }
+
       for (let i = 0; i < obstacles.length; i++) {
         const obs = obstacles[i];
-        if (heldItem && heldItem.obs === obs) continue;
-        if (obs.isFalling) continue;
-        if ((obs.level || 'desk') !== carLevel) continue;
-        if (obs.h !== undefined && carHeight > obs.h - 0.15) continue; // pulou por cima
-        const dx = nextX - obs.x;
-        const dz = nextZ - obs.z;
-        const dist = Math.hypot(dx, dz);
-        const minAllowed = obs.r + CAR_RADIUS;
-        if (dist >= minAllowed || dist < 1e-4) continue;
+        if (!obstacleCollidesWithCar(obs, carLevel, carHeight)) continue;
+        const contact = carContact(obs, nextX, nextZ, carAngle);
+        if (!contact) continue;
 
-        const nx = dx / dist, nz = dz / dist;
-        const overlap = minAllowed - dist;
+        const nx = contact.nx, nz = contact.nz;
+        const overlap = contact.overlap;
         const approach = -(velX * nx + velZ * nz); // > 0 quando avança contra o objeto
 
         if (obs._dyn) {
-          // Objeto empurrável: separação e impulso proporcionais às massas
+          // Objeto empurrável: separação proporcional às massas + impulso pela velocidade RELATIVA
+          // (um objeto que vem rolando também empurra o carrinho, e não atravessa mais)
           const mass = obs.mass || 1;
           const inv = 1 / (CAR_MASS + mass);
           nextX += nx * overlap * mass * inv;
           nextZ += nz * overlap * mass * inv;
           obs.x -= nx * overlap * CAR_MASS * inv;
           obs.z -= nz * overlap * CAR_MASS * inv;
-          if (approach > 0) {
-            const restitution = 0.35;
-            const objSpeed = approach * (1 + restitution) * CAR_MASS * inv;
-            obs.vx -= nx * objSpeed;
-            obs.vz -= nz * objSpeed;
-            obs.vRotY += (Math.random() - 0.5) * 0.3 * objSpeed;
-            if (obs.canTopple) {
-              obs.tiltX = clamp(obs.tiltX - nz * 0.9 * objSpeed, -0.6, 0.6);
-              obs.tiltZ = clamp(obs.tiltZ + nx * 0.9 * objSpeed, -0.6, 0.6);
+          const relApproach = -((velX - obs.vx) * nx + (velZ - obs.vz) * nz);
+          if (relApproach > 0) {
+            const strong = relApproach > 0.2;
+            const restitution = obs.ball ? 0.55 : strong ? 0.45 : 0.25;
+            const j = relApproach * (1 + restitution) / (1 / CAR_MASS + 1 / mass);
+            obs.vx -= nx * (j / mass);
+            obs.vz -= nz * (j / mass);
+            obs.vRotY += (Math.random() - 0.5) * (strong ? 0.6 : 0.2) * (j / mass);
+            // O carrinho recebe a reação ao longo da direção em que anda
+            carSpeed += (nx * Math.sin(carAngle) + nz * Math.cos(carAngle)) * (j / CAR_MASS);
+            if (obs.ball) {
+              // Bola: ganha parte do embalo na direção do carrinho e quica para a frente
+              obs.vx += Math.sin(carAngle) * relApproach * 0.35;
+              obs.vz += Math.cos(carAngle) * relApproach * 0.35;
+              obs.hopV = Math.max(obs.hopV || 0, Math.min(0.45, relApproach * 1.1));
+            } else if (strong && !obs.pin && !(obs.stackOffset > 0)) {
+              // Batida forte: o objeto dá um pulinho e gira
+              obs.hopV = Math.max(obs.hopV || 0, Math.min(0.32, (relApproach - 0.15) * 1.2) * (1.2 / Math.max(0.6, mass)));
             }
-            const carLoss = approach * (1 + restitution) * mass * inv;
-            carSpeed = Math.sign(carSpeed) * Math.max(0, Math.abs(carSpeed) - carLoss);
+            if (obs.pin && relApproach > 0.03) knockPin(obs, -nx, -nz);
+            if (obs.crate && relApproach > 0.12) explodeCrate(obs);
+            if (obs.canTopple) {
+              const tip = (strong ? 1.4 : 0.7) * (j / mass);
+              obs.tiltX = clamp(obs.tiltX - nz * tip, -0.75, 0.75);
+              obs.tiltZ = clamp(obs.tiltZ + nx * tip, -0.75, 0.75);
+            }
+            playImpactSound(obs, relApproach, mass);
+            if (strong) rumble(0.25, 0.5, 90);
           }
           if (obs.group) { obs.group.position.x = obs.x; obs.group.position.z = obs.z; }
         } else {
-          // Objeto fixo: o carrinho é empurrado para fora e quica se bater de frente
-          nextX = obs.x + nx * (minAllowed + 0.02);
-          nextZ = obs.z + nz * (minAllowed + 0.02);
-          if (approach > 0.1) handleFixedBounce(obs.name);
-          else carSpeed *= 0.92;
+          // Objeto fixo: raspão desliza pelo contorno; batida de frente forte quica para trás
+          nextX += nx * (overlap + 0.02);
+          nextZ += nz * (overlap + 0.02);
+          const speedAbs = Math.abs(carSpeed);
+          const headOn = speedAbs > 1e-4 ? clamp(approach / speedAbs, 0, 1) : 0;
+          if (approach > 0.16 && headOn > 0.55) {
+            handleFixedBounce(obs.name, approach);
+            playImpactSound(obs, approach, 6);
+          } else if (approach > 0) {
+            carSpeed *= 1 - 0.6 * headOn;
+            if (carSpeed > 0.02 && headOn < 0.8) {
+              // Vira suavemente para a tangente do obstáculo (contorna em vez de travar)
+              const tx = -nz, tz = nx;
+              const side = Math.sin(carAngle) * tx + Math.cos(carAngle) * tz >= 0 ? 1 : -1;
+              let dA = Math.atan2(tx * side, tz * side) - carAngle;
+              dA = Math.atan2(Math.sin(dA), Math.cos(dA));
+              carAngle += dA * 0.15;
+            }
+            if (approach > 0.05) playImpactSound(obs, approach, 6);
+          }
         }
 
         if (obs.type === 'water_cup' && !cupSpilled) {
@@ -7912,8 +8856,38 @@
         }
       }
 
+      // Passadas extras só de posição: ao sair de um objeto o carrinho não pode entrar em outro
+      for (let pass = 0; pass < 6; pass++) {
+        let moved = false;
+        for (let i = 0; i < obstacles.length; i++) {
+          const obs = obstacles[i];
+          if (!obstacleCollidesWithCar(obs, carLevel, carHeight)) continue;
+          const contact = carContact(obs, nextX, nextZ, carAngle);
+          if (!contact || contact.overlap < 0.005) continue;
+          // Objeto móvel cede para fora do carrinho — a menos que esteja preso contra a parede
+          const ox = obs.x - contact.nx * contact.overlap, oz = obs.z - contact.nz * contact.overlap;
+          const pinned = obs._dyn && dynamicObjectBlockedAt(obs, ox, oz);
+          if (obs._dyn && !pinned) {
+            obs.x = ox; obs.z = oz;
+            if (obs.group) { obs.group.position.x = obs.x; obs.group.position.z = obs.z; }
+          } else {
+            nextX += contact.nx * (contact.overlap + 0.01);
+            nextZ += contact.nz * (contact.overlap + 0.01);
+          }
+          moved = true;
+        }
+        if (!moved) break;
+      }
+
       // Superfície sob o carrinho
-      const g = sampleGround(nextX, nextZ, curY);
+      let g = sampleGround(nextX, nextZ, curY);
+      if (g.wall) {
+        // Bateu na lateral/frente alta do apoio de pés: volta e quica
+        nextX = curX; nextZ = curZ;
+        if (Math.abs(carSpeed) > 0.12) handleFixedBounce('Apoio de pés', Math.abs(carSpeed));
+        else carSpeed *= -0.3;
+        g = sampleGround(nextX, nextZ, curY);
+      }
       let groundY = g.y;
 
       // Pilhas palito (na mesa e no circuito do chão): lombada + mini turbo
@@ -7923,13 +8897,22 @@
           groundY = Math.max(groundY, tb.y - 0.15 + 0.52);
           if (carHeight < 1.5 && time - tb.lastBoostTime > 1.2) {
             tb.lastBoostTime = time;
-            turboBoostTimer = 1.65;
-            carSpeed = baseMaxSpeed * 1.85;
-            showCarSpeech('⚡ MINI TURBO!', 1800);
-            setStatusBanner('⚡ MINI TURBO ATIVADO PELA PILHA PALITO!', '#35e0ff');
-            logInteractionEvent('⚡ Passou por cima da pilha palito: MINI TURBO!');
+            // A pilha recarrega a bateria; o turbo só sai se a bateria já estava acima de 60%
+            const before = chargeBattery(35);
             trackAchievementSet('turbo', tb.id);
-            rumble(0.25, 0.5, 160);
+            if (before > 60) {
+              turboBoostTimer = 1.65;
+              carSpeed = baseMaxSpeed * 1.85;
+              showCarSpeech('⚡ MINI TURBO!', 1800);
+              setStatusBanner('⚡ MINI TURBO! (+35% de bateria)', '#35e0ff');
+              logInteractionEvent('⚡ Pilha palito: MINI TURBO + recarga!');
+              rumble(0.25, 0.5, 160);
+            } else {
+              showCarSpeech('🔋 +35% de bateria', 1600);
+              setStatusBanner(`🔋 Pilha recarregou a bateria: ${Math.round(carBattery)}% (turbo só acima de 60%)`, '#7ee787');
+              rumble(0.15, 0.25, 90);
+            }
+            playTone(660, 0, 0.1, 'triangle', 0.06); playTone(990, 0.08, 0.12, 'triangle', 0.05);
           }
         });
       }
@@ -7950,6 +8933,11 @@
       // Chegada em uma ilha (descoberta de área, como no mundo do DS)
       if (g.island) {
         const isl = islandAt(nextX, nextZ);
+        // Posto do Bombeiro (a "ilha do Ravi") recarrega a bateria enquanto o carrinho está nela
+        if (isl && isl.id === 'fire' && carBattery < 100) {
+          chargeBattery(dt * 25);
+          setStatusBanner(`🔋 Carregando no Posto do Bombeiro: ${Math.round(carBattery)}%`, '#7ee787');
+        }
         if (isl && !isl.visited) {
           isl.visited = true;
           notify({ type: 'info', title: isl.name, description: 'Ilha descoberta! Procure o diamante para interagir.', duration: 3600 });
@@ -8017,7 +9005,12 @@
         }
       } else if (groundY < y - 1.0) {
         // Beirada: começa a cair (antes o carro "teleportava" ou flutuava)
-        launchVehicle(lastGroundWasFootrest && Math.abs(carSpeed) > 0.24 ? 0.22 : 0);
+        // Saindo do topo da rampa do apoio de pés: salto proporcional à velocidade (atalho!)
+        launchVehicle(lastGroundWasFootrest ? Math.min(0.42, Math.abs(carSpeed) * 0.55 + 0.06) : 0);
+        if (lastGroundWasFootrest && Math.abs(carSpeed) > 0.2) {
+          showCarSpeech('Atalho secreto!', 1600);
+          if (!achievementState.unlocked.shortcut) progressAchievement('shortcut', 1);
+        }
         carAirPeakY = y;
       } else if (g.ramp) {
         y = groundY;
@@ -8044,7 +9037,9 @@
 
       // Objeto seguro é arrastado atrás do carrinho
       if (heldItem) {
-        const dragDist = heldItem.type === 'pencil' ? 3.4 : 3.2;
+        // Distância do arrasto respeita o tamanho do objeto (antes objetos grandes ficavam dentro do carrinho)
+        const heldR = heldItem.obs ? heldItem.obs.r : 1;
+        const dragDist = Math.max(heldItem.type === 'pencil' ? 3.4 : 3.2, 2.1 + heldR + 0.4);
         const dragX = nextX - Math.sin(carAngle) * dragDist;
         const dragZ = nextZ - Math.cos(carAngle) * dragDist;
         heldItem.group.position.set(dragX, y - CAR_DESK_Y + itemRestOffset(heldItem) + 0.35, dragZ);
@@ -8105,6 +9100,7 @@
             (Math.abs(obs.x) > DESK_HALF_W + 0.6 || Math.abs(obs.z) > DESK_HALF_D + 0.6)) {
           obs.isFalling = true;
           obs.vy = 0;
+          obs.stackOffset = 0;
         }
         if (obs.isFalling) {
           obs.vy -= GRAVITY;
@@ -8118,30 +9114,62 @@
             obs.vx *= 0.35;
             obs.vz *= 0.35;
             if (obs.canTopple) obs.tiltX += 0.25;
+            if (obs.ball) obs.hopV = 0.3; // a bola quica ao chegar no chão
           }
         }
 
-        if (Math.abs(obs.vx) > 1e-4 || Math.abs(obs.vz) > 1e-4 || Math.abs(obs.vRotY) > 1e-4) {
+        const moving = Math.abs(obs.vx) > 1e-4 || Math.abs(obs.vz) > 1e-4 || Math.abs(obs.vRotY) > 1e-4;
+        if (moving) {
+          // Atrito por objeto: bolas rolam longe, caixas e tijolos param rápido
+          const fr = obs.friction || 0.91;
           obs.x += obs.vx;
           obs.z += obs.vz;
-          obs.vx *= 0.91;
-          obs.vz *= 0.91;
+          obs.vx *= fr;
+          obs.vz *= fr;
           obs.vRotY *= 0.88;
-          grp.rotation.y += obs.vRotY;
+          if (!obs.pin) grp.rotation.y += obs.vRotY;
         } else {
           obs.vx = 0; obs.vz = 0; obs.vRotY = 0;
         }
 
-        // Paredes do quarto também seguram os objetos
+        // Paredes do quarto também seguram os objetos (bola quica com mais energia)
         if (obs.level === 'floor') {
-          const r = obs.r;
-          if (obs.x < -167 + r) { obs.x = -167 + r; obs.vx = Math.abs(obs.vx) * 0.4; }
-          if (obs.x > 122 - r) { obs.x = 122 - r; obs.vx = -Math.abs(obs.vx) * 0.4; }
-          if (obs.z < -72 + r) { obs.z = -72 + r; obs.vz = Math.abs(obs.vz) * 0.4; }
-          if (obs.z > 92 - r) { obs.z = 92 - r; obs.vz = -Math.abs(obs.vz) * 0.4; }
+          const r = obs.box ? Math.max(obs.box.hx, obs.box.hz) : obs.r, e = obs.ball ? 0.75 : 0.4;
+          if (obs.x < -167 + r) { obs.x = -167 + r; obs.vx = Math.abs(obs.vx) * e; }
+          if (obs.x > 122 - r) { obs.x = 122 - r; obs.vx = -Math.abs(obs.vx) * e; }
+          if (obs.z < -72 + r) { obs.z = -72 + r; obs.vz = Math.abs(obs.vz) * e; }
+          if (obs.z > 92 - r) { obs.z = 92 - r; obs.vz = -Math.abs(obs.vz) * e; }
         }
 
-        if (obs.tiltX || obs.tiltZ) {
+        const baseY = surfaceBaseY(obs.level === 'desk' ? 0 : FLOOR_SURFACE_Y) + (obs.restOffset || 0);
+        if (!obs.isFalling) {
+          // Quique vertical com perda de energia (bola sempre; outros objetos após batidas fortes)
+          if (!obs.pin && !(obs.stackOffset > 0) && (obs.ball || obs.hopV || obs.hop)) {
+            obs.hop = obs.hop || 0;
+            obs.hopV = (obs.hopV || 0) - GRAVITY;
+            obs.hop += obs.hopV;
+            if (obs.hop <= 0) {
+              obs.hop = 0;
+              obs.hopV = obs.hopV < -0.06 ? -obs.hopV * 0.5 : 0;
+            }
+            grp.position.y = baseY + obs.hop;
+          }
+          // Tijolos empilhados caem quando o muro é empurrado
+          if (obs.stackOffset > 0) {
+            if (moving) obs.stackDropping = true;
+            if (obs.stackDropping) obs.stackOffset = Math.max(0, obs.stackOffset - 0.09);
+            grp.position.y = baseY + obs.stackOffset;
+          }
+          // Pino derrubado: tomba até ficar deitado
+          if (obs.pin && obs.knocked && obs.knockT < 1) {
+            obs.knockT = Math.min(1, obs.knockT + 0.07);
+            const ease = 1 - Math.pow(1 - obs.knockT, 3);
+            grp.quaternion.setFromAxisAngle(obs.knockAxis, Math.PI / 2 * ease);
+            grp.position.y = baseY + 0.7 * ease;
+          }
+        }
+
+        if (!obs.pin && (obs.tiltX || obs.tiltZ)) {
           obs.tiltX *= 0.86;
           obs.tiltZ *= 0.86;
           if (Math.abs(obs.tiltX) < 1e-3) obs.tiltX = 0;
@@ -8171,9 +9199,15 @@
           b.z += nz * overlap * ma / (ma + mb);
           const closing = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz;
           if (closing > 0) {
-            const j2 = (1 + 0.3) * closing / (1 / ma + 1 / mb);
+            const e = (a.ball || b.ball) ? 0.6 : 0.3;
+            const j2 = (1 + e) * closing / (1 / ma + 1 / mb);
             a.vx -= (j2 / ma) * nx; a.vz -= (j2 / ma) * nz;
             b.vx += (j2 / mb) * nx; b.vz += (j2 / mb) * nz;
+            // Pinos tombam quando algo bate neles com força (bola, outro pino, caixa)
+            if (closing > 0.03) {
+              if (b.pin) knockPin(b, nx, nz);
+              if (a.pin) knockPin(a, -nx, -nz);
+            }
           }
           if (a.group) { a.group.position.x = a.x; a.group.position.z = a.z; }
           if (b.group) { b.group.position.x = b.x; b.group.position.z = b.z; }
@@ -8189,9 +9223,62 @@
           a.x = s.x + nx * minD;
           a.z = s.z + nz * minD;
           const vn = a.vx * nx + a.vz * nz;
-          if (vn < 0) { a.vx -= 1.4 * vn * nx; a.vz -= 1.4 * vn * nz; }
+          const e = a.ball ? 1.7 : 1.4;
+          if (vn < 0) { a.vx -= e * vn * nx; a.vz -= e * vn * nz; }
           if (a.group) { a.group.position.x = a.x; a.group.position.z = a.z; }
         }
+      }
+
+      // Objetos em movimento também não atravessam o carrinho (ex.: bola rolando contra ele parado)
+      const cp = vehicle.position;
+      const carLvl = levelOfY(cp.y);
+      const carH = cp.y - (surfaceBaseY(cp.y) + CAR_DESK_Y);
+      for (let i = 0; i < dynamicObstacles.length; i++) {
+        const o = dynamicObstacles[i];
+        if (!obstacleCollidesWithCar(o, carLvl, carH)) continue;
+        const contact = carContact(o, cp.x, cp.z, carAngle);
+        if (!contact) continue;
+        // Normal do contato aponta para o carrinho: o objeto sai no sentido oposto
+        const nx = -contact.nx, nz = -contact.nz;
+        const ox = o.x + nx * contact.overlap, oz = o.z + nz * contact.overlap;
+        if (!dynamicObjectBlockedAt(o, ox, oz)) { o.x = ox; o.z = oz; }
+        else {
+          // Objeto preso (parede/fixo): o carrinho recua imediatamente, nunca fica sobreposto
+          cp.x += contact.nx * (contact.overlap + 0.01);
+          cp.z += contact.nz * (contact.overlap + 0.01);
+        }
+        const vn = o.vx * nx + o.vz * nz;
+        if (vn < 0) {
+          const e = o.ball ? 1.6 : 1.3;
+          o.vx -= e * vn * nx; o.vz -= e * vn * nz;
+          if (o.ball && -vn > 0.15) o.hopV = Math.max(o.hopV || 0, -vn * 0.6);
+          playImpactSound(o, -vn, o.mass || 1);
+        }
+        if (o.group) { o.group.position.x = o.x; o.group.position.z = o.z; }
+      }
+      // Correção final combinada: fixos empurram o carrinho; móveis saem do caminho se puderem
+      // (senão o carrinho recua). Repete até não sobrar sobreposição com NADA.
+      for (let pass = 0; pass < 6; pass++) {
+        let moved = false;
+        for (let i = 0; i < obstacles.length; i++) {
+          const s = obstacles[i];
+          if (!obstacleCollidesWithCar(s, carLvl, carH)) continue;
+          const c = carContact(s, cp.x, cp.z, carAngle);
+          if (!c || c.overlap < 0.005) continue;
+          if (s._dyn) {
+            const ox = s.x - c.nx * c.overlap, oz = s.z - c.nz * c.overlap;
+            if (!dynamicObjectBlockedAt(s, ox, oz) && !dynamicOverlapsOtherDynamic(s, ox, oz)) {
+              s.x = ox; s.z = oz;
+              if (s.group) { s.group.position.x = s.x; s.group.position.z = s.z; }
+              moved = true;
+              continue;
+            }
+          }
+          cp.x += c.nx * (c.overlap + 0.01);
+          cp.z += c.nz * (c.overlap + 0.01);
+          moved = true;
+        }
+        if (!moved) break;
       }
     }
 
@@ -8276,6 +9363,15 @@
     const clock = new THREE.Clock();
     let prevTime = 0;
     const lastLookTarget = new THREE.Vector3();
+    let lastCamLevel = 'desk';
+    let lastScreenTick = 0;
+    let closeCamAngle = -0.55;
+    const camFollowTarget = new THREE.Vector3(11.5, 1.2, 11.5);
+    const closeLookAhead = new THREE.Vector3();
+    const renderInterp = {
+      active: false, prevPos: new THREE.Vector3(), physPos: new THREE.Vector3(), shownPos: new THREE.Vector3(),
+      prevYaw: 0, physYaw: 0
+    };
 
     function animate() {
       requestAnimationFrame(animate);
@@ -8284,6 +9380,11 @@
       prevTime = elapsedTime;
 
       pollGamepad();
+      // Tela do Antigravity animada (monitor + notebook)
+      if (monitorState === 'normal' && !monitorProfileMode && elapsedTime - lastScreenTick > 0.12) {
+        lastScreenTick = elapsedTime;
+        updateMonitorScreen();
+      }
 
       // Peixes e bolhas do aquário
       fishes.forEach((f) => {
@@ -8351,7 +9452,7 @@
           fireLight.intensity = 0;
           monitorHeadGroup.rotation.z = -0.14;
           monitorHeadGroup.rotation.x = 0.12;
-          curvedBackMat.color.setHex(0x090a0c);
+          curvedBack.material.color.setHex(0x090a0c);
           updateMonitorScreen();
           setStatusBanner('💥 BOOM! O monitor explodiu! Reinicie pelo menu para consertar.', '#ff5252');
           logInteractionEvent('💥 O monitor 1 explodiu após a contagem de autodestruição!');
@@ -8370,34 +9471,77 @@
       }
 
       // Física em passo fixo (60 Hz): mesma velocidade em monitores de 60, 120 ou 144 Hz
+      // Restaura o estado físico do carrinho (o quadro anterior mostrou uma posição interpolada).
+      // Se algo moveu o carrinho fora da física (teleporte, reinício), aceita a nova posição.
+      if (renderInterp.active) {
+        if (vehicle.position.distanceToSquared(renderInterp.shownPos) < 1e-10) {
+          vehicle.position.copy(renderInterp.physPos);
+          vehicle.rotation.y = renderInterp.physYaw;
+        } else {
+          renderInterp.prevPos.copy(vehicle.position);
+          renderInterp.prevYaw = vehicle.rotation.y;
+        }
+      }
       physAccumulator += dt;
       let steps = 0;
       while (physAccumulator >= PHYS_STEP && steps < 8) {
+        renderInterp.prevPos.copy(vehicle.position);
+        renderInterp.prevYaw = vehicle.rotation.y;
         physicsStep(elapsedTime);
         physAccumulator -= PHYS_STEP;
         steps++;
       }
       if (steps >= 8) physAccumulator = 0;
+      // Interpolação visual entre os dois últimos passos de 60 Hz (sem tremedeira em telas 120/144 Hz)
+      renderInterp.physPos.copy(vehicle.position);
+      renderInterp.physYaw = vehicle.rotation.y;
+      if (!isFallingOff) {
+        const alpha = clamp(physAccumulator / PHYS_STEP, 0, 1);
+        vehicle.position.lerpVectors(renderInterp.prevPos, renderInterp.physPos, alpha);
+        let dYaw = renderInterp.physYaw - renderInterp.prevYaw;
+        dYaw = Math.atan2(Math.sin(dYaw), Math.cos(dYaw));
+        vehicle.rotation.y = renderInterp.prevYaw + dYaw * alpha;
+      }
+      renderInterp.shownPos.copy(vehicle.position);
+      renderInterp.active = true;
 
       updateFloatingProps(elapsedTime);
       updateWorldEffects(elapsedTime, dt);
       updateGateGlow(elapsedTime);
+      updateSiren(elapsedTime);
+
+      // Preset automático: em cima da mesa = Isométrica; ao descer para o quarto = Atrás do carrinho
+      // (só alterna entre esses dois; Quarto e Mesa completa continuam fixos se escolhidos no menu)
+      const camLevelNow = vehicle.position.y > (lastCamLevel === 'desk' ? -8 : -4) ? 'desk' : 'floor';
+      if (camLevelNow !== lastCamLevel) {
+        lastCamLevel = camLevelNow;
+        if (camMode === 'iso' || camMode === 'close') setCameraMode(camLevelNow === 'desk' ? 'iso' : 'close');
+      }
 
       // Órbita manual pelo analógico direito (volta ao centro quando solto)
-      if (Math.abs(padInput.camX) > 0) camOrbitYaw += padInput.camX * dt * 2.4;
+      // Eixos invertidos (pedido): direita gira a câmera para a direita, para cima sobe a câmera
+      if (Math.abs(padInput.camX) > 0) camOrbitYaw -= padInput.camX * dt * 2.4;
       else camOrbitYaw *= Math.pow(0.2, dt);
-      if (Math.abs(padInput.camY) > 0) camOrbitPitch = clamp(camOrbitPitch + padInput.camY * dt * 1.4, -0.45, 0.7);
+      if (Math.abs(padInput.camY) > 0) camOrbitPitch = clamp(camOrbitPitch - padInput.camY * dt * 1.4, -0.45, 0.7);
       else camOrbitPitch *= Math.pow(0.2, dt);
 
       // Câmera dinâmica — 4 modos: isométrica (inicial), atrás do carrinho, quarto e mesa completa
       let camOffset, lookTarget;
       const vp = vehicle.position;
-      if (camMode === 'close') {
-        // Atrás do carrinho, olhando um pouco à frente dele
-        const viewAngle = carAngle + Math.PI;
-        const distCam = 9.5 * zoomFactor, heightCam = 4.4 * zoomFactor;
+      if (camMode === 'close' || camMode === 'fps') {
+        // Ângulo suavizado (curvas não sacodem a câmera)
+        let dA = carAngle - closeCamAngle;
+        dA = Math.atan2(Math.sin(dA), Math.cos(dA));
+        closeCamAngle += dA * (1 - Math.exp(-dt * (camMode === 'fps' ? 9 : 5)));
+        const viewAngle = closeCamAngle + Math.PI;
+        // Atrás do carrinho: carro inteiro à frente da câmera. Primeira pessoa: colada no teto, canhão à frente.
+        const distCam = (camMode === 'fps' ? 3.6 : 9.4) * zoomFactor;
+        const heightCam = (camMode === 'fps' ? 3.3 : 4.9) * zoomFactor;
         camOffset = new THREE.Vector3(Math.sin(viewAngle) * distCam, heightCam, Math.cos(viewAngle) * distCam);
-        lookTarget = new THREE.Vector3(vp.x + Math.sin(carAngle) * 3, vp.y + 1.5, vp.z + Math.cos(carAngle) * 3);
+        // Base da câmera = carrinho; ela olha à frente dele
+        lookTarget = new THREE.Vector3(vp.x, vp.y + 1.2, vp.z);
+        const ahead = camMode === 'fps' ? 10 : 3.2;
+        closeLookAhead.set(Math.sin(closeCamAngle) * ahead, camMode === 'fps' ? 1.4 : 0.2, Math.cos(closeCamAngle) * ahead);
       } else if (camMode === 'room') {
         camOffset = new THREE.Vector3(88 * zoomFactor, 74 * zoomFactor, 118 * zoomFactor);
         lookTarget = new THREE.Vector3(0, -18, 15);
@@ -8409,7 +9553,7 @@
         camOffset = new THREE.Vector3(18 * zoomFactor, 26 * zoomFactor, 32 * zoomFactor);
         lookTarget = new THREE.Vector3(vp.x, vp.y + 1.0, vp.z);
       }
-      if (camMode === 'close' || camMode === 'iso') {
+      if (camMode === 'close' || camMode === 'fps' || camMode === 'iso') {
         camOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), camOrbitYaw);
         camOffset.y *= 1 + camOrbitPitch;
       }
@@ -8419,9 +9563,22 @@
         freeOrbitControls.update();
       } else {
         // Suavização independente da taxa de quadros (equivale a 0.09 por quadro a 60 Hz)
-        const camAlpha = 1 - Math.pow(1 - 0.09, dt * 60);
-        camera.position.lerp(lookTarget.clone().add(camOffset), camAlpha);
-        camera.lookAt(lookTarget);
+        // Alvo suavizado uma única vez e câmera presa a ele: posição e direção andam juntas
+        const followRate = (camMode === 'close' || camMode === 'fps') ? 9 : 5.6;
+        const k = 1 - Math.exp(-dt * followRate);
+        if (camFollowTarget.distanceToSquared(lookTarget) > 900) camFollowTarget.copy(lookTarget); // teleporte
+        camFollowTarget.lerp(lookTarget, k);
+        const desired = camFollowTarget.clone().add(camOffset);
+        if (camMode === 'close' || camMode === 'fps') {
+          // Nunca abaixo do terreno atrás do carrinho (ex.: descendo a rampa, o trecho de trás é mais alto)
+          const behindGround = sampleGround(desired.x, desired.z, vp.y + 6);
+          desired.y = Math.max(desired.y, behindGround.y + (camMode === 'fps' ? 2.2 : 3.2));
+          camera.position.copy(desired);
+          camera.lookAt(camFollowTarget.clone().add(closeLookAhead));
+        } else {
+          camera.position.lerp(desired, 1 - Math.pow(1 - 0.09, dt * 60));
+          camera.lookAt(camFollowTarget);
+        }
       }
 
       // Oclusão: objetos grandes ficam translúcidos quando escondem o carrinho
@@ -8435,24 +9592,40 @@
       occlusionRaycaster.far = Math.max(1.0, rayDist - 1.2);
       const hits = occlusionRaycaster.intersectObjects(occluderMeshes, true);
       const currentOccluded = new Set();
+      // Objetos fixos entre a câmera e o carrinho ficam 90% transparentes (opacidade 0.1)
+      const OCCLUDED_OPACITY = 0.1;
+      const matsOf = (m) => (Array.isArray(m.material) ? m.material : [m.material]);
       hits.forEach((h) => {
         const m = h.object;
         if (m.material && !m.isCar) {
           currentOccluded.add(m);
           if (m._origOpacity === undefined) {
-            m._origOpacity = m.material.opacity !== undefined ? m.material.opacity : 1.0;
-            m._origTransparent = m.material.transparent !== undefined ? m.material.transparent : false;
+            const first = matsOf(m)[0];
+            m._origOpacity = first.opacity !== undefined ? first.opacity : 1.0;
+            m._origTransparent = !!first.transparent;
+            m._origDepthWrite = first.depthWrite !== false;
           }
-          m.material.transparent = true;
-          m.material.opacity = THREE.MathUtils.lerp(m.material.opacity, 0.18, 0.22);
+          matsOf(m).forEach((mat) => {
+            mat.transparent = true;
+            mat.depthWrite = false; // não esconde o carrinho atrás dela
+            mat.opacity = THREE.MathUtils.lerp(mat.opacity, Math.min(OCCLUDED_OPACITY, m._origOpacity), 0.25);
+          });
         }
       });
       occludedMeshesSet.forEach((m) => {
         if (!currentOccluded.has(m) && m.material) {
-          m.material.opacity = THREE.MathUtils.lerp(m.material.opacity, m._origOpacity || 1.0, 0.18);
-          if (Math.abs(m.material.opacity - (m._origOpacity || 1.0)) < 0.05) {
-            m.material.opacity = m._origOpacity || 1.0;
-            m.material.transparent = m._origTransparent || false;
+          const target = m._origOpacity || 1.0;
+          let done = true;
+          matsOf(m).forEach((mat) => {
+            mat.opacity = THREE.MathUtils.lerp(mat.opacity, target, 0.18);
+            if (Math.abs(mat.opacity - target) >= 0.05) done = false;
+          });
+          if (done) {
+            matsOf(m).forEach((mat) => {
+              mat.opacity = target;
+              mat.transparent = m._origTransparent || false;
+              mat.depthWrite = m._origDepthWrite !== false;
+            });
             occludedMeshesSet.delete(m);
           }
         }
@@ -8463,7 +9636,7 @@
       const isCarUnderDesk = vehicle.position.y < -15 && Math.abs(vehicle.position.x) < DESK_HALF_W && Math.abs(vehicle.position.z) < DESK_HALF_D;
       if (isCarUnderDesk) {
         deskMat.transparent = true;
-        deskMat.opacity = THREE.MathUtils.lerp(deskMat.opacity, 0.15, 0.25);
+        deskMat.opacity = THREE.MathUtils.lerp(deskMat.opacity, 0.1, 0.25);
       } else if (!currentOccluded.has(deskTop)) {
         deskMat.opacity = THREE.MathUtils.lerp(deskMat.opacity, 1.0, 0.18);
         if (deskMat.opacity > 0.95) { deskMat.opacity = 1.0; deskMat.transparent = false; }
@@ -8498,7 +9671,7 @@
       document.body.style.cursor = on ? 'grab' : '';
     }
 
-    const camModesList = ['iso', 'close', 'room', 'wide'];
+    const camModesList = ['iso', 'close', 'fps', 'room', 'wide'];
     function cycleCameraMode() {
       const nextIdx = (camModesList.indexOf(camMode) + 1) % camModesList.length;
       setCameraMode(camModesList[nextIdx]);
@@ -8691,6 +9864,7 @@
 
     applyQuality();
     updateWaterHUD();
+    updateBatteryHUD();
     renderAchievements();
     renderLeaderboard();
     animate();
