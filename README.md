@@ -18,6 +18,16 @@ Um mundo 3D interativo em **Three.js (r128)** inspirado em Bruno Simon: o cenár
 
 No celular aparecem o direcional e a barra de ações (Pular · Pegar · Água).
 
+Também: `Enter` interage com ilhas, rádio e notebook · `Shift` boost · `H` buzina · `R` volta para a largada.
+Controle (DualSense/Xbox): L2 acelera, R2 ré, analógico esquerdo dirige, ○ boost, △ pula, ▢ freia, ✕ interage, L1 hidráulica, R1 água, analógico direito câmera, Create volta à largada, Options abre o menu.
+
+## 🏁 Circuito, ilhas e itens interativos
+
+- Pista original que contorna a mesa, desce a rampa de papelão, cruza o quarto embaixo da mesa e sobe de volta, com 6 portais, cronômetro e ranking local (menu › Circuito).
+- Ilhas no quarto (Posto do Bombeiro, Espacial, Música, Brinquedos e Lago) com grama, folhagem e água em shader.
+- Rádio da mesa toca o canal oficial no YouTube Music; o notebook mostra LinkedIn e Trailhead no monitor.
+- Os cadernos da mesa listam conquistas, recordes e pinturas; alimentos e plantinhas quebram com batidas; a caixinha de clipes derruba clipes ao ser arrastada.
+
 ## 🎨 Design system
 
 A interface usa o design system de Bruno Simon (`assets/css/bruno-ds.css`, fontes em `assets/fonts`, ícones em `assets/ui`): intro com anel de carregamento, triggers de menu/mapa, menu split-pane (Início, Opções, Controles, Conquistas, Bastidores), toasts de notificação, conquistas com pinturas desbloqueáveis, tooltips e mapa com pins de viagem rápida.

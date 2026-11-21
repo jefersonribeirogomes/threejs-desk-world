@@ -149,6 +149,24 @@
       transform: rotate(45deg);
     }
     html.is-mode-touch .interact-prompt .key { display: none; }
+    html.is-mode-touch .grab-prompt .key { display: inline-block; }
+    .modals .modal.island .island-actions { flex-wrap: wrap; }
+
+    /* Mini player do rádio (superfície ameixa + moldura do DS) */
+    .radio-player {
+      position: fixed; left: 20px; bottom: 20px; z-index: 9; width: 320px; max-width: calc(100vw - 40px);
+      background: var(--ds-surface); color: #fff; padding: 10px 12px 12px; display: none;
+    }
+    .radio-player.is-visible { display: block; }
+    .radio-player .radio-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .radio-player .music-note { width: 16px; height: 18px; background: url(./assets/ui/music-note.svg) 0 0 / cover; }
+    .radio-player .radio-title { font-family: var(--ds-font-title); font-weight: 700; font-size: 1.6rem; color: var(--ds-music); line-height: 1; flex: 1; }
+    .radio-player .radio-close { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; opacity: .7; position: relative; z-index: 1; }
+    .radio-player .radio-close:hover { opacity: 1; }
+    .radio-player .radio-frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
+    .radio-player .radio-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .radio-player .radio-link { display: inline-block; margin-top: 8px; font-size: .7rem; font-weight: 700; color: var(--ds-peach); position: relative; z-index: 1; }
+    html.is-mode-touch .radio-player { bottom: 130px; }
 
     /* HUD do circuito (timer Nunito 900 · 30px do DS) */
     .race-hud {
@@ -355,6 +373,19 @@
 
   <!-- Prompt de ponto interativo das ilhas -->
   <div class="interact-prompt" id="interact-prompt"><span class="key">ENTER</span> <span id="interact-label">Interagir</span></div>
+  <!-- Balão "aperte ... para pegar" sobre objetos seguráveis -->
+  <div class="interact-prompt grab-prompt" id="grab-prompt"></div>
+
+  <!-- Mini player do rádio (YouTube Music do canal oficial) -->
+  <div class="radio-player ds-frame" id="radio-player" aria-live="polite">
+    <div class="radio-head">
+      <span class="music-note"></span>
+      <div class="radio-title">Rádio do Jheff</div>
+      <button class="radio-close" id="radio-close" type="button" aria-label="Desligar rádio"><img src="./assets/ui/close-mini.svg" alt=""></button>
+    </div>
+    <div class="radio-frame" id="radio-frame"></div>
+    <a class="radio-link" href="https://www.youtube.com/@jefersonrgomes_oficial" target="_blank" rel="noopener">Canal oficial no YouTube Music ↗</a>
+  </div>
 
   <!-- HUD do circuito -->
   <div class="race-hud ds-frame" id="race-hud">
@@ -610,9 +641,7 @@
         <button class="close js-close" id="island-close" type="button" aria-label="Fechar"><img class="icon is-default" src="./assets/ui/close.svg" alt=""></button>
         <div class="title" id="island-title">Ilha</div>
         <p class="text" id="island-text"></p>
-        <div class="horizontal-group">
-          <button class="button" id="island-action" type="button">Ação</button>
-        </div>
+        <div class="horizontal-group island-actions" id="island-actions"></div>
       </div>
     </div>
     <!-- Reinício -->
@@ -858,14 +887,109 @@
     monitorCanvas.height = 420;
     const monitorCtx = monitorCanvas.getContext('2d');
     const monitorTexture = new THREE.CanvasTexture(monitorCanvas);
+    monitorTexture.encoding = THREE.sRGBEncoding; // cores fiéis ao canvas (sem desbotar)
 
     let typedTextLines = ['> terminal ready...'];
     let selfDestructProgress = 0; // 0 a 100
     let monitorState = 'normal'; // 'normal', 'burning', 'exploded'
     let fireTimer = 15.0;
+    let monitorProfileMode = null; // null | 'linkedin' | 'trailhead' (escolhido no notebook)
+
+    // Versões mini dos perfis profissionais desenhadas na tela ultrawide (1024 x 420)
+    function drawProfileAvatar(ctx, cx, cy, r, ringText) {
+      const ring = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+      ring.addColorStop(0, '#f2f4f7'); ring.addColorStop(0.5, '#9aa3ad'); ring.addColorStop(1, '#e6e9ee');
+      ctx.fillStyle = ring;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#2b2e35';
+      ctx.beginPath(); ctx.arc(cx, cy, r * 0.68, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 ${Math.round(r * 0.55)}px Nunito, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('JG', cx, cy + 2);
+      ctx.font = `800 ${Math.round(r * 0.17)}px Nunito, sans-serif`;
+      ctx.fillStyle = '#2b2e35';
+      const chars = ringText.split('');
+      chars.forEach((ch, i) => {
+        const a = -Math.PI * 0.92 + (i / (chars.length - 1)) * Math.PI * 0.84;
+        ctx.save();
+        ctx.translate(cx + Math.cos(a) * r * 0.84, cy + Math.sin(a) * r * 0.84);
+        ctx.rotate(a + Math.PI / 2);
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
+      });
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    }
+    function drawProfileScreen(ctx, mode) {
+      const W = 1024, H = 420;
+      if (mode === 'linkedin') {
+        ctx.fillStyle = '#1b1f23'; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#1d2226'; ctx.fillRect(0, 0, W, 46);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(24, 9, 28, 28);
+        ctx.fillStyle = '#0a66c2'; ctx.font = '900 22px Nunito, sans-serif'; ctx.fillText('in', 28, 31);
+        ctx.fillStyle = '#9aa3ad'; ctx.font = '600 15px Nunito, sans-serif';
+        ctx.fillText('linkedin.com/in/jefersonribeirogomes', 70, 29);
+        ctx.fillStyle = '#f3f2f8'; ctx.fillRect(170, 60, 690, 110);
+        [[190, 70, 40], [560, 68, 70], [700, 110, 34], [810, 64, 46], [300, 140, 26]].forEach(([x, y, s], i) => {
+          ctx.fillStyle = i % 2 ? '#a5b4fc' : '#5b4ff0'; ctx.fillRect(x, y, s, s);
+        });
+        ctx.fillStyle = '#3d3d4e'; ctx.font = '600 16px Nunito, sans-serif';
+        ctx.fillText('Arquiteto de Soluções de IA &', 640, 115);
+        ctx.fillText('Especialista em Integração (MuleSoft/Salesforce)', 560, 138);
+        ctx.fillStyle = '#1b1f23'; ctx.fillRect(170, 170, 690, 240);
+        drawProfileAvatar(ctx, 270, 180, 78, 'AGENTBLAZER CHAMPION');
+        ctx.fillStyle = '#ffffff'; ctx.font = '800 34px Nunito, sans-serif';
+        ctx.fillText('Jeferson (Jheff) Gomes', 200, 300);
+        ctx.fillStyle = '#d0d4d9'; ctx.font = '600 19px Nunito, sans-serif';
+        ctx.fillText('Arquiteto de Soluções de IA | Desenvolvedor Senior MuleSoft | Agentblazer', 200, 334);
+        ctx.fillStyle = '#9aa3ad'; ctx.font = '600 17px Nunito, sans-serif';
+        ctx.fillText('São Paulo, Brasil  ·  UNINOVE', 200, 364);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(640, 250, 44, 44);
+        ctx.fillStyle = '#c21515'; ctx.font = '900 11px Nunito, sans-serif'; ctx.fillText('UNINOVE', 642, 276);
+        ctx.fillStyle = '#ffffff'; ctx.font = '700 20px Nunito, sans-serif'; ctx.fillText('UNINOVE', 696, 280);
+        ctx.strokeStyle = '#70b5f9'; ctx.lineWidth = 2;
+        ctx.strokeRect(640, 318, 190, 34);
+        ctx.fillStyle = '#70b5f9'; ctx.font = '700 16px Nunito, sans-serif'; ctx.fillText('Abrir no notebook ↗', 655, 341);
+      } else {
+        ctx.fillStyle = '#f4f6f9'; ctx.fillRect(0, 0, W, H);
+        const sky = ctx.createLinearGradient(0, 0, 0, 130);
+        sky.addColorStop(0, '#ffe8a3'); sky.addColorStop(1, '#ffd27a');
+        ctx.fillStyle = sky; ctx.fillRect(0, 0, W, 130);
+        ctx.fillStyle = '#3e8e41';
+        for (let i = 0; i < 9; i++) { ctx.beginPath(); ctx.moveTo(i * 120 - 20, 130); ctx.lineTo(i * 120 + 30, 50 + (i % 3) * 18); ctx.lineTo(i * 120 + 80, 130); ctx.fill(); }
+        ctx.fillStyle = '#00a1e0';
+        [[60, 34, 22], [84, 26, 26], [110, 34, 22], [84, 42, 20]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
+        ctx.fillStyle = '#ffffff'; ctx.font = '700 14px Nunito, sans-serif'; ctx.fillText('salesforce', 52, 39);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(40, 110, 470, 296); ctx.fillRect(530, 110, 454, 296);
+        drawProfileAvatar(ctx, 140, 190, 70, 'AGENTBLAZER CHAMPION');
+        ctx.fillStyle = '#181818'; ctx.font = '800 30px Nunito, sans-serif'; ctx.fillText('Jeferson Gomes', 60, 300);
+        ctx.fillStyle = '#3e3e3c'; ctx.font = '600 16px Nunito, sans-serif';
+        ctx.fillText('Arquiteto de Soluções de IA | Desenvolvedor', 60, 330);
+        ctx.fillText('Senior MuleSoft · São Paulo, Brasil', 60, 352);
+        ctx.fillText('12+ anos projetando ecossistemas de APIs', 60, 382);
+        ctx.fillStyle = '#181818'; ctx.font = '700 22px Nunito, sans-serif'; ctx.fillText('Trailhead', 556, 145);
+        // Emblema de patente Mountaineer
+        ctx.fillStyle = '#1b5d8c'; ctx.beginPath(); ctx.moveTo(700, 165); ctx.lineTo(760, 160); ctx.lineTo(820, 165); ctx.lineTo(820, 250); ctx.lineTo(700, 250); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#9fd7ff'; ctx.fillRect(708, 172, 104, 50);
+        ctx.fillStyle = '#ffffff'; ctx.font = '900 13px Nunito, sans-serif'; ctx.fillText('MOUNTAINEER', 713, 242);
+        [['58', 'Emblemas', 580], ['20.425', 'Pontos', 700], ['8', 'Trilhas', 860]].forEach(([n, l, x]) => {
+          ctx.fillStyle = '#2e844a'; ctx.font = '800 30px Nunito, sans-serif'; ctx.fillText(n, x, 300);
+          ctx.fillStyle = '#3e3e3c'; ctx.font = '600 15px Nunito, sans-serif'; ctx.fillText(l, x, 322);
+        });
+        const banner = ctx.createLinearGradient(556, 340, 960, 390);
+        banner.addColorStop(0, '#e3ecff'); banner.addColorStop(1, '#cfe4ff');
+        ctx.fillStyle = banner; ctx.fillRect(556, 340, 404, 52);
+        ctx.fillStyle = '#0b5cab'; ctx.font = 'italic 900 24px Nunito, sans-serif'; ctx.fillText("Agentblazer Champion '26", 574, 375);
+      }
+    }
 
     function updateMonitorScreen() {
       const ctx = monitorCtx;
+      if (monitorProfileMode && monitorState === 'normal') {
+        drawProfileScreen(ctx, monitorProfileMode);
+        monitorTexture.needsUpdate = true;
+        return;
+      }
       if (monitorState === 'exploded') {
         // Tela quebrada / estilhaçada preta
         ctx.fillStyle = '#0a0b0d';
@@ -3839,12 +3963,10 @@
     radioGroup.add(antenna);
 
     deskWorld.add(radioGroup);
-    const radioObs = { x: -54, z: -18, r: 6.2, name: 'RÁDIO RETRÔ BOOMBOX FM 📻' };
+    // Rádio é o item central de uma "ilha" da mesa: fixo, mas interativo (toca as músicas do canal)
+    const radioObs = { x: -54, z: -18, r: 6.2, name: 'RÁDIO RETRÔ BOOMBOX FM 📻', isStatic: true };
     obstacles.push(radioObs);
-    registerGrabbable({
-      id: 'radio', name: 'Rádio Retrô Boombox', group: radioGroup, obs: radioObs,
-      initX: -54, initY: 0, initZ: -18, initRotY: 0.42, grabRadius: 8.5
-    });
+    const radioParts = { tunerNeedle, antenna };
 
     // 11. PILHAS PALITO TURBO POSICIONADAS AO LONGO DA PISTA DE CORRIDA (MINI-TURBO BOOST AO PASSAR POR CIMA!)
     // Coordenadas exatas distribuídas ao longo das retas e curvas do circuito da pista de corrida!
@@ -3920,6 +4042,42 @@
     createCoiledUsbCable(42, 6, 0xe8eceb);
 
     // 13. CAIXINHAS DE GUARDAR CLIPS (COM CLIPS COLORIDOS DENTRO E ESPALHADOS!)
+    const clipGeometry = new THREE.TorusGeometry(0.35, 0.05, 8, 16);
+    // Clipes caem da caixinha enquanto ela é arrastada (1 a 2 por trecho, até esvaziar)
+    function dropClipsWhileDragging(item) {
+      const cb = item.clipBox;
+      const gp = item.group.position;
+      cb.travel += Math.hypot(gp.x - cb.lastX, gp.z - cb.lastZ);
+      cb.lastX = gp.x; cb.lastZ = gp.z;
+      if (cb.travel < 6) return;
+      cb.travel = 0;
+      const remaining = cb.inside.filter(c => c.visible);
+      if (!remaining.length) return;
+      const count = Math.min(remaining.length, 1 + Math.round(Math.random()));
+      for (let i = 0; i < count; i++) {
+        const src = remaining[i];
+        src.visible = false;
+        const dropped = new THREE.Mesh(clipGeometry, src.material);
+        dropped.scale.copy(src.scale);
+        dropped.rotation.set(Math.PI / 2, 0, Math.random() * Math.PI);
+        dropped.position.set(gp.x + (Math.random() - 0.5) * 1.6, surfaceBaseY(gp.y) + 0.08, gp.z + (Math.random() - 0.5) * 1.6);
+        (gp.y > -15 ? deskWorld : bedroomWorld).add(dropped);
+        cb.dropped.push(dropped);
+      }
+      if (count === remaining.length) {
+        showCarSpeech('A caixinha esvaziou!', 1800);
+        logInteractionEvent('📎 A caixinha de clipes ficou vazia de tanto arrastar!');
+      }
+    }
+    function resetClipBox(item) {
+      const cb = item.clipBox;
+      cb.inside.forEach(c => { c.visible = true; });
+      cb.dropped.forEach(c => { if (c.parent) c.parent.remove(c); });
+      cb.dropped.length = 0;
+      cb.travel = 0;
+      cb.lastX = item.initX; cb.lastZ = item.initZ;
+    }
+
     function createClipBox(x, z) {
       const cbGroup = new THREE.Group();
       cbGroup.position.set(x, 0, z);
@@ -3941,22 +4099,25 @@
 
       // Clips metálicos coloridos dentro da caixinha e ao redor na mesa!
       const clipColors = [0x00e5ff, 0xff4081, 0xffeb3b, 0x76ff03, 0xd0d7de];
+      const insideClips = [];
       for (let i = 0; i < 18; i++) {
         const clip = new THREE.Mesh(
-          new THREE.TorusGeometry(0.35, 0.05, 8, 16),
+          clipGeometry,
           new THREE.MeshStandardMaterial({ color: clipColors[i % clipColors.length], metalness: 0.6, roughness: 0.2 })
         );
         clip.scale.set(1.6, 0.7, 1);
         clip.rotation.x = Math.PI / 2 + (Math.random() - 0.5) * 0.4;
         clip.rotation.z = Math.random() * Math.PI;
         if (i < 11) {
-          // Dentro/no topo da caixinha
+          // Dentro/no topo da caixinha (caem pelo caminho quando a caixa é arrastada)
           clip.position.set((Math.random() - 0.5) * 2.2, 1.55 + (i % 3) * 0.05, (Math.random() - 0.5) * 2.2);
+          cbGroup.add(clip);
+          insideClips.push(clip);
         } else {
-          // Espalhados ao redor na mesa
-          clip.position.set(2.5 + (Math.random() - 0.5) * 3.5, 0.08, (Math.random() - 0.5) * 4.5);
+          // Espalhados ao redor na mesa (ficam no lugar; antes andavam junto com a caixa)
+          clip.position.set(x + 2.5 + (Math.random() - 0.5) * 3.5, 0.08, z + (Math.random() - 0.5) * 4.5);
+          deskWorld.add(clip);
         }
-        cbGroup.add(clip);
       }
 
       deskWorld.add(cbGroup);
@@ -3964,7 +4125,8 @@
       obstacles.push(clipObs);
       registerGrabbable({
         id: 'clipbox_' + x, name: 'Caixinha de Clips', group: cbGroup, obs: clipObs,
-        initX: x, initY: 0, initZ: z, initRotY: 0, grabRadius: 5.5
+        initX: x, initY: 0, initZ: z, initRotY: 0, grabRadius: 5.5,
+        clipBox: { inside: insideClips, dropped: [], travel: 0, lastX: x, lastZ: z }
       });
     }
     createClipBox(-16, 24);
@@ -4356,6 +4518,7 @@
             });
           }
         }
+        if (opts.breakable && container.userData.obs) setupBreakable(container.userData.obs, container, opts.breakable);
         if (opts.occluder) container.traverse((ch) => { if (ch.isMesh) occluderMeshes.push(ch); });
         loaded3DModels.push({ model: container, key, opts });
         if (opts.onLoad) opts.onLoad(container);
@@ -4369,10 +4532,10 @@
     // --- MESA: brinquedos, lanches e acessórios empurráveis (fora do traçado do circuito) ---
     placeModel('traffic_cone_01', { x: -32, z: 15, name: 'Cone de Trânsito 1' });
     placeModel('traffic_cone_02', { x: -48, z: 18, name: 'Cone Listrado 2' });
-    placeModel('water_pistol', { x: -52, z: -10, rotY: 0.45, name: "Pistola d'Água" });
-    placeModel('cheeseburger', { x: 35, z: -2.0, name: 'Cheeseburger' });
-    placeModel('apple', { x: 39, z: -4.5, name: 'Maçã Vermelha' });
-    placeModel('banana', { x: 37.5, z: 2.5, rotY: 0.9, name: 'Banana' });
+    placeModel('water_pistol', { x: -38, z: -4, rotY: 0.45, name: "Pistola d'Água" });
+    placeModel('cheeseburger', { x: 35, z: -2.0, name: 'Cheeseburger', breakable: 'food' });
+    placeModel('apple', { x: 39, z: -4.5, name: 'Maçã Vermelha', breakable: 'food' });
+    placeModel('banana', { x: 37.5, z: 2.5, rotY: 0.9, name: 'Banana', breakable: 'food' });
     placeModel('stapler', { x: -42, z: 28, rotY: -0.35, name: 'Grampeador Metálico' });
     placeModel('storage_box_01', { x: 34, z: 28, rotY: 0.2, name: 'Caixa Organizadora' });
     placeModel('computer_headphones_01', { x: 80, z: -47, rotY: -0.4, name: 'Headphone' });
@@ -6373,6 +6536,8 @@
       { name: "Copo d'água", x: -21, z: 22, angle: Math.PI },
       { name: 'Lápis', x: -10, z: 40, angle: -Math.PI / 2 },
       { name: 'Teclado', x: 4.5, z: 13, angle: Math.PI },
+      { name: 'Notebook', x: -21, z: 8, angle: Math.PI },
+      { name: 'Rádio', x: -47, z: -4, angle: Math.PI + 0.42 },
       { name: 'Aquário', x: 64, z: -4, angle: Math.PI / 2 },
       { name: 'Rampa', x: -78, z: 18, angle: -Math.PI / 2 },
       { name: 'Circuito', race: true },
@@ -6555,6 +6720,7 @@
       if (best) {
         heldItem = best;
         itemRestOffset(best);
+        if (best.clipBox) { best.clipBox.lastX = best.group.position.x; best.clipBox.lastZ = best.group.position.z; }
         grabBtnEl.classList.add('is-holding');
         grabLabelEl.textContent = 'Soltar';
         logInteractionEvent(`🧲 Segurando: ${best.name}`);
@@ -6666,6 +6832,7 @@
       resetRaceTrackCanvas();
       pencilDrawTime = 0;
       grabbableItems.forEach((item) => {
+        if (item.clipBox) resetClipBox(item);
         item.group.position.set(item.initX, item.initY, item.initZ);
         item.group.rotation.set(0, item.initRotY || 0, 0);
         if (item.obs) {
@@ -6696,8 +6863,12 @@
         if (p.obs) p.obs.name = `${p.name} (NÍVEL 1)`;
       });
 
+      // Alimentos e plantinhas quebrados voltam inteiros; monitor sai do modo currículo
+      resetBreakables();
+      monitorProfileMode = null;
+
       // Controles e detritos
-      controllerDebrisList.forEach(m => deskWorld.remove(m));
+      controllerDebrisList.forEach(m => { if (m.parent) m.parent.remove(m); });
       controllerDebrisList.length = 0;
       breakableControllers.forEach((c) => {
         c.hits = 0;
@@ -6764,7 +6935,7 @@
         return;
       }
       if (modalsOpen === 'map' && e.code === 'KeyM') { closeModals(); return; }
-      if (modalsOpen === 'island' && e.code === 'Enter') { e.preventDefault(); document.getElementById('island-action').click(); return; }
+      if (modalsOpen === 'island' && e.code === 'Enter') { e.preventDefault(); runPrimaryIslandAction(); return; }
       if (menuOpen || modalsOpen) return;
 
       if (e.key === 'F2') { e.preventDefault(); toggleDevMode(); return; }
@@ -6824,52 +6995,286 @@
     bindTouchButton('t-interact', () => interactWithNearest());
 
     // ============================================================================
-    // PONTOS INTERATIVOS DAS ILHAS (ENTER / ✕ / botão "Interagir")
+    // PONTOS INTERATIVOS: ILHAS DO QUARTO + ITENS CENTRAIS DA MESA (RÁDIO E NOTEBOOK)
+    // ENTER / ✕ / botão "Interagir"
     // ============================================================================
     const interactPromptEl = document.getElementById('interact-prompt');
     const interactLabelEl = document.getElementById('interact-label');
+    const grabPromptEl = document.getElementById('grab-prompt');
     const touchInteractEl = document.getElementById('t-interact');
     const islandModalTitle = document.getElementById('island-title');
     const islandModalText = document.getElementById('island-text');
-    const islandModalAction = document.getElementById('island-action');
+    const islandActionsEl = document.getElementById('island-actions');
     let nearestInteractive = null;
     let currentIsland = null;
+    let currentActions = [];
     const promptAnchor = new THREE.Vector3();
 
-    function updateInteractives() {
+    // ---------- Rádio: músicas do canal oficial (YouTube Music) ----------
+    const RADIO_CHANNEL_URL = 'https://www.youtube.com/@jefersonrgomes_oficial';
+    const RADIO_FIRST_VIDEO = 'WXxvpysirdk';
+    const radioPlayerEl = document.getElementById('radio-player');
+    const radioFrameEl = document.getElementById('radio-frame');
+    let radioPlaying = false;
+    function playRadio() {
+      radioFrameEl.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube-nocookie.com/embed/${RADIO_FIRST_VIDEO}?autoplay=1&rel=0&modestbranding=1`;
+      iframe.title = 'Rádio do Jheff — YouTube';
+      iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
+      iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+      radioFrameEl.appendChild(iframe);
+      radioPlayerEl.classList.add('is-visible');
+      radioPlaying = true;
+      notify({ type: 'music', title: 'Rádio do Jheff', description: 'Tocando o canal oficial no YouTube Music', duration: 4500 });
+      showCarSpeech('🎵 Aumenta o som!', 2200);
+      progressAchievement('islandActions', 1);
+    }
+    function stopRadio() {
+      radioFrameEl.innerHTML = '';
+      radioPlayerEl.classList.remove('is-visible');
+      radioPlaying = false;
+    }
+    document.getElementById('radio-close').addEventListener('click', stopRadio);
+
+    // ---------- Notebook: currículo (LinkedIn e Trailhead) no monitor ----------
+    const LINKEDIN_URL = 'https://www.linkedin.com/in/jefersonribeirogomes/';
+    const TRAILHEAD_URL = 'https://www.salesforce.com/trailblazer/profile';
+    function showProfileOnMonitor(mode) {
+      if (monitorState !== 'normal') {
+        notify({ type: 'danger', title: 'Monitor indisponível', description: 'Apague o incêndio ou reinicie a partida primeiro.' });
+        return;
+      }
+      monitorProfileMode = mode;
+      updateMonitorScreen();
+      setCameraMode('iso');
+      showCarSpeech(mode === 'linkedin' ? 'Olha o currículo do papai!' : 'Agentblazer Champion!', 2600);
+      progressAchievement('islandActions', 1);
+    }
+    function openExternal(url) { window.open(url, '_blank', 'noopener'); }
+
+    // Pin de interação (anel + diamante do mapa do DS) para os itens da mesa
+    function createInteractivePin(x, y, z) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(1.5, 1.95, 40),
+        new THREE.MeshBasicMaterial({ color: 0xffceca, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(x, y + 0.05, z);
+      scene.add(ring);
+      const diamond = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.85),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffceca, emissiveIntensity: 0.55, roughness: 0.3 })
+      );
+      diamond.scale.y = 1.35;
+      diamond.position.set(x, y + 3, z);
+      scene.add(diamond);
+      return { ring, diamond, baseY: y };
+    }
+
+    const deskInteractives = [
+      {
+        id: 'radio', name: 'Rádio do Jheff', point: [-50.3, -9.8], y: 0.14,
+        text: 'O rádio da mesa toca as músicas do canal oficial do papai no YouTube Music. Aperte play e curta!',
+        actions: [
+          { label: '▶ Tocar música', run: playRadio },
+          { label: 'Abrir canal ↗', run: () => openExternal(RADIO_CHANNEL_URL) }
+        ]
+      },
+      {
+        id: 'laptop', name: 'Notebook do Jheff', point: [-21, 4], y: 0.14,
+        text: 'O currículo do Jeferson (Jheff) Gomes: Arquiteto de Soluções de IA, Desenvolvedor Senior MuleSoft e Agentblazer Champion. Escolha o que mostrar no monitor grande:',
+        actions: [
+          { label: 'LinkedIn no monitor', run: () => showProfileOnMonitor('linkedin') },
+          { label: 'Trailhead no monitor', run: () => showProfileOnMonitor('trailhead') },
+          { label: 'Abrir LinkedIn ↗', run: () => openExternal(LINKEDIN_URL) },
+          { label: 'Abrir Trailhead ↗', run: () => openExternal(TRAILHEAD_URL) }
+        ]
+      }
+    ];
+    deskInteractives.forEach((it) => { it.pointMeshes = createInteractivePin(it.point[0], it.y, it.point[1]); });
+
+    function interactiveActions(item) {
+      if (item.actions) return item.actions;
+      return [{ label: item.action, run: () => performIslandAction(item) }];
+    }
+
+    // Objeto segurável mais próximo (para o balão "aperte ... para pegar")
+    function nearestGrabbable() {
+      if (heldItem || inputBlocked()) return null;
+      const carLevel = levelOfY(vehicle.position.y);
+      let best = null, bestD = Infinity;
+      grabbableItems.forEach((item) => {
+        if (!item.group.visible || (item.cableRef && item.cableRef.connected)) return;
+        if (levelOfY(item.group.position.y) !== carLevel || (item.obs && item.obs.isFalling)) return;
+        const d = Math.hypot(vehicle.position.x - item.group.position.x, vehicle.position.z - item.group.position.z);
+        if (d < (item.grabRadius || 5.2) && d < bestD) { bestD = d; best = item; }
+      });
+      return best;
+    }
+    function grabKeyLabel() {
+      if (htmlEl.classList.contains('is-mode-gamepad')) return 'D-pad ↓';
+      if (htmlEl.classList.contains('is-mode-touch')) return 'PEGAR';
+      return 'E';
+    }
+    function placePrompt(el, x, y, z) {
+      promptAnchor.set(x, y, z).project(camera);
+      if (promptAnchor.z > 1) { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      el.style.left = `${(promptAnchor.x * 0.5 + 0.5) * sizes.width}px`;
+      el.style.top = `${(-promptAnchor.y * 0.5 + 0.5) * sizes.height}px`;
+    }
+
+    function updateInteractives(time) {
       nearestInteractive = null;
-      if (!inputBlocked() && vehicle.position.y < -15) {
+      if (!inputBlocked()) {
+        const onFloor = vehicle.position.y < -15;
         let best = 4.6;
-        islands.forEach((isl) => {
-          const d = Math.hypot(vehicle.position.x - isl.point[0], vehicle.position.z - isl.point[1]);
-          if (d < best) { best = d; nearestInteractive = isl; }
+        (onFloor ? islands : deskInteractives).forEach((it) => {
+          const d = Math.hypot(vehicle.position.x - it.point[0], vehicle.position.z - it.point[1]);
+          if (d < best) { best = d; nearestInteractive = it; }
         });
       }
+      deskInteractives.forEach((it, i) => {
+        it.pointMeshes.diamond.rotation.y = time * 1.4 + i;
+        it.pointMeshes.diamond.position.y = it.y + 3 + Math.sin(time * 2 + i) * 0.35;
+        it.pointMeshes.ring.material.opacity = 0.55 + Math.sin(time * 3 + i) * 0.3;
+      });
+      // Rádio tocando: ponteiro do dial dança e notas musicais saem dos alto-falantes
+      if (radioPlaying) {
+        radioParts.tunerNeedle.position.x = 0.45 + Math.sin(time * 1.3) * 1.4;
+        if (Math.random() < dtNotes) spawnMusicNote(-54 + (Math.random() - 0.5) * 6, 9, -18 + (Math.random() - 0.5) * 3);
+      }
       touchInteractEl.classList.toggle('is-visible', !!nearestInteractive);
-      if (!nearestInteractive) { interactPromptEl.style.display = 'none'; return; }
-      interactLabelEl.textContent = nearestInteractive.name;
-      promptAnchor.set(nearestInteractive.point[0], ISLAND_Y + 5, nearestInteractive.point[1]).project(camera);
-      if (promptAnchor.z > 1) { interactPromptEl.style.display = 'none'; return; }
-      interactPromptEl.style.display = 'block';
-      interactPromptEl.style.left = `${(promptAnchor.x * 0.5 + 0.5) * sizes.width}px`;
-      interactPromptEl.style.top = `${(-promptAnchor.y * 0.5 + 0.5) * sizes.height}px`;
+
+      if (nearestInteractive) {
+        interactLabelEl.textContent = nearestInteractive.name;
+        const baseY = nearestInteractive.y !== undefined ? nearestInteractive.y : ISLAND_Y;
+        placePrompt(interactPromptEl, nearestInteractive.point[0], baseY + 5, nearestInteractive.point[1]);
+        grabPromptEl.style.display = 'none';
+        return;
+      }
+      interactPromptEl.style.display = 'none';
+
+      const grab = nearestGrabbable();
+      if (!grab) { grabPromptEl.style.display = 'none'; return; }
+      grabPromptEl.innerHTML = `Aperte <span class="key">${grabKeyLabel()}</span> para pegar`;
+      const dims = grab.group.userData.dims;
+      placePrompt(grabPromptEl, grab.group.position.x, grab.group.position.y + (dims ? dims.h : 2.2) + 1.2, grab.group.position.z);
     }
+    const dtNotes = 0.04;
 
     function interactWithNearest() {
       if (!nearestInteractive || inputBlocked()) return;
       currentIsland = nearestInteractive;
+      currentActions = interactiveActions(currentIsland);
       islandModalTitle.textContent = currentIsland.name;
       islandModalText.textContent = currentIsland.text;
-      islandModalAction.textContent = currentIsland.action;
+      islandActionsEl.innerHTML = '';
+      currentActions.forEach((action) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'button';
+        btn.textContent = action.label;
+        btn.addEventListener('click', () => {
+          closeModals();
+          setTimeout(() => action.run(), 120);
+        });
+        islandActionsEl.appendChild(btn);
+      });
       openModalPanel('island');
       rumble(0.15, 0.3, 80);
     }
-    islandModalAction.addEventListener('click', () => {
-      const isl = currentIsland;
-      closeModals();
-      if (isl) setTimeout(() => performIslandAction(isl), 120);
-    });
+    // Enter / ✕ dentro do modal executa a primeira ação
+    function runPrimaryIslandAction() {
+      const first = islandActionsEl.querySelector('button');
+      if (first) first.click();
+    }
     document.getElementById('island-close').addEventListener('click', closeModals);
+
+    // ============================================================================
+    // OBJETOS QUEBRÁVEIS (alimentos e plantinhas, mesma mecânica dos controles)
+    // ============================================================================
+    const breakableObjects = [];
+    const BREAK_PRESETS = {
+      food: { perStage: 3, colors: [0xd18f45, 0x5a321f, 0xffc23d, 0xe2412f, 0x6cc04a], label: 'mordida' },
+      plant: { perStage: 4, colors: [0x48b874, 0x2d6a2f, 0x8a5a2b, 0xa7e05a, 0xffffff], label: 'folhagem' }
+    };
+    function setupBreakable(obs, group, kind, visual) {
+      if (!obs || obs.breakable) return;
+      const preset = BREAK_PRESETS[kind];
+      const target = visual || group.children[0] || group;
+      obs.breakable = {
+        kind, hits: 0, stage: 0, lastHit: 0, perStage: preset.perStage, colors: preset.colors,
+        group, target, origScale: target.scale.clone(), origR: obs.r, origName: obs.name
+      };
+      breakableObjects.push(obs);
+    }
+    function hitBreakable(obs, impact) {
+      const b = obs.breakable;
+      const now = performance.now();
+      if (b.stage >= 4 || now - b.lastHit < 240 || impact < 0.04) return;
+      b.lastHit = now;
+      b.hits++;
+      showCarSpeech(breakSpeechToggle ? 'eita' : 'ops', 1500);
+      breakSpeechToggle = !breakSpeechToggle;
+      rumble(0.25, 0.45, 90);
+      const name = (b.origName || 'Objeto').split('(')[0].trim();
+      if (b.hits % b.perStage !== 0) {
+        setStatusBanner(`💥 ${name}: ${b.hits % b.perStage}/${b.perStage} batidas para quebrar a parte ${b.stage + 1}/4`, '#ffb300');
+        return;
+      }
+      b.stage++;
+      const gp = b.group.getWorldPosition(new THREE.Vector3());
+      for (let i = 0; i < 6; i++) {
+        const piece = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3 + Math.random() * 0.25, 0.16, 0.3 + Math.random() * 0.25),
+          new THREE.MeshStandardMaterial({ color: b.colors[i % b.colors.length], roughness: 0.6 })
+        );
+        const a = Math.random() * Math.PI * 2, dist = 1.2 + Math.random() * 2.4;
+        piece.position.set(gp.x + Math.cos(a) * dist, surfaceBaseY(gp.y) + 0.2, gp.z + Math.sin(a) * dist);
+        piece.rotation.set(Math.random(), Math.random(), Math.random());
+        piece.castShadow = true;
+        (gp.y > -15 ? deskWorld : bedroomWorld).add(piece);
+        controllerDebrisList.push(piece);
+        spawnFx(gp.x, gp.y + 1.5, gp.z, Math.cos(a) * 4, 6 + Math.random() * 4, Math.sin(a) * 4, b.colors[i % b.colors.length], 0.9, 18, 0.8);
+      }
+      const k = 1 - b.stage * 0.18;
+      b.target.scale.set(b.origScale.x * k, b.origScale.y * k, b.origScale.z * k);
+      b.target.rotation.z = (b.stage % 2 ? 1 : -1) * 0.12 * b.stage;
+      if (b.kind === 'plant') burstLeaves(8);
+      if (b.stage >= 4) {
+        if (b.kind === 'food') {
+          b.group.visible = false;
+          obs.r = 0.001;
+          setStatusBanner(`🍔 ${name} virou farelo!`, '#ff5722');
+        } else {
+          b.target.visible = false;
+          setStatusBanner(`🪴 ${name} ficou só no vaso!`, '#ff5722');
+        }
+        logInteractionEvent(`🚨 ${name}: totalmente quebrado(a)!`);
+      } else {
+        setStatusBanner(`🚨 ${name}: parte ${b.stage}/4 quebrada!`, '#f44336');
+        logInteractionEvent(`🚨 ${name}: parte ${b.stage}/4 quebrada`);
+      }
+      obs.name = `${b.origName} — PARTE ${b.stage}/4`;
+    }
+    function resetBreakables() {
+      breakableObjects.forEach((obs) => {
+        const b = obs.breakable;
+        b.hits = 0; b.stage = 0;
+        b.target.scale.copy(b.origScale);
+        b.target.rotation.z = 0;
+        b.target.visible = true;
+        b.group.visible = true;
+        obs.r = b.origR;
+        obs.name = b.origName;
+      });
+    }
+    // Plantinhas da mesa (com folhagem própria) quebram igual aos controles
+    growablePlants.forEach((p) => {
+      if (p.obs && p.group && p.foliageGroup) setupBreakable(p.obs, p.group, 'plant', p.foliageGroup);
+    });
 
     // ============================================================================
     // CIRCUITO: CRONÔMETRO, PORTAIS EM ORDEM, CONTAGEM REGRESSIVA E RANKING LOCAL
@@ -7042,8 +7447,7 @@
     function drawNotebookPage(canvas, title, lines, paper) {
       const ctx = canvas.getContext('2d');
       const w = canvas.width, h = canvas.height;
-      // Cores mais escuras: a textura passa pelo encoding sRGB e clareia na tela
-      ctx.fillStyle = paper === 'white' ? '#e9e9e4' : '#f2d64a';
+      ctx.fillStyle = paper === 'white' ? '#fbfbf8' : '#fff1a0';
       ctx.fillRect(0, 0, w, h);
       ctx.strokeStyle = 'rgba(30, 80, 190, 0.45)';
       ctx.lineWidth = 2;
@@ -7072,6 +7476,7 @@
         c.width = 400; c.height = 520;
         const tex = new THREE.CanvasTexture(c);
         tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        tex.encoding = THREE.sRGBEncoding;
         const base = mesh.material;
         const top = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
         mesh.material = [base, base, top, base, base, base]; // face +Y da caixa recebe a página
@@ -7175,7 +7580,7 @@
         if (justPressed(0) || justPressed(9)) startExperience();
       } else if (modalsOpen) {
         if (justPressed(0)) {
-          if (modalsOpen === 'island') islandModalAction.click();
+          if (modalsOpen === 'island') runPrimaryIslandAction();
           else closeModalFromUser();
         }
         if (justPressed(1)) closeModalFromUser();
@@ -7500,6 +7905,7 @@
           logInteractionEvent('🌊 Copo derrubado! Água espalhada na mesa para recarga.');
           unlockAchievement('oops');
         }
+        if (obs.breakable) hitBreakable(obs, approach);
         if (obs.type === 'controller' && approach > 0.04) {
           hitController(obs.ctrlRef, approach);
           logInteractionEvent(`💥 Batida no ${obs.ctrlRef.name}: ${obs.ctrlRef.hits} impactos (parte ${obs.ctrlRef.stage}/4)`);
@@ -7557,6 +7963,7 @@
         if (nextX > -3.2 && nextX < 12.2 && nextZ > 0.8 && nextZ < 7.2) {
           groundY = 0.78 + Math.sin(nextX * 5 + nextZ * 5) * 0.06;
           if (!carAirborne && Math.abs(carSpeed) > 0.02 && monitorState === 'normal') {
+            monitorProfileMode = null; // digitar no teclado volta a tela para o terminal
             selfDestructProgress = Math.min(100, selfDestructProgress + dt * 24);
             if (time - lastTypeTime > 0.25) {
               lastTypeTime = time;
@@ -7649,6 +8056,7 @@
           if (pencilDrawTime > 3) unlockAchievement('artist');
         }
         if (heldItem.onDrag) heldItem.onDrag();
+        if (heldItem.clipBox) dropClipsWhileDragging(heldItem);
       }
 
       // Inclinação: veículo alinhado ao terreno (rampa) + carroceria com squat/lean
@@ -8062,7 +8470,7 @@
       }
 
       updateSpeechBubblePosition();
-      updateInteractives();
+      updateInteractives(elapsedTime);
       updateNotificationBars(performance.now());
       updateMapPlayer();
       renderer.render(scene, camera);
