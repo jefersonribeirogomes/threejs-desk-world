@@ -1860,7 +1860,7 @@
 
     bedroomWorld.add(elementsChairGroup);
     elementsChairGroup.traverse(m => { if (m.isMesh) occluderMeshes.push(m); });
-    obstacles.push({ x: -18, z: 42, r: 8.8, name: 'CADEIRA GAMER ELEMENTS' });
+    obstacles.push({ x: -18, z: 42, r: 6.8, name: 'CADEIRA GAMER ELEMENTS' });
 
     // 5. APOIO PARA PÉS DE ESCRITÓRIO SOB A MESA (Funciona como MINI RAMPA DE SALTO!)
     const footrestGroup = new THREE.Group();
@@ -2839,7 +2839,7 @@
     mugGroup.position.set(21.5, 0.14, -2.5);
     deskWorld.add(mugGroup);
     const mugObs = registerDynamicObstacle({
-      obs: { x: 21.5, z: -2.5, r: 2.35, name: 'CANECA MULESOFT MENTOR COM CORTIÇA' },
+      obs: { x: 21.5, z: -2.5, r: 1.95, name: 'CANECA MULESOFT MENTOR COM CORTIÇA' },
       group: mugGroup,
       mass: 1.6,
       canTopple: true
@@ -5440,6 +5440,17 @@
       });
 
       currentOccluded.forEach(m => occludedMeshesSet.add(m));
+
+      // Quando o carrinho estiver debaixo da mesa, torna o tampo 85% translúcido (X-Ray imediato)
+      const isCarUnderDesk = vehicle.position.y < -15 && Math.abs(vehicle.position.x) < DESK_HALF_W && Math.abs(vehicle.position.z) < DESK_HALF_D;
+      if (isCarUnderDesk) {
+        deskMat.transparent = true;
+        deskMat.opacity = THREE.MathUtils.lerp(deskMat.opacity, 0.15, 0.25);
+      } else if (!currentOccluded.has(deskTop)) {
+        deskMat.opacity = THREE.MathUtils.lerp(deskMat.opacity, 1.0, 0.18);
+        if (deskMat.opacity > 0.95) { deskMat.opacity = 1.0; deskMat.transparent = false; }
+      }
+
 
 
       // Atualiza a posição 2D do balão de fala em cima do carrinho do Ravi
