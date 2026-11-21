@@ -5724,9 +5724,10 @@
       if (e.key === 'f' || e.key === 'F') {
         triggerCarJump();
       }
-      // Espaço: Câmera Livre com OrbitControls
+      // Espaço: Câmera Livre com OrbitControls (desativa temporariamente o TransformControl para evitar conflito de ponteiro)
       if (e.code === 'Space' && !e.repeat) {
         isFreeCameraActive = true;
+        if (transformControl) transformControl.enabled = false;
         freeOrbitControls.enabled = true;
         document.body.style.cursor = 'grab';
       }
@@ -5749,6 +5750,7 @@
       if (e.code === 'Space') {
         isFreeCameraActive = false;
         freeOrbitControls.enabled = false;
+        if (devModeActive && transformControl) transformControl.enabled = true;
         document.body.style.cursor = 'default';
       }
     });
