@@ -1572,6 +1572,38 @@
     // ============================================================================
     // MESA DE TRABALHO EXPANDIDA 3X (180 x 108 UNIDADES!)
     // ============================================================================
+    // ESTRUTURAS GLOBAIS DE OBSTÁCULOS, FÍSICA DINÂMICA, PLANTAS E ITENS ARRASTÁVEIS
+    const obstacles = [];
+    const dynamicObstacles = []; // Objetos que sofrem impulso físico, tombam e colidem entre si
+    const occluderMeshes = [];   // Objetos grandes que ficam translúcidos (80-85%) quando obstruem a visão do carrinho
+    const occludedMeshesSet = new Set();
+    const occlusionRaycaster = new THREE.Raycaster();
+    let isFallingOffDesk = false; // Queda contínua da mesa para o chão sem resetar!
+    const growablePlants = [];
+    const grabbableItems = [];
+    let heldItem = null;
+    function registerGrabbable(config) {
+      grabbableItems.push(config);
+      return config;
+    }
+    // Registrador de Obstáculo com Física Dinâmica
+    function registerDynamicObstacle(config) {
+      const obs = config.obs;
+      obs.group = config.group;
+      obs.isStatic = !!config.isStatic;
+      obs.mass = config.mass || (obs.r * 0.85 + 0.6);
+      obs.canTopple = config.canTopple !== undefined ? config.canTopple : true;
+      obs.vx = 0; obs.vz = 0; obs.vRotY = 0;
+      obs.tiltX = 0; obs.tiltZ = 0;
+      obs.initX = obs.x; obs.initZ = obs.z;
+      obs.isFalling = false;
+      obstacles.push(obs);
+      if (!obs.isStatic) {
+        dynamicObstacles.push(obs);
+      }
+      return obs;
+    }
+
     const deskWorld = new THREE.Group();
     scene.add(deskWorld);
 
@@ -1617,37 +1649,7 @@
     elgTag.position.set(38.5, 0.16, 21.2);
     deskWorld.add(elgTag);
 
-    // ESTRUTURAS GLOBAIS DE OBSTÁCULOS, FÍSICA DINÂMICA, PLANTAS E ITENS ARRASTÁVEIS
-    const obstacles = [];
-    const dynamicObstacles = []; // Objetos que sofrem impulso físico, tombam e colidem entre si
-    const occluderMeshes = [];   // Objetos grandes que ficam translúcidos (80-85%) quando obstruem a visão do carrinho
-    const occludedMeshesSet = new Set();
-    const occlusionRaycaster = new THREE.Raycaster();
-    let isFallingOffDesk = false; // Queda contínua da mesa para o chão sem resetar!
-    const growablePlants = [];
-    const grabbableItems = [];
-    let heldItem = null;
-    function registerGrabbable(config) {
-      grabbableItems.push(config);
-      return config;
-    }
-    // Registrador de Obstáculo com Física Dinâmica
-    function registerDynamicObstacle(config) {
-      const obs = config.obs;
-      obs.group = config.group;
-      obs.isStatic = !!config.isStatic;
-      obs.mass = config.mass || (obs.r * 0.85 + 0.6);
-      obs.canTopple = config.canTopple !== undefined ? config.canTopple : true;
-      obs.vx = 0; obs.vz = 0; obs.vRotY = 0;
-      obs.tiltX = 0; obs.tiltZ = 0;
-      obs.initX = obs.x; obs.initZ = obs.z;
-      obs.isFalling = false;
-      obstacles.push(obs);
-      if (!obs.isStatic) {
-        dynamicObstacles.push(obs);
-      }
-      return obs;
-    }
+// Estruturas globais e registradores movidos para o topo
 
 
     // ============================================================================
