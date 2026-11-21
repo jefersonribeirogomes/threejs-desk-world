@@ -533,6 +533,9 @@
     }
   </style>
   <script src="./three.min.js"></script>
+  <script src="./GLTFLoader.js"></script>
+  <script src="./OrbitControls.js"></script>
+  <script src="./TransformControls.js"></script>
 </head>
 <body>
   <!-- Botão Flutuante que Abre/Fecha o Menu de Informações e Mini Log -->
@@ -570,6 +573,7 @@
       <button class="btn-cam" id="btn-cam-mug">Close Caneca MuleSoft</button>
       <button class="btn-cam" id="btn-cam-arm">Close Suporte Articulado & Nitro</button>
       <button class="btn-cam" id="btn-cam-wide">Mesa 3x Completa</button>
+      <button class="btn-cam" id="btn-toggle-dev" style="color:#ffd24c; border-color:rgba(255, 210, 76, 0.5); font-weight:800;">🛠️ Modo Dev / Edição [F2]</button>
     </div>
     <!-- Mini Log de Eventos de Interação -->
     <div id="event-log-container">
@@ -578,6 +582,33 @@
         <li>[Início] 🚒 Carrinho do Ravi pronto na mesa!</li>
       </ul>
     </div>
+  </div>
+
+  <!-- BARRA FLUTUANTE DO MODO DE EDIÇÃO DO DESENVOLVEDOR (DEV EDIT MODE) -->
+  <div id="dev-mode-bar" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); background:radial-gradient(at 0 0, rgba(37, 31, 43, 0.98), rgba(20, 16, 24, 0.98)); border:1.5px solid #ffd24c; border-radius:12px; padding:8px 16px; z-index:150; color:#fff; display:none; align-items:center; gap:10px; font-family:var(--ds-font-body); font-size:12px; box-shadow:0 10px 35px rgba(0,0,0,0.75); backdrop-filter:blur(10px);">
+    <span style="font-weight:900; color:#ffd24c; font-size:13px; display:flex; align-items:center; gap:6px;">🛠️ MODO EDIÇÃO DEV</span>
+    <span id="dev-selected-name" style="color:#00e5ff; font-weight:700; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">(Clique em um objeto)</span>
+    <button id="dev-btn-translate" style="background:#2d3139; color:#fff; border:1px solid #777; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:700; font-size:11px;">Mover [G]</button>
+    <button id="dev-btn-rotate" style="background:#2d3139; color:#fff; border:1px solid #777; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:700; font-size:11px;">Girar [R]</button>
+    <select id="dev-add-model-select" style="background:#1b1d22; color:#fff; border:1px solid #ffd24c; border-radius:6px; padding:4px 8px; font-size:11.5px; outline:none; font-family:var(--ds-font-body);">
+      <option value="">+ Inserir Modelo 3D...</option>
+      <option value="traffic_cone_01">Cone de Trânsito</option>
+      <option value="traffic_cone_02">Cone Laranja Listrado</option>
+      <option value="brick_flemish_bond">Bloco / Mureta de Tijolo</option>
+      <option value="rocket_toy_01">Foguetinho de Brinquedo</option>
+      <option value="water_pistol">Pistola de Água</option>
+      <option value="cheeseburger">Cheeseburger</option>
+      <option value="apple">Maçã</option>
+      <option value="banana">Banana</option>
+      <option value="desk_lamp">Luminária de Mesa</option>
+      <option value="acoustic_guitar">Violão Acústico</option>
+      <option value="stapler">Grampeador</option>
+      <option value="storage_box_01">Caixa Organizadora</option>
+      <option value="mesh_bin">Cesto de Metal</option>
+    </select>
+    <button id="dev-btn-add-model" style="background:radial-gradient(at 100% 0, #00b4d8, #0077b6); color:#fff; border:none; padding:5px 12px; border-radius:6px; font-weight:800; cursor:pointer; font-size:11px;">+ Inserir</button>
+    <button id="dev-btn-save" style="background:radial-gradient(at 100% 0, #2e7d32, #1b5e20); color:#fff; border:none; padding:5px 12px; border-radius:6px; font-weight:800; cursor:pointer; font-size:11px;">💾 Salvar</button>
+    <button id="dev-btn-close" style="background:#c21515; color:#fff; border:none; padding:5px 10px; border-radius:6px; font-weight:800; cursor:pointer; font-size:11px;">✕ Sair</button>
   </div>
 
   <!-- Balão de Conversa Interativo em cima do Carrinho -->
@@ -1557,6 +1588,7 @@
     deskTop.receiveShadow = true;
     deskTop.castShadow = true;
     deskWorld.add(deskTop);
+    occluderMeshes.push(deskTop);
 
     // Pernas robustas da mesa 3x
     const legMat = new THREE.MeshStandardMaterial({ color: 0x121316, roughness: 0.3, metalness: 0.6 });
@@ -1585,8 +1617,13 @@
     elgTag.position.set(38.5, 0.16, 21.2);
     deskWorld.add(elgTag);
 
-    // ESTRUTURAS GLOBAIS DE OBSTÁCULOS, PLANTAS E ITENS ARRASTÁVEIS
+    // ESTRUTURAS GLOBAIS DE OBSTÁCULOS, FÍSICA DINÂMICA, PLANTAS E ITENS ARRASTÁVEIS
     const obstacles = [];
+    const dynamicObstacles = []; // Objetos que sofrem impulso físico, tombam e colidem entre si
+    const occluderMeshes = [];   // Objetos grandes que ficam translúcidos (80-85%) quando obstruem a visão do carrinho
+    const occludedMeshesSet = new Set();
+    const occlusionRaycaster = new THREE.Raycaster();
+    let isFallingOffDesk = false; // Queda contínua da mesa para o chão sem resetar!
     const growablePlants = [];
     const grabbableItems = [];
     let heldItem = null;
@@ -1594,6 +1631,24 @@
       grabbableItems.push(config);
       return config;
     }
+    // Registrador de Obstáculo com Física Dinâmica
+    function registerDynamicObstacle(config) {
+      const obs = config.obs;
+      obs.group = config.group;
+      obs.isStatic = !!config.isStatic;
+      obs.mass = config.mass || (obs.r * 0.85 + 0.6);
+      obs.canTopple = config.canTopple !== undefined ? config.canTopple : true;
+      obs.vx = 0; obs.vz = 0; obs.vRotY = 0;
+      obs.tiltX = 0; obs.tiltZ = 0;
+      obs.initX = obs.x; obs.initZ = obs.z;
+      obs.isFalling = false;
+      obstacles.push(obs);
+      if (!obs.isStatic) {
+        dynamicObstacles.push(obs);
+      }
+      return obs;
+    }
+
 
     // ============================================================================
     // SISTEMA DE RAMPAS CONTÍNUAS DE PAPELÃO (DESCIDA E SUBIDA MESA <-> QUARTO)
@@ -1802,6 +1857,7 @@
     });
 
     bedroomWorld.add(elementsChairGroup);
+    elementsChairGroup.traverse(m => { if (m.isMesh) occluderMeshes.push(m); });
     obstacles.push({ x: -18, z: 42, r: 8.8, name: 'CADEIRA GAMER ELEMENTS' });
 
     // 5. APOIO PARA PÉS DE ESCRITÓRIO SOB A MESA (Funciona como MINI RAMPA DE SALTO!)
@@ -1888,6 +1944,7 @@
     bigPlantGroup.add(crownTall, crownShort);
 
     bedroomWorld.add(bigPlantGroup);
+    bigPlantGroup.traverse(m => { if (m.isMesh) occluderMeshes.push(m); });
     obstacles.push({ x: 72, z: 28, r: 8.5, name: 'VASO COM YUCCA/DRACENA E ARGILA' });
 
     // Registra a grande planta do quarto como regável!
@@ -2068,12 +2125,16 @@
 
     let cupSpilled = false;
     let puddleScale = 0.001;
-    const cupObstacle = {
-      x: -26, z: 14, r: 2.35,
-      name: 'COPO COM ÁGUA (BATA PARA DERRAMAR E ABASTECER!)',
-      type: 'water_cup'
-    };
-    obstacles.push(cupObstacle);
+    const cupObstacle = registerDynamicObstacle({
+      obs: {
+        x: -26, z: 14, r: 2.35,
+        name: 'COPO COM ÁGUA (BATA PARA DERRAMAR E ABASTECER!)',
+        type: 'water_cup'
+      },
+      group: tumblerGroup,
+      mass: 0.85,
+      canTopple: true
+    });
 
     // 2 & 3. SUPORTE ARTICULADO A GÁS DUPLO (DUAL ARM COM MORSA NA MESA) + NOTEBOOK ACER NITRO V 15 + MONITOR LG ULTRAGEAR™ 45"
     // ============================================================================
@@ -2404,7 +2465,7 @@
         }
       };
       ctrlObj.obs.ctrlRef = ctrlObj;
-      obstacles.push(ctrlObj.obs);
+      registerDynamicObstacle({ obs: ctrlObj.obs, group: gp, mass: 1.35, canTopple: true });
       breakableControllers.push(ctrlObj);
     }
 
@@ -2413,62 +2474,81 @@
 
     function hitController(ctrl, impactSpeed) {
       const now = performance.now();
-      if (now - ctrl.lastHitTime < 280) return; // Evita múltiplos hits no mesmo frame
+      if (now - ctrl.lastHitTime < 240) return;
       ctrl.lastHitTime = now;
 
-      if (ctrl.hits >= 20) return;
+      // Impulso físico dinâmico ao controle (empurrão e rotação com a colisão)
+      if (ctrl.obs) {
+        const pushDirX = Math.sin(carAngle);
+        const pushDirZ = Math.cos(carAngle);
+        ctrl.obs.vx = pushDirX * (impactSpeed * 0.85 + 0.12);
+        ctrl.obs.vz = pushDirZ * (impactSpeed * 0.85 + 0.12);
+        ctrl.obs.vRotY = (Math.random() - 0.5) * 0.45;
+      }
+
+      if (ctrl.stage >= 4) {
+        setStatusBanner(`💥 ${ctrl.name} já quebrou todas as 4 partes!`, '#ff5722');
+        return;
+      }
+
       ctrl.hits++;
-      ctrl.stage = Math.min(5, Math.floor(ctrl.hits / 4));
+      const currentPartHits = ctrl.hits % 10;
+      const hitsNeeded = 10;
 
-      // Empurrãozinho e vibração no controle
-      ctrl.group.rotation.y += (Math.random() - 0.5) * 0.45;
+      // Feedback sonoro/visual
+      showCarSpeech(breakSpeechToggle ? 'eita' : 'ops', 1800);
+      breakSpeechToggle = !breakSpeechToggle;
 
-      // Soltar pedacinhos do controle na mesa a cada batida!
-      const pieceColors = [ctrl.origColor, 0x181a1e, 0x00e5ff, 0xff4081, 0xffeb3b];
-      const piecesToSpawn = ctrl.hits % 4 === 0 ? 4 : 2;
-      for (let i = 0; i < piecesToSpawn; i++) {
-        const piece = new THREE.Mesh(
-          new THREE.BoxGeometry(0.28 + Math.random() * 0.25, 0.16, 0.28 + Math.random() * 0.25),
-          new THREE.MeshStandardMaterial({ color: pieceColors[i % pieceColors.length], roughness: 0.4 })
-        );
-        const ang = Math.random() * Math.PI * 2;
-        const dist = 1.4 + Math.random() * 2.4;
-        piece.position.set(
-          ctrl.group.position.x + Math.cos(ang) * dist,
-          0.22,
-          ctrl.group.position.z + Math.sin(ang) * dist
-        );
-        piece.rotation.set(Math.random(), Math.random(), Math.random());
-        piece.castShadow = true;
-        deskWorld.add(piece);
-        controllerDebrisList.push(piece);
+      if (currentPartHits === 0) {
+        // Atingiu a resistência de 10 batidas: quebra a próxima parte!
+        ctrl.stage = Math.min(4, ctrl.stage + 1);
+
+        // Solta pedacinhos do controle na mesa/quarto
+        const pieceColors = [ctrl.origColor, 0x181a1e, 0x00e5ff, 0xff4081, 0xffeb3b];
+        for (let i = 0; i < 5; i++) {
+          const piece = new THREE.Mesh(
+            new THREE.BoxGeometry(0.35 + Math.random() * 0.25, 0.18, 0.35 + Math.random() * 0.25),
+            new THREE.MeshStandardMaterial({ color: pieceColors[i % pieceColors.length], roughness: 0.4 })
+          );
+          const ang = Math.random() * Math.PI * 2;
+          const dist = 1.6 + Math.random() * 2.5;
+          piece.position.set(
+            ctrl.group.position.x + Math.cos(ang) * dist,
+            0.22,
+            ctrl.group.position.z + Math.sin(ang) * dist
+          );
+          piece.rotation.set(Math.random(), Math.random(), Math.random());
+          piece.castShadow = true;
+          deskWorld.add(piece);
+          controllerDebrisList.push(piece);
+        }
+
+        // Aplica os 4 estágios de quebra
+        if (ctrl.stage === 1) {
+          ctrl.stickL.visible = false; // Parte 1: solta o analógico esquerdo
+          ctrl.centerBody.rotation.z = 0.08;
+        } else if (ctrl.stage === 2) {
+          ctrl.stickR.visible = false; // Parte 2: solta o analógico direito
+          ctrl.gripL.position.x = -1.45;
+          ctrl.gripL.rotation.z = 0.55;
+        } else if (ctrl.stage === 3) {
+          ctrl.gripL.visible = false; // Parte 3: quebra o grip esquerdo
+          ctrl.gripR.position.x = 1.45;
+          ctrl.gripR.rotation.z = -0.55;
+        } else if (ctrl.stage >= 4) {
+          ctrl.gripR.visible = false; // Parte 4: quebra o grip direito e racha o corpo
+          ctrl.centerBody.scale.set(0.68, 0.5, 0.68);
+          ctrl.centerBody.rotation.set(0.2, 0.35, -0.15);
+          ctrl.bodyMat.color.setHex(0x383232);
+        }
+
+        setStatusBanner(`🚨 ${ctrl.name}: QUEBROU A PARTE ${ctrl.stage} DE 4! (Após 10 impactos)`, '#f44336');
+        logInteractionEvent(`🚨 ${ctrl.name}: Parte ${ctrl.stage}/4 quebrada após 10 impactos!`);
+      } else {
+        setStatusBanner(`💥 ${ctrl.name}: Resistência ${currentPartHits}/10 batidas para quebrar a Parte ${ctrl.stage + 1}/4!`, '#ffb300');
       }
 
-      // Aplica os 5 estágios visuais de quebra!
-      if (ctrl.stage === 1) {
-        ctrl.stickL.rotation.z = 0.65;
-        ctrl.centerBody.rotation.z = 0.06;
-      } else if (ctrl.stage === 2) {
-        ctrl.stickL.visible = false; // Perdeu o analógico esquerdo
-        ctrl.gripL.rotation.z = 0.55;
-        ctrl.gripL.position.x = -1.45;
-      } else if (ctrl.stage === 3) {
-        ctrl.stickR.visible = false; // Perdeu os dois analógicos
-        ctrl.gripL.visible = false;  // Quebrou o grip esquerdo
-        ctrl.centerBody.rotation.x = 0.18;
-      } else if (ctrl.stage === 4) {
-        ctrl.gripR.rotation.x = 1.2;
-        ctrl.gripR.position.set(1.6, 0.2, 0.8);
-        ctrl.centerBody.scale.set(0.85, 0.7, 0.85);
-      } else if (ctrl.stage >= 5) {
-        ctrl.gripR.visible = false;
-        ctrl.centerBody.scale.set(0.65, 0.4, 0.6);
-        ctrl.centerBody.rotation.set(0.25, 0.4, -0.2);
-        ctrl.bodyMat.color.setHex(0x3a3535);
-      }
-
-      ctrl.obs.name = `${ctrl.name} — QUEBRA: ESTÁGIO ${ctrl.stage}/5 (${ctrl.hits}/20 BATIDAS)`;
-      setStatusBanner(`💥 ${ctrl.name}: Estágio ${ctrl.stage}/5 (${ctrl.hits}/20 batidas)!`);
+      ctrl.obs.name = `${ctrl.name} — PARTE ${ctrl.stage}/4 QUEBRADA (${ctrl.hits % 10}/10 IMPACTOS)`;
     }
 
     // 5. TECLADO GAMER LOGITECH G213 PRODIGY (Descanso de Pulso Integrado + Adesivo Copilot + Iluminação ABNT2!)
@@ -2756,8 +2836,12 @@
 
     mugGroup.position.set(21.5, 0.14, -2.5);
     deskWorld.add(mugGroup);
-    const mugObs = { x: 21.5, z: -2.5, r: 2.35, name: 'CANECA MULESOFT MENTOR COM CORTIÇA' };
-    obstacles.push(mugObs);
+    const mugObs = registerDynamicObstacle({
+      obs: { x: 21.5, z: -2.5, r: 2.35, name: 'CANECA MULESOFT MENTOR COM CORTIÇA' },
+      group: mugGroup,
+      mass: 1.6,
+      canTopple: true
+    });
     registerGrabbable({
       id: 'mug', name: 'Caneca MuleSoft Mentor', group: mugGroup, obs: mugObs,
       initX: 21.5, initY: 0.14, initZ: -2.5, initRotY: 0, grabRadius: 5.2
@@ -3746,6 +3830,125 @@
       deskWorld.add(postIt);
     });
 
+
+    // ============================================================================
+    // CARREGAMENTO DE MODELOS 3D GLB (PASTA MODELS / SKETCHFAB DOWNLOADS)
+    // ============================================================================
+    const gltfLoader = new THREE.GLTFLoader();
+    const loaded3DModels = [];
+
+    function loadGLBModel(relPath, config) {
+      gltfLoader.load('./models/' + relPath, (gltf) => {
+        const model = gltf.scene;
+        const s = config.scale || 1.0;
+        model.scale.set(s, s, s);
+        model.position.set(config.x || 0, config.y || 0, config.z || 0);
+        if (config.rotY) model.rotation.y = config.rotY;
+
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            child.userData.parentGroup = model;
+            child.userData.config = config;
+          }
+        });
+
+        if (config.targetWorld === 'bedroom') {
+          bedroomWorld.add(model);
+        } else {
+          deskWorld.add(model);
+        }
+
+        if (config.obs) {
+          registerDynamicObstacle({
+            obs: config.obs,
+            group: model,
+            mass: config.mass || 0.8,
+            canTopple: config.canTopple !== undefined ? config.canTopple : true,
+            isStatic: !!config.isStatic
+          });
+        }
+
+        registerGrabbable({
+          id: config.id || ('glb_' + Date.now() + Math.random()),
+          name: config.name || 'Modelo 3D',
+          group: model,
+          obs: config.obs,
+          initX: config.x || 0,
+          initY: config.y || 0,
+          initZ: config.z || 0,
+          initRotY: config.rotY || 0,
+          grabRadius: config.grabRadius || 4.2
+        });
+
+        loaded3DModels.push({ model, config, relPath });
+        console.log('✓ Modelo 3D carregado:', config.name || relPath);
+      }, undefined, (err) => {
+        console.warn('Aviso: Modelo 3D não encontrado ou em carregamento:', relPath);
+      });
+    }
+
+    // Carregar Modelos 3D Selecionados pelo Usuário na Mesa e no Quarto:
+    // 1. Cones de Trânsito Miniatura na Pista de Corrida da Mesa (Voam e tombam ao bater!)
+    loadGLBModel('traffic_cone_01/traffic_cone_01.glb', {
+      x: -32, y: 0.14, z: 15, scale: 0.038, name: 'Cone de Trânsito 1',
+      obs: { x: -32, z: 15, r: 1.25, name: 'CONE DE TRÂNSITO' }, mass: 0.35, canTopple: true
+    });
+    loadGLBModel('traffic_cone_02/traffic_cone_02.glb', {
+      x: -48, y: 0.14, z: 18, scale: 0.038, name: 'Cone Listrado 2',
+      obs: { x: -48, z: 18, r: 1.25, name: 'CONE LISTRADO' }, mass: 0.35, canTopple: true
+    });
+
+    // 2. Cones no Chão do Quarto (Marcando a saída da Rampa de Papelão!)
+    loadGLBModel('traffic_cone_01/traffic_cone_01.glb', {
+      x: -142, y: -35.85, z: 12, scale: 0.055, name: 'Cone Quarto 1', targetWorld: 'bedroom',
+      obs: { x: -142, z: 12, r: 1.6, name: 'CONE CHÃO' }, mass: 0.5, canTopple: true
+    });
+    loadGLBModel('traffic_cone_02/traffic_cone_02.glb', {
+      x: -142, y: -35.85, z: 24, scale: 0.055, name: 'Cone Quarto 2', targetWorld: 'bedroom',
+      obs: { x: -142, z: 24, r: 1.6, name: 'CONE LISTRADO CHÃO' }, mass: 0.5, canTopple: true
+    });
+
+    // 3. Foguetinho de Brinquedo no Quarto
+    loadGLBModel('rocket_toy_01/rocket_toy_01.glb', {
+      x: -6, y: -35.85, z: 55, scale: 0.048, name: 'Foguete de Brinquedo', targetWorld: 'bedroom',
+      obs: { x: -6, z: 55, r: 2.2, name: 'FOGUETINHO DO RAVI' }, mass: 0.9, canTopple: true
+    });
+
+    // 4. Pistola de Água do Ravi na Mesa (Recarga extra!)
+    loadGLBModel('water_pistol/water_pistol.glb', {
+      x: -52, y: 0.14, z: -10, scale: 0.042, rotY: 0.45, name: 'Pistola de Água',
+      obs: { x: -52, z: -10, r: 2.2, name: 'PISTOLA DE ÁGUA' }, mass: 0.7
+    });
+
+    // 5. Lanchinho na Mesa (Hambúrguer e Frutas empurráveis!)
+    loadGLBModel('cheeseburger/cheeseburger.glb', {
+      x: 35, y: 0.14, z: -2.0, scale: 0.038, name: 'Cheeseburger',
+      obs: { x: 35, z: -2.0, r: 1.7, name: 'CHEESEBURGER' }, mass: 0.45
+    });
+    loadGLBModel('apple/apple.glb', {
+      x: 39, y: 0.14, z: -4.5, scale: 0.035, name: 'Maçã Vermelha',
+      obs: { x: 39, z: -4.5, r: 1.3, name: 'MAÇÃ' }, mass: 0.35
+    });
+
+    // 6. Grampeador e Caixa de Clipes
+    loadGLBModel('stapler/stapler.glb', {
+      x: -42, y: 0.14, z: 28, scale: 0.035, rotY: -0.35, name: 'Grampeador Metálico',
+      obs: { x: -42, z: 28, r: 1.8, name: 'GRAMPEADOR' }, mass: 0.95
+    });
+    loadGLBModel('storage_box_01/storage_box_01.glb', {
+      x: 34, y: 0.14, z: 28, scale: 0.042, name: 'Caixa Organizadora',
+      obs: { x: 34, z: 28, r: 2.2, name: 'CAIXA DE CLIPES' }, mass: 1.1
+    });
+
+    // 7. Violão Acústico Apoiado na Parede do Quarto
+    loadGLBModel('acoustic_guitar/acoustic_guitar.glb', {
+      x: -86, y: -35.85, z: -14, scale: 0.052, rotY: 0.25, name: 'Violão Acústico', targetWorld: 'bedroom',
+      obs: { x: -86, z: -14, r: 3.2, name: 'VIOLÃO ACÚSTICO' }, mass: 2.5
+    });
+
+
     // ============================================================================
     // CARRINHO DO RAVI: //Fire Engine// (MODELO 3D FIEL AOS 4 ÂNGULOS REAIS!)
     // ============================================================================
@@ -4717,18 +4920,38 @@
       // 5. Movimentação do Carrinho e Balão "vrum vrumm" após 5s acelerando!
       if (!isModalOpen) {
         if (isFallingOff) {
-          fallVelocityY -= 0.025;
+          // Queda do abismo externo do quarto (fora das paredes do quarto)
+          fallVelocityY -= 0.035;
           vehicle.position.y += fallVelocityY;
           vehicle.position.x += Math.sin(carAngle) * carSpeed;
           vehicle.position.z += Math.cos(carAngle) * carSpeed;
           vehicle.rotation.x += 0.06;
           vehicle.rotation.z += 0.04;
 
-          if (vehicle.position.y < -18) {
+          if (vehicle.position.y < -55) {
             openModal(
-              '🚨 O Carrinho Caiu da Mesa!',
-              'Você se jogou para fora da mesa! Deseja reiniciar o jogo e restaurar todos os objetos ao estado original?'
+              '🚨 O Carrinho Saiu do Quarto!',
+              'Você ultrapassou as paredes do quarto! Deseja reiniciar o jogo e restaurar tudo?'
             );
+          }
+        } else if (isFallingOffDesk) {
+          // Queda suave da borda da mesa para o chão do quarto (sem reiniciar!)
+          fallVelocityY -= 0.032;
+          vehicle.position.y += fallVelocityY;
+          vehicle.position.x += Math.sin(carAngle) * carSpeed;
+          vehicle.position.z += Math.cos(carAngle) * carSpeed;
+          vehicle.rotation.x = THREE.MathUtils.lerp(vehicle.rotation.x, 0.25, 0.1);
+
+          if (vehicle.position.y <= -35.71) {
+            vehicle.position.y = -35.71;
+            isFallingOffDesk = false;
+            fallVelocityY = 0;
+            carSpeed *= 0.6;
+            vehicle.rotation.x = 0;
+            vehicle.rotation.z = 0;
+            showCarSpeech('Cataploft! Cai no chão!', 3200);
+            setStatusBanner('🛬 Você caiu da mesa e aterrissou são e salvo no chão do quarto! Continue acelerando!', '#00e5ff');
+            logInteractionEvent('🛬 O carrinho caiu da borda da mesa e aterrissou diretamente no chão do quarto!');
           }
         } else {
           if (keys.forward || keys.backward) {
@@ -4815,10 +5038,10 @@
           // 4. No Topo da Mesa de Trabalho
           else {
             targetY = 0.14;
-            // Verificar se saiu das bordas da mesa onde NÃO há rampa
+            // Verificar se saiu das bordas da mesa onde NÃO há rampa -> Cai para o chão do quarto!
             if (Math.abs(nextX) > DESK_HALF_W + 1.2 || Math.abs(nextZ) > DESK_HALF_D + 1.2) {
-              isFallingOff = true;
-              fallVelocityY = -0.15;
+              isFallingOffDesk = true;
+              fallVelocityY = -0.12;
             }
           }
 
@@ -4826,7 +5049,7 @@
             // smooth lerp handled below
           }
 
-          // Colisões com Obstáculos (ignorando o objeto atualmente segurado pelo carrinho)
+          // Colisões Dinâmicas com Obstáculos (física de empurrão, tombamento e reação)
           obstacles.forEach((obs) => {
             if (heldItem && heldItem.obs === obs) return;
             const dx = nextX - obs.x;
@@ -4835,6 +5058,31 @@
             const minAllowed = obs.r + 1.45;
 
             if (dist < minAllowed && dist > 0.001) {
+              const nx = dx / dist;
+              const nz = dz / dist;
+              const impact = Math.abs(carSpeed);
+
+              // SE O OBJETO NÃO FOR ESTÁTICO (ex: caneca, copos, controles, cones, lanchinhos, blocos) -> Sofre impulso físico!
+              if (!obs.isStatic) {
+                const force = impact * 0.95 + 0.10;
+                const mass = obs.mass || 1.0;
+                obs.vx = -(nx) * (force / mass);
+                obs.vz = -(nz) * (force / mass);
+                obs.vRotY = (Math.random() - 0.5) * 0.45 * force;
+                if (obs.canTopple) {
+                  obs.tiltX = -nz * 0.35 * force;
+                  obs.tiltZ = nx * 0.35 * force;
+                }
+                // O carrinho desacelera levemente e empurra o objeto
+                carSpeed *= Math.max(0.4, 1.0 - (0.35 * mass));
+                nextX = obs.x + nx * (minAllowed * 0.92);
+                nextZ = obs.z + nz * (minAllowed * 0.92);
+              } else {
+                // Objeto estático e pesado (Notebook, Monitores, Suporte, Aquário, Coluna da Mesa)
+                nextX = obs.x + nx * minAllowed;
+                nextZ = obs.z + nz * minAllowed;
+                carSpeed *= -0.25;
+              }
               // Se bateu no Copo com Água -> Derrama a água + Balão "ops" / "eita"!
               if (obs.type === 'water_cup' && !cupSpilled) {
                 cupSpilled = true;
@@ -5077,11 +5325,299 @@
       camera.position.lerp(desiredCamPos, 0.09);
       camera.lookAt(lookTarget);
 
+
+      // ============================================================================
+      // FÍSICA DINÂMICA DOS OBJETOS (DESLIZAMENTO, TOMBAMENTO E COLISÃO OBJETO-OBJETO)
+      // ============================================================================
+      dynamicObstacles.forEach((obs) => {
+        if (Math.abs(obs.vx) > 0.001 || Math.abs(obs.vz) > 0.001 || Math.abs(obs.vRotY) > 0.001) {
+          obs.x += obs.vx;
+          obs.z += obs.vz;
+          obs.vx *= 0.91; // atrito com a mesa/chão
+          obs.vz *= 0.91;
+          obs.vRotY *= 0.88;
+
+          if (obs.group) {
+            obs.group.position.x = obs.x;
+            obs.group.position.z = obs.z;
+            obs.group.rotation.y += obs.vRotY;
+
+            if (obs.tiltX !== undefined) {
+              obs.tiltX *= 0.84;
+              obs.tiltZ *= 0.84;
+              obs.group.rotation.x = obs.tiltX;
+              obs.group.rotation.z = obs.tiltZ;
+            }
+
+            // Se estiver na mesa e for empurrado para fora da borda, cai até o chão do quarto!
+            if (obs.group.position.y > -5) {
+              if (Math.abs(obs.x) > DESK_HALF_W + 1.2 || Math.abs(obs.z) > DESK_HALF_D + 1.2) {
+                obs.isFalling = true;
+              }
+            }
+            if (obs.isFalling) {
+              obs.group.position.y -= 0.65;
+              if (obs.group.position.y <= -35.85) {
+                obs.group.position.y = -35.85;
+                obs.isFalling = false;
+                obs.vx *= 0.35;
+                obs.vz *= 0.35;
+              }
+            }
+          }
+        }
+      });
+
+      // Colisão Dinâmica entre os Próprios Objetos (um objeto empurra o outro!)
+      for (let i = 0; i < dynamicObstacles.length; i++) {
+        const oA = dynamicObstacles[i];
+        if (Math.abs(oA.vx) < 0.004 && Math.abs(oA.vz) < 0.004) continue;
+        for (let j = 0; j < dynamicObstacles.length; j++) {
+          if (i === j) continue;
+          const oB = dynamicObstacles[j];
+          const cdx = oB.x - oA.x;
+          const cdz = oB.z - oA.z;
+          const cdist = Math.hypot(cdx, cdz);
+          const cmin = oA.r + oB.r;
+          if (cdist < cmin && cdist > 0.001) {
+            const cnx = cdx / cdist;
+            const cnz = cdz / cdist;
+            const overlap = cmin - cdist;
+            oB.x += cnx * overlap * 0.5;
+            oB.z += cnz * overlap * 0.5;
+            oA.x -= cnx * overlap * 0.5;
+            oA.z -= cnz * overlap * 0.5;
+            oB.vx += oA.vx * 0.6;
+            oB.vz += oA.vz * 0.6;
+            oA.vx *= 0.4;
+            oA.vz *= 0.4;
+            if (oB.group) { oB.group.position.x = oB.x; oB.group.position.z = oB.z; }
+          }
+        }
+      }
+
+      // ============================================================================
+      // OCLUSÃO E TRANSPARÊNCIA X-RAY (80% A 85%) QUANDO O CARRINHO É OBSTRUÍDO
+      // ============================================================================
+      const camPos = camera.position;
+      const carCenter = vehicle.position.clone().add(new THREE.Vector3(0, 1.1, 0));
+      const rayDir = carCenter.clone().sub(camPos);
+      const rayDist = rayDir.length();
+      rayDir.normalize();
+
+      occlusionRaycaster.set(camPos, rayDir);
+      occlusionRaycaster.near = 1.0;
+      occlusionRaycaster.far = Math.max(1.0, rayDist - 1.2);
+
+      const hits = occlusionRaycaster.intersectObjects(occluderMeshes, true);
+      const currentOccluded = new Set();
+
+      hits.forEach((h) => {
+        const m = h.object;
+        if (m.material && !m.isCar) {
+          currentOccluded.add(m);
+          if (m._origOpacity === undefined) {
+            m._origOpacity = m.material.opacity !== undefined ? m.material.opacity : 1.0;
+            m._origTransparent = m.material.transparent !== undefined ? m.material.transparent : false;
+          }
+          m.material.transparent = true;
+          // 80% a 85% de transparência = opacidade ~0.18
+          m.material.opacity = THREE.MathUtils.lerp(m.material.opacity, 0.18, 0.22);
+        }
+      });
+
+      occludedMeshesSet.forEach((m) => {
+        if (!currentOccluded.has(m) && m.material) {
+          m.material.opacity = THREE.MathUtils.lerp(m.material.opacity, m._origOpacity || 1.0, 0.18);
+          if (Math.abs(m.material.opacity - (m._origOpacity || 1.0)) < 0.05) {
+            m.material.opacity = m._origOpacity || 1.0;
+            m.material.transparent = m._origTransparent || false;
+            occludedMeshesSet.delete(m);
+          }
+        }
+      });
+
+      currentOccluded.forEach(m => occludedMeshesSet.add(m));
+
+
       // Atualiza a posição 2D do balão de fala em cima do carrinho do Ravi
       updateSpeechBubblePosition();
 
       renderer.render(scene, camera);
     }
+
+
+    // ============================================================================
+    // MODO EDIÇÃO DO DESENVOLVEDOR (DEV EDIT MODE COM TRANSFORM CONTROLS)
+    // ============================================================================
+    let devModeActive = false;
+    let devSelectedObject = null;
+    const devRaycaster = new THREE.Raycaster();
+    const devMouse = new THREE.Vector2();
+
+    const transformControl = new THREE.TransformControls(camera, renderer.domElement);
+    transformControl.size = 0.85;
+    scene.add(transformControl);
+
+    transformControl.addEventListener('dragging-changed', (event) => {
+      // Bloqueia rotação da câmera enquanto arrasta o gizmo
+      if (typeof orbitControls !== 'undefined' && orbitControls) {
+        orbitControls.enabled = !event.value;
+      }
+    });
+
+    transformControl.addEventListener('objectChange', () => {
+      if (devSelectedObject && devSelectedObject.userData && devSelectedObject.userData.obs) {
+        const obs = devSelectedObject.userData.obs;
+        obs.x = devSelectedObject.position.x;
+        obs.z = devSelectedObject.position.z;
+      }
+    });
+
+    const devBarEl = document.getElementById('dev-mode-bar');
+    const devSelectedNameEl = document.getElementById('dev-selected-name');
+    const btnToggleDevEl = document.getElementById('btn-toggle-dev');
+    const devBtnTranslateEl = document.getElementById('dev-btn-translate');
+    const devBtnRotateEl = document.getElementById('dev-btn-rotate');
+    const devBtnCloseEl = document.getElementById('dev-btn-close');
+    const devBtnSaveEl = document.getElementById('dev-btn-save');
+    const devBtnAddModelEl = document.getElementById('dev-btn-add-model');
+    const devSelectModelEl = document.getElementById('dev-add-model-select');
+
+    function toggleDevMode(forceState) {
+      devModeActive = forceState !== undefined ? forceState : !devModeActive;
+      devBarEl.style.display = devModeActive ? 'flex' : 'none';
+      transformControl.enabled = devModeActive;
+      if (!devModeActive) {
+        transformControl.detach();
+        devSelectedObject = null;
+        devSelectedNameEl.textContent = '(Nenhum selecionado)';
+      }
+      logInteractionEvent(devModeActive ? '🛠️ Modo Dev de Edição ATIVADO!' : '🛠️ Modo Dev DESATIVADO.');
+      setStatusBanner(devModeActive ? '🛠️ MODO EDIÇÃO ATIVO! Clique em um objeto para mover/girar.' : '🏎️ Modo de Jogo normal.');
+    }
+
+    if (btnToggleDevEl) btnToggleDevEl.addEventListener('click', () => toggleDevMode());
+    if (devBtnCloseEl) devBtnCloseEl.addEventListener('click', () => toggleDevMode(false));
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F2') {
+        e.preventDefault();
+        toggleDevMode();
+      }
+      if (!devModeActive) return;
+      if (e.key === 'g' || e.key === 'G') {
+        transformControl.setMode('translate');
+        devBtnTranslateEl.style.background = '#00e5ff'; devBtnTranslateEl.style.color = '#000';
+        devBtnRotateEl.style.background = '#2d3139'; devBtnRotateEl.style.color = '#fff';
+      } else if (e.key === 'r' || e.key === 'R') {
+        transformControl.setMode('rotate');
+        devBtnRotateEl.style.background = '#00e5ff'; devBtnRotateEl.style.color = '#000';
+        devBtnTranslateEl.style.background = '#2d3139'; devBtnTranslateEl.style.color = '#fff';
+      }
+    });
+
+    devBtnTranslateEl.addEventListener('click', () => {
+      transformControl.setMode('translate');
+      devBtnTranslateEl.style.background = '#00e5ff'; devBtnTranslateEl.style.color = '#000';
+      devBtnRotateEl.style.background = '#2d3139'; devBtnRotateEl.style.color = '#fff';
+    });
+    devBtnRotateEl.addEventListener('click', () => {
+      transformControl.setMode('rotate');
+      devBtnRotateEl.style.background = '#00e5ff'; devBtnRotateEl.style.color = '#000';
+      devBtnTranslateEl.style.background = '#2d3139'; devBtnTranslateEl.style.color = '#fff';
+    });
+
+    // Clique com o mouse para selecionar objeto na cena
+    window.addEventListener('pointerdown', (e) => {
+      if (!devModeActive || e.target.closest('#dev-mode-bar') || e.target.closest('#ui-overlay') || e.target.closest('#btn-toggle-menu')) return;
+      devMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      devMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      devRaycaster.setFromCamera(devMouse, camera);
+
+      const candidates = [];
+      scene.traverse((obj) => {
+        if (obj.isMesh && obj.parent && obj !== vehicle && !obj.isFloor && !obj.isRamp) {
+          candidates.push(obj);
+        }
+      });
+
+      const devHits = devRaycaster.intersectObjects(candidates, true);
+      if (devHits.length > 0) {
+        let selectedGroup = devHits[0].object;
+        while (selectedGroup.parent && selectedGroup.parent !== scene && selectedGroup.parent !== deskWorld && selectedGroup.parent !== bedroomWorld) {
+          selectedGroup = selectedGroup.parent;
+        }
+        devSelectedObject = selectedGroup;
+        transformControl.attach(selectedGroup);
+        const name = selectedGroup.name || selectedGroup.userData?.name || 'Objeto 3D';
+        devSelectedNameEl.textContent = name;
+        logInteractionEvent('🛠️ Objeto selecionado: ' + name);
+      }
+    });
+
+    // Inserir Novo Modelo 3D da biblioteca selecionado no dropdown
+    devBtnAddModelEl.addEventListener('click', () => {
+      const val = devSelectModelEl.value;
+      if (!val) {
+        alert('Selecione um modelo no dropdown para inserir!');
+        return;
+      }
+      const modelPathMap = {
+        traffic_cone_01: 'traffic_cone_01/traffic_cone_01.glb',
+        traffic_cone_02: 'traffic_cone_02/traffic_cone_02.glb',
+        brick_flemish_bond: 'brick_flemish_bond/brick_flemish_bond.glb',
+        rocket_toy_01: 'rocket_toy_01/rocket_toy_01.glb',
+        water_pistol: 'water_pistol/water_pistol.glb',
+        cheeseburger: 'cheeseburger/cheeseburger.glb',
+        apple: 'apple/apple.glb',
+        banana: 'banana/banana.glb',
+        desk_lamp: 'desk_lamp/desk_lamp.glb',
+        acoustic_guitar: 'acoustic_guitar/acoustic_guitar.glb',
+        stapler: 'stapler/stapler.glb',
+        storage_box_01: 'storage_box_01/storage_box_01.glb',
+        mesh_bin: 'mesh_bin/mesh_bin.glb'
+      };
+      const rel = modelPathMap[val];
+      if (rel) {
+        const spawnX = vehicle.position.x + Math.sin(carAngle) * 5.0;
+        const spawnZ = vehicle.position.z + Math.cos(carAngle) * 5.0;
+        const spawnY = vehicle.position.y > -5 ? 0.14 : -35.85;
+        loadGLBModel(rel, {
+          x: spawnX, y: spawnY, z: spawnZ,
+          scale: 0.045, name: 'Item: ' + val,
+          obs: { x: spawnX, z: spawnZ, r: 1.8, name: val.toUpperCase() },
+          mass: 0.8, canTopple: true
+        });
+        logInteractionEvent('🛠️ Novo modelo inserido: ' + val);
+        setStatusBanner('✓ Modelo ' + val + ' inserido na cena!', '#7ee787');
+      }
+    });
+
+    // Salvar posições dos objetos no localStorage
+    devBtnSaveEl.addEventListener('click', () => {
+      const savedLayout = [];
+      dynamicObstacles.forEach((obs) => {
+        if (obs.group) {
+          savedLayout.push({
+            name: obs.name,
+            x: obs.group.position.x,
+            y: obs.group.position.y,
+            z: obs.group.position.z,
+            rotY: obs.group.rotation.y
+          });
+        }
+      });
+      try {
+        localStorage.setItem('ravi_desk_custom_layout', JSON.stringify(savedLayout));
+        alert('💾 Posições dos objetos salvas com sucesso no seu navegador!');
+        setStatusBanner('💾 Layout personalizado salvo no localStorage!', '#7ee787');
+        logInteractionEvent('💾 Layout dos objetos salvo pelo desenvolvedor.');
+      } catch (e) {
+        console.error('Erro ao salvar no localStorage:', e);
+      }
+    });
+
 
     animate();
   </script>
