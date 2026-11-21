@@ -7,14 +7,14 @@
 //   4. App Check com reCAPTCHA v3 (opcional, recomendado) — bloqueia chamadas que não vêm do site.
 //
 // Enquanto FIREBASE_CONFIG for null, o site funciona normalmente só com o salvamento local do navegador.
-window.FIREBASE_CONFIG = null;
-/* Exemplo (preencha com os dados do SEU projeto):
 window.FIREBASE_CONFIG = {
-  apiKey: 'AIza...',
-  authDomain: 'seu-projeto.firebaseapp.com',
-  projectId: 'seu-projeto',
-  appId: '1:000000000000:web:abc123'
+  apiKey: "AIzaSyAzP3OV0H2nOpzqz6VNDuvpGWiEailroKs",
+  authDomain: "jeferson-deskwork-interative.firebaseapp.com",
+  projectId: "jeferson-deskwork-interative",
+  storageBucket: "jeferson-deskwork-interative.firebasestorage.app",
+  messagingSenderId: "357767695383",
+  appId: "1:357767695383:web:892e80a661c8c8df2ee052"
 };
-*/
 // Chave de site do reCAPTCHA v3 usada pelo App Check (opcional)
 window.FIREBASE_APPCHECK_SITE_KEY = null;
+

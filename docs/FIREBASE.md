@@ -30,8 +30,13 @@ documentos do usuário (direito de exclusão).
 7. Em **Configurações do projeto → Seus apps**, adicione um app **Web** e copie o objeto de configuração para
    [`firebase-config.js`](../firebase-config.js) (`window.FIREBASE_CONFIG = { ... }`).
 8. **Restrinja a chave de API** no Google Cloud Console (APIs e serviços → Credenciais → a chave "Browser key"):
-   - Restrição de aplicativo: *Referenciadores HTTP* → `https://jefersonribeirogomes.github.io/*` e `http://localhost:*/*`;
-   - Restrição de API: Identity Toolkit API, Token Service API e Cloud Firestore API.
+   - Restrição de aplicativo: *Sites (referenciadores HTTP)*, um por linha:
+     - `https://jefersonribeirogomes.github.io/*` (site publicado)
+     - `https://SEU-PROJETO.firebaseapp.com/*` (**obrigatório**: a janela de login do Google roda neste domínio)
+     - `http://localhost:8080/*` (testes locais — inclua a porta usada)
+   - Restrição de API: **Identity Toolkit API**, **Token Service API** e **Cloud Firestore API**
+     (sem as duas primeiras o login falha com `auth/permission-denied-on-the-service`).
+   - As mudanças levam alguns minutos para valer.
 9. (Recomendado) **App Check**: em *App Check*, registre o app Web com **reCAPTCHA v3**, cole a chave do site em
    `window.FIREBASE_APPCHECK_SITE_KEY` e ative a *aplicação obrigatória* (enforcement) para o Firestore.
 
