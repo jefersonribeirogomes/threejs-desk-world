@@ -585,30 +585,34 @@
   </div>
 
   <!-- BARRA FLUTUANTE DO MODO DE EDIÇÃO DO DESENVOLVEDOR (DEV EDIT MODE) -->
-  <div id="dev-mode-bar" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); background:radial-gradient(at 0 0, rgba(37, 31, 43, 0.98), rgba(20, 16, 24, 0.98)); border:1.5px solid #ffd24c; border-radius:12px; padding:8px 16px; z-index:150; color:#fff; display:none; align-items:center; gap:10px; font-family:var(--ds-font-body); font-size:12px; box-shadow:0 10px 35px rgba(0,0,0,0.75); backdrop-filter:blur(10px);">
-    <span style="font-weight:900; color:#ffd24c; font-size:13px; display:flex; align-items:center; gap:6px;">🛠️ MODO EDIÇÃO DEV</span>
-    <span id="dev-selected-name" style="color:#00e5ff; font-weight:700; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">(Clique em um objeto)</span>
-    <button id="dev-btn-translate" style="background:#2d3139; color:#fff; border:1px solid #777; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:700; font-size:11px;">Mover [G]</button>
-    <button id="dev-btn-rotate" style="background:#2d3139; color:#fff; border:1px solid #777; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:700; font-size:11px;">Girar [R]</button>
-    <select id="dev-add-model-select" style="background:#1b1d22; color:#fff; border:1px solid #ffd24c; border-radius:6px; padding:4px 8px; font-size:11.5px; outline:none; font-family:var(--ds-font-body);">
-      <option value="">+ Inserir Modelo 3D...</option>
+  <div id="dev-mode-bar" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); background:var(--ds-bg-plum); border:1px solid var(--ds-brand); border-radius:12px; padding:9px 18px; z-index:150; color:#fff; align-items:center; gap:10px; font-family:var(--ds-font-body); font-size:12px; box-shadow:0 12px 40px rgba(0,0,0,0.8); backdrop-filter:blur(14px);">
+    <span style="font-family:var(--ds-font-title); font-size:1.6rem; color:var(--ds-brand); letter-spacing:0.04em; margin-right:4px;">MODO DEV</span>
+    <span id="dev-selected-name" style="color:#00e5ff; font-weight:800; max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:rgba(0,0,0,0.4); padding:3px 8px; border-radius:5px; border:1px solid rgba(0,229,255,0.3);">(Clique em um objeto)</span>
+    <button id="dev-btn-translate" style="background:radial-gradient(at 100% 0, #c21515, #ff5722); color:#fff; border:1px solid var(--ds-brand); padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:800; font-size:11.5px;">Mover [G]</button>
+    <button id="dev-btn-rotate" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.85); border:1px solid rgba(255,255,255,0.25); padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:800; font-size:11.5px;">Girar [R]</button>
+    <button id="dev-btn-delete" style="background:rgba(211,47,47,0.7); color:#fff; border:1px solid #ff5252; padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:800; font-size:11.5px;">🗑️ Excluir [Del]</button>
+    <select id="dev-add-model-select" style="background:#151219; color:#ffceca; border:1px solid var(--ds-brand); border-radius:6px; padding:5px 8px; font-size:11.5px; font-weight:700; outline:none; font-family:var(--ds-font-body);">
+      <option value="">+ Selecionar Modelo 3D...</option>
       <option value="traffic_cone_01">Cone de Trânsito</option>
-      <option value="traffic_cone_02">Cone Laranja Listrado</option>
-      <option value="brick_flemish_bond">Bloco / Mureta de Tijolo</option>
-      <option value="rocket_toy_01">Foguetinho de Brinquedo</option>
-      <option value="water_pistol">Pistola de Água</option>
+      <option value="traffic_cone_02">Cone Listrado</option>
+      <option value="brick_flemish_bond">Bloco de Tijolo</option>
+      <option value="rocket_toy_01">Foguete de Brinquedo</option>
+      <option value="water_pistol">Pistola d'Água</option>
       <option value="cheeseburger">Cheeseburger</option>
-      <option value="apple">Maçã</option>
+      <option value="apple">Maçã Vermelha</option>
       <option value="banana">Banana</option>
       <option value="desk_lamp">Luminária de Mesa</option>
       <option value="acoustic_guitar">Violão Acústico</option>
       <option value="stapler">Grampeador</option>
-      <option value="storage_box_01">Caixa Organizadora</option>
+      <option value="storage_box_01">Caixa de Clipes</option>
       <option value="mesh_bin">Cesto de Metal</option>
     </select>
-    <button id="dev-btn-add-model" style="background:radial-gradient(at 100% 0, #00b4d8, #0077b6); color:#fff; border:none; padding:5px 12px; border-radius:6px; font-weight:800; cursor:pointer; font-size:11px;">+ Inserir</button>
-    <button id="dev-btn-save" style="background:radial-gradient(at 100% 0, #2e7d32, #1b5e20); color:#fff; border:none; padding:5px 12px; border-radius:6px; font-weight:800; cursor:pointer; font-size:11px;">💾 Salvar</button>
-    <button id="dev-btn-close" style="background:#c21515; color:#fff; border:none; padding:5px 10px; border-radius:6px; font-weight:800; cursor:pointer; font-size:11px;">✕ Sair</button>
+    <button id="dev-btn-add-model" style="background:radial-gradient(at 100% 0, #0099ff, #00c3ff); color:#fff; border:1px solid #80d8ff; padding:5px 12px; border-radius:6px; font-weight:900; cursor:pointer; font-size:11.5px;">+ Inserir</button>
+    <button id="dev-btn-save" style="background:radial-gradient(at 100% 0, #2e7d32, #43a047); color:#fff; border:1px solid #a5d6a7; padding:5px 12px; border-radius:6px; font-weight:900; cursor:pointer; font-size:11.5px;">💾 Salvar</button>
+    <button id="dev-btn-close" style="background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.3); padding:5px 10px; border-radius:6px; font-weight:800; cursor:pointer; font-size:11.5px;">✕ Sair</button>
+    <div style="font-size:10px; color:rgba(255,206,202,0.8); margin-left:4px; border-left:1px solid rgba(255,255,255,0.2); padding-left:8px;">
+      <b>[Espaço + Mouse]</b> Câmera Livre &bull; <b>[V]</b> Câmera &bull; <b>[F]</b> Pular
+    </div>
   </div>
 
   <!-- Balão de Conversa Interativo em cima do Carrinho -->
@@ -739,7 +743,8 @@
     mainLight.shadow.camera.right = sd;
     mainLight.shadow.camera.top = sd;
     mainLight.shadow.camera.bottom = -sd;
-    mainLight.shadow.bias = -0.0005;
+    mainLight.shadow.bias = -0.0001;
+    mainLight.shadow.normalBias = 0.05;
     scene.add(mainLight);
 
     const screenGlowLight = new THREE.PointLight(0x88b4ff, 0.65, 45);
@@ -1622,13 +1627,7 @@
     deskWorld.add(deskTop);
     occluderMeshes.push(deskTop);
 
-    // Pernas robustas da mesa 3x
-    const legMat = new THREE.MeshStandardMaterial({ color: 0x121316, roughness: 0.3, metalness: 0.6 });
-    [[-78, -38], [78, -38], [-78, 38], [78, 38]].forEach(([lx, lz]) => {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(4, 38, 4), legMat);
-      leg.position.set(lx, -20, lz);
-      deskWorld.add(leg);
-    });
+    // Pernas da mesa gerenciadas pelas colunas motorizadas da Standing Desk abaixo
 
     // Deskmat de Feltro Cinza-Chumbo Expandido
     const feltMat = new THREE.MeshStandardMaterial({
@@ -1728,13 +1727,39 @@
     bedroomFloor.receiveShadow = true;
     bedroomWorld.add(bedroomFloor);
 
+    // 1b. AS 4 PAREDES REAIS DO QUARTO (LIMITES FÍSICOS DA SALA)
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xe6e8ec, roughness: 0.85 });
+    const baseboardMat = new THREE.MeshStandardMaterial({ color: 0x222428, roughness: 0.5 });
+
+    function createRoomWall(w, h, d, px, py, pz) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+      wall.position.set(px, py, pz);
+      wall.receiveShadow = true;
+      bedroomWorld.add(wall);
+      // Rodapé escuro na base da parede
+      const baseboard = new THREE.Mesh(new THREE.BoxGeometry(w > d ? w : 1.2, 2.5, d > w ? d : 1.2), baseboardMat);
+      baseboard.position.set(px, py - h / 2 + 1.25, pz);
+      bedroomWorld.add(baseboard);
+      return wall;
+    }
+
+    // Parede Norte (Fundo): z = -75
+    createRoomWall(320, 56, 4, -22, -8, -75);
+    // Parede Sul (Frente): z = 95
+    createRoomWall(320, 56, 4, -22, -8, 95);
+    // Parede Oeste (Esquerda): x = -170
+    createRoomWall(4, 56, 174, -170, -8, 10);
+    // Parede Leste (Direita): x = 125
+    createRoomWall(4, 56, 174, 125, -8, 10);
+
+
     // 2. TAPETE LISTRADO PRETO E BRANCO (Estilo Tear Artesanal da Foto Real!)
     const rugMat = new THREE.MeshStandardMaterial({
       map: createStripedRugTexture(),
       roughness: 0.95
     });
     const stripedRug = new THREE.Mesh(new THREE.BoxGeometry(112, 0.16, 72), rugMat);
-    stripedRug.position.set(-16, -35.92, 34);
+    stripedRug.position.set(-18, -35.92, 58);
     stripedRug.receiveShadow = true;
     bedroomWorld.add(stripedRug);
 
@@ -1773,7 +1798,7 @@
 
     // 4. CADEIRA GAMER ELEMENTS (Base Estrela 5 Pontas, Rodinhas, Pistão, Assento e Logo!)
     const elementsChairGroup = new THREE.Group();
-    elementsChairGroup.position.set(-18, -36.0, 42);
+    elementsChairGroup.position.set(-18, -36.0, 82); // 28 cm à frente da borda da mesa (totalmente livre)
 
     const chairFabricMat = new THREE.MeshStandardMaterial({ color: 0x18191c, roughness: 0.85 });
     const chairBlackPlastMat = new THREE.MeshStandardMaterial({ color: 0x101114, roughness: 0.4, metalness: 0.2 });
@@ -1860,7 +1885,7 @@
 
     bedroomWorld.add(elementsChairGroup);
     elementsChairGroup.traverse(m => { if (m.isMesh) occluderMeshes.push(m); });
-    obstacles.push({ x: -18, z: 42, r: 6.8, name: 'CADEIRA GAMER ELEMENTS' });
+    obstacles.push({ x: -18, z: 82, r: 7.2, name: 'CADEIRA GAMER ELEMENTS', isStatic: true });
 
     // 5. APOIO PARA PÉS DE ESCRITÓRIO SOB A MESA (Funciona como MINI RAMPA DE SALTO!)
     const footrestGroup = new THREE.Group();
@@ -1881,7 +1906,7 @@
 
     // 6. GRANDE VASO OVAL COM DRACENA / YUCCA E ARGILA EXPANDIDA (Ao Lado Direito da Mesa!)
     const bigPlantGroup = new THREE.Group();
-    bigPlantGroup.position.set(72, -36.0, 28);
+    bigPlantGroup.position.set(118, -36.0, 14); // 28 cm à direita da borda da mesa (totalmente livre)
 
     // Vaso Oval / Cápsula em Tom Grafite Fosco
     const planterMat = new THREE.MeshStandardMaterial({ color: 0x222428, roughness: 0.75 });
@@ -1947,13 +1972,13 @@
 
     bedroomWorld.add(bigPlantGroup);
     bigPlantGroup.traverse(m => { if (m.isMesh) occluderMeshes.push(m); });
-    obstacles.push({ x: 72, z: 28, r: 8.5, name: 'VASO COM YUCCA/DRACENA E ARGILA' });
+    obstacles.push({ x: 118, z: 14, r: 8.5, name: 'VASO COM YUCCA/DRACENA E ARGILA', isStatic: true });
 
     // Registra a grande planta do quarto como regável!
     growablePlants.push({
       mesh: bigPlantGroup,
       name: 'Yucca / Dracena do Quarto',
-      x: 72, z: 28,
+      x: 118, z: 14,
       isWatered: false,
       growthElapsed: 0,
       level: 1,
@@ -2007,7 +2032,7 @@
 
     // 9. PAINEL PERFURADO (PEGBOARD) PRETO NA PAREDE ESQUERDA
     const pegboardGroup = new THREE.Group();
-    pegboardGroup.position.set(-96, 8, -20);
+    pegboardGroup.position.set(-168, 10, -10); // Fixado rente à parede esquerda do quarto!
     const pegMat = new THREE.MeshStandardMaterial({ map: createPegboardTexture(), roughness: 0.8 });
     const pegBoard = new THREE.Mesh(new THREE.BoxGeometry(0.8, 38, 26), pegMat);
     pegboardGroup.add(pegBoard);
@@ -2778,8 +2803,12 @@
     mouseGroup.position.set(15.6, 0.14, 4.6);
     mouseGroup.rotation.y = -0.12;
     deskWorld.add(mouseGroup);
-    const mouseObs = { x: 15.6, z: 4.6, r: 2.3, name: 'MOUSE LOGITECH G502 HERO (COM FIO)' };
-    obstacles.push(mouseObs);
+    const mouseObs = registerDynamicObstacle({
+      obs: { x: 15.6, z: 4.6, r: 1.85, name: 'MOUSE LOGITECH G502 HERO (COM FIO)' },
+      group: mouseGroup,
+      mass: 0.65,
+      canTopple: false
+    });
     registerGrabbable({
       id: 'mouse', name: 'Mouse Logitech G502 HERO', group: mouseGroup, obs: mouseObs,
       initX: 15.6, initY: 0.14, initZ: 4.6, initRotY: -0.12, grabRadius: 5.0
@@ -5031,7 +5060,33 @@
               }
             }
 
-            // Queda para fora dos limites do quarto (limites ampliados do quarto: x de -175 a 125, z de -75 a 95)
+            
+          // ============================================================================
+          // LIMITAÇÃO FÍSICA PELAS 4 PAREDES DO QUARTO (NUNCA REINICIA, QUIQUE/CAPOTAMENTO)
+          // ============================================================================
+          if (vehicle.position.y < -15) {
+            // Parede Oeste (x = -170)
+            if (nextX <= -165) {
+              handleFixedBounce('Parede Esquerda', 1, 0);
+              nextX = -164.5;
+            }
+            // Parede Leste (x = 125)
+            else if (nextX >= 120) {
+              handleFixedBounce('Parede Direita', -1, 0);
+              nextX = 119.5;
+            }
+            // Parede Norte (z = -75)
+            if (nextZ <= -70) {
+              handleFixedBounce('Parede do Fundo', 0, 1);
+              nextZ = -69.5;
+            }
+            // Parede Sul (z = 95)
+            else if (nextZ >= 90) {
+              handleFixedBounce('Parede da Frente', 0, -1);
+              nextZ = 89.5;
+            }
+          }
+          // Queda externa
             if (nextX < -175 || nextX > 125 || nextZ < -75 || nextZ > 95) {
               isFallingOff = true;
               fallVelocityY = -0.15;
@@ -5080,10 +5135,10 @@
                 nextX = obs.x + nx * (minAllowed * 0.92);
                 nextZ = obs.z + nz * (minAllowed * 0.92);
               } else {
-                // Objeto estático e pesado (Notebook, Monitores, Suporte, Aquário, Coluna da Mesa)
-                nextX = obs.x + nx * minAllowed;
-                nextZ = obs.z + nz * minAllowed;
-                carSpeed *= -0.25;
+                // Objeto estático e pesado (Notebook, Monitores, Suporte, Aquário, Cadeira, Planta, Radio)
+                handleFixedBounce(obs.name, nx, nz);
+                nextX = obs.x + nx * (minAllowed + 0.3);
+                nextZ = obs.z + nz * (minAllowed + 0.3);
               }
               // Se bateu no Copo com Água -> Derrama a água + Balão "ops" / "eita"!
               if (obs.type === 'water_cup' && !cupSpilled) {
@@ -5302,10 +5357,10 @@
         lookTarget = new THREE.Vector3(0, -18, 15);
       } else if (camMode === 'chair') {
         camOffset = new THREE.Vector3(28 * zoomFactor, 24 * zoomFactor, 32 * zoomFactor);
-        lookTarget = new THREE.Vector3(-18, -24, 38);
+        lookTarget = new THREE.Vector3(-18, -24, 78);
       } else if (camMode === 'plant') {
         camOffset = new THREE.Vector3(28 * zoomFactor, 22 * zoomFactor, 30 * zoomFactor);
-        lookTarget = new THREE.Vector3(72, -16, 28);
+        lookTarget = new THREE.Vector3(118, -16, 14);
       } else if (camMode === 'gear') {
         camOffset = new THREE.Vector3(1.5 * zoomFactor, 15.5 * zoomFactor, 16.5 * zoomFactor);
         lookTarget = new THREE.Vector3(8.5, 1.5, 2.0);
@@ -5323,9 +5378,13 @@
         lookTarget = new THREE.Vector3(vehicle.position.x * 0.78, Math.max(-4, vehicle.position.y + 1.0), vehicle.position.z * 0.78);
       }
 
-      const desiredCamPos = lookTarget.clone().add(camOffset);
-      camera.position.lerp(desiredCamPos, 0.09);
-      camera.lookAt(lookTarget);
+      if (isFreeCameraActive) {
+        freeOrbitControls.update();
+      } else {
+        const desiredCamPos = lookTarget.clone().add(camOffset);
+        camera.position.lerp(desiredCamPos, 0.09);
+        camera.lookAt(lookTarget);
+      }
 
 
       // ============================================================================
@@ -5456,9 +5515,97 @@
       // Atualiza a posição 2D do balão de fala em cima do carrinho do Ravi
       updateSpeechBubblePosition();
 
+      // Animação de Capotamento para Trás
+      if (isSomersaulting) {
+        somersaultTime += dt;
+        carBodyGroup.rotation.x += 13.5 * dt; // giro de 360 graus no ar
+        if (somersaultTime >= 0.52 && (vehicle.position.y <= -35.71 || (vehicle.position.y <= 0.16 && vehicle.position.y >= -2))) {
+          isSomersaulting = false;
+          carBodyGroup.rotation.x = 0;
+          fallVelocityY = 0;
+        }
+      }
+
+
       renderer.render(scene, camera);
     }
 
+
+
+    // ============================================================================
+    // CÂMERA LIVRE (ORBITCONTROLS AO SEGURAR 'ESPAÇO'), TECLAS 'V' E 'F' (PULO)
+    // ============================================================================
+    const freeOrbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+    freeOrbitControls.enabled = false;
+    freeOrbitControls.enableDamping = true;
+    freeOrbitControls.dampingFactor = 0.08;
+    let isFreeCameraActive = false;
+
+    // Ciclar Modos de Câmera com a tecla 'V'
+    const camModesList = ['iso', 'room', 'chair', 'plant', 'close', 'wide'];
+    function cycleCameraMode() {
+      const curIdx = camModesList.indexOf(camMode);
+      const nextIdx = (curIdx + 1) % camModesList.length;
+      camMode = camModesList[nextIdx];
+      const btnMap = {
+        iso: 'btn-cam-iso', room: 'btn-cam-room', chair: 'btn-cam-chair',
+        plant: 'btn-cam-plant', close: 'btn-cam-close', wide: 'btn-cam-wide'
+      };
+      const btn = document.getElementById(btnMap[camMode]);
+      if (btn) setActiveBtn(btn);
+      showCarSpeech('Câmera: ' + camMode.toUpperCase(), 1500);
+      setStatusBanner('📷 Câmera alternada com [V]: ' + camMode.toUpperCase(), '#00e5ff');
+    }
+
+    // Pulo Simples do Carrinho com a tecla 'F'
+    function triggerCarJump() {
+      if (isFallingOffDesk || isSomersaulting) return;
+      if (Math.abs(fallVelocityY) > 0.08) return; // já no ar
+      fallVelocityY = 0.38;
+      carBodyGroup.rotation.x = -0.18;
+      showCarSpeech('Pulo!', 1400);
+      setStatusBanner('🦘 Pulo simples com [F]!', '#00e5ff');
+      logInteractionEvent('🦘 Ravi deu um pulo com o carrinho!');
+    }
+
+    // Variáveis de Quique e Capotamento contra Objetos Fixos e Paredes
+    let lastFixedHitTarget = null;
+    let fixedHitCount = 0;
+    let lastFixedHitTime = 0;
+    let isSomersaulting = false;
+    let somersaultTime = 0;
+
+    function handleFixedBounce(obstacleOrWallName, normalX, normalZ) {
+      const now = performance.now();
+      if (now - lastFixedHitTime < 2500 && lastFixedHitTarget === obstacleOrWallName) {
+        fixedHitCount++;
+      } else {
+        lastFixedHitTarget = obstacleOrWallName;
+        fixedHitCount = 1;
+      }
+      lastFixedHitTime = now;
+
+      if (fixedHitCount >= 3) {
+        // CAPOTAR PARA TRÁS AO INSISTIR MAIS DE 3 VEZES!
+        isSomersaulting = true;
+        somersaultTime = 0;
+        fallVelocityY = 0.58;
+        carSpeed = -0.35;
+        fixedHitCount = 0;
+        showCarSpeech('Eita! Capotei!', 2800);
+        setStatusBanner('🤸‍♂️ O carrinho capotou para trás após insistir na colisão!', '#ff5722');
+        logInteractionEvent('🤸‍♂️ O carrinho insistiu na colisão com ' + obstacleOrWallName + ' e capotou para trás!');
+      } else {
+        // QUIQUE PARA TRÁS COM UM PEQUENO SALTO!
+        fallVelocityY = 0.24;
+        carSpeed = -Math.max(0.18, Math.abs(carSpeed) * 0.75);
+        vehicle.position.x += normalX * 0.45;
+        vehicle.position.z += normalZ * 0.45;
+        carBodyGroup.rotation.x = 0.30;
+        showCarSpeech('Quicou!', 1300);
+        setStatusBanner(`⚡ Bateu em ${obstacleOrWallName} (${fixedHitCount}/3)! Quicou para trás.`, '#ffd24c');
+      }
+    }
 
     // ============================================================================
     // MODO EDIÇÃO DO DESENVOLVEDOR (DEV EDIT MODE COM TRANSFORM CONTROLS)
@@ -5513,20 +5660,72 @@
     if (btnToggleDevEl) btnToggleDevEl.addEventListener('click', () => toggleDevMode());
     if (devBtnCloseEl) devBtnCloseEl.addEventListener('click', () => toggleDevMode(false));
 
+    const devBtnDeleteEl = document.getElementById('dev-btn-delete');
+
+    function deleteSelectedDevObject() {
+      if (!devSelectedObject) {
+        alert('Selecione um objeto primeiro clicando nele!');
+        return;
+      }
+      const objName = devSelectedObject.name || 'Objeto';
+      if (devSelectedObject.parent) {
+        devSelectedObject.parent.remove(devSelectedObject);
+      }
+      const obsIdx = obstacles.findIndex(o => o.group === devSelectedObject);
+      if (obsIdx !== -1) obstacles.splice(obsIdx, 1);
+      const dynIdx = dynamicObstacles.findIndex(o => o.group === devSelectedObject);
+      if (dynIdx !== -1) dynamicObstacles.splice(dynIdx, 1);
+      const grabIdx = grabbableItems.findIndex(g => g.group === devSelectedObject);
+      if (grabIdx !== -1) grabbableItems.splice(grabIdx, 1);
+
+      transformControl.detach();
+      devSelectedObject = null;
+      devSelectedNameEl.textContent = '(Nenhum selecionado)';
+      setStatusBanner(`🗑️ ${objName} excluído da cena!`, '#ff5252');
+      logInteractionEvent(`🗑️ Desenvolvedor excluiu o objeto: ${objName}`);
+    }
+
+    if (devBtnDeleteEl) devBtnDeleteEl.addEventListener('click', deleteSelectedDevObject);
+
     window.addEventListener('keydown', (e) => {
       if (e.key === 'F2') {
         e.preventDefault();
         toggleDevMode();
       }
+      // Atalho V: Ciclar Câmera
+      if (e.key === 'v' || e.key === 'V') {
+        cycleCameraMode();
+      }
+      // Atalho F: Pulo Simples
+      if (e.key === 'f' || e.key === 'F') {
+        triggerCarJump();
+      }
+      // Espaço: Câmera Livre com OrbitControls
+      if (e.code === 'Space' && !e.repeat) {
+        isFreeCameraActive = true;
+        freeOrbitControls.enabled = true;
+        document.body.style.cursor = 'grab';
+      }
+
       if (!devModeActive) return;
       if (e.key === 'g' || e.key === 'G') {
         transformControl.setMode('translate');
-        devBtnTranslateEl.style.background = '#00e5ff'; devBtnTranslateEl.style.color = '#000';
-        devBtnRotateEl.style.background = '#2d3139'; devBtnRotateEl.style.color = '#fff';
+        devBtnTranslateEl.style.background = 'radial-gradient(at 100% 0, #c21515, #ff5722)';
+        devBtnRotateEl.style.background = 'rgba(255,255,255,0.08)';
       } else if (e.key === 'r' || e.key === 'R') {
         transformControl.setMode('rotate');
-        devBtnRotateEl.style.background = '#00e5ff'; devBtnRotateEl.style.color = '#000';
-        devBtnTranslateEl.style.background = '#2d3139'; devBtnTranslateEl.style.color = '#fff';
+        devBtnRotateEl.style.background = 'radial-gradient(at 100% 0, #c21515, #ff5722)';
+        devBtnTranslateEl.style.background = 'rgba(255,255,255,0.08)';
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        deleteSelectedDevObject();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') {
+        isFreeCameraActive = false;
+        freeOrbitControls.enabled = false;
+        document.body.style.cursor = 'default';
       }
     });
 
@@ -5569,42 +5768,85 @@
       }
     });
 
-    // Inserir Novo Modelo 3D da biblioteca selecionado no dropdown
+    // Inserir Novo Modelo 3D da biblioteca com Auto-Scale, Posicionamento Visível e Seleção Imediata
     devBtnAddModelEl.addEventListener('click', () => {
       const val = devSelectModelEl.value;
       if (!val) {
-        alert('Selecione um modelo no dropdown para inserir!');
+        alert('Selecione um modelo no menu dropdown para inserir!');
         return;
       }
       const modelPathMap = {
-        traffic_cone_01: 'traffic_cone_01/traffic_cone_01.glb',
-        traffic_cone_02: 'traffic_cone_02/traffic_cone_02.glb',
-        brick_flemish_bond: 'brick_flemish_bond/brick_flemish_bond.glb',
-        rocket_toy_01: 'rocket_toy_01/rocket_toy_01.glb',
-        water_pistol: 'water_pistol/water_pistol.glb',
-        cheeseburger: 'cheeseburger/cheeseburger.glb',
-        apple: 'apple/apple.glb',
-        banana: 'banana/banana.glb',
-        desk_lamp: 'desk_lamp/desk_lamp.glb',
-        acoustic_guitar: 'acoustic_guitar/acoustic_guitar.glb',
-        stapler: 'stapler/stapler.glb',
-        storage_box_01: 'storage_box_01/storage_box_01.glb',
-        mesh_bin: 'mesh_bin/mesh_bin.glb'
+        traffic_cone_01: { path: 'traffic_cone_01/traffic_cone_01.glb', name: 'Cone de Trânsito', size: 2.8 },
+        traffic_cone_02: { path: 'traffic_cone_02/traffic_cone_02.glb', name: 'Cone Listrado', size: 2.8 },
+        brick_flemish_bond: { path: 'brick_flemish_bond/brick_flemish_bond.glb', name: 'Bloco de Tijolo', size: 3.5 },
+        rocket_toy_01: { path: 'rocket_toy_01/rocket_toy_01.glb', name: 'Foguete de Brinquedo', size: 3.2 },
+        water_pistol: { path: 'water_pistol/water_pistol.glb', name: 'Pistola d\'Água', size: 3.0 },
+        cheeseburger: { path: 'cheeseburger/cheeseburger.glb', name: 'Cheeseburger', size: 2.5 },
+        apple: { path: 'apple/apple.glb', name: 'Maçã Vermelha', size: 2.2 },
+        banana: { path: 'banana/banana.glb', name: 'Banana', size: 2.5 },
+        desk_lamp: { path: 'desk_lamp/desk_lamp.glb', name: 'Luminária de Mesa', size: 4.5 },
+        acoustic_guitar: { path: 'acoustic_guitar/acoustic_guitar.glb', name: 'Violão Acústico', size: 5.0 },
+        stapler: { path: 'stapler/stapler.glb', name: 'Grampeador', size: 2.6 },
+        storage_box_01: { path: 'storage_box_01/storage_box_01.glb', name: 'Caixa de Clipes', size: 3.2 },
+        mesh_bin: { path: 'mesh_bin/mesh_bin.glb', name: 'Cesto de Metal', size: 4.0 }
       };
-      const rel = modelPathMap[val];
-      if (rel) {
-        const spawnX = vehicle.position.x + Math.sin(carAngle) * 5.0;
-        const spawnZ = vehicle.position.z + Math.cos(carAngle) * 5.0;
-        const spawnY = vehicle.position.y > -5 ? 0.14 : -35.85;
-        loadGLBModel(rel, {
-          x: spawnX, y: spawnY, z: spawnZ,
-          scale: 0.045, name: 'Item: ' + val,
-          obs: { x: spawnX, z: spawnZ, r: 1.8, name: val.toUpperCase() },
-          mass: 0.8, canTopple: true
+
+      const entry = modelPathMap[val];
+      if (!entry) return;
+
+      const spawnX = vehicle.position.x + Math.sin(carAngle) * 5.5;
+      const spawnZ = vehicle.position.z + Math.cos(carAngle) * 5.5;
+      const spawnY = vehicle.position.y > -5 ? 0.14 : -35.85;
+      const targetWorld = vehicle.position.y > -5 ? deskWorld : bedroomWorld;
+
+      gltfLoader.load('./models/' + entry.path, (gltf) => {
+        const model = gltf.scene;
+        // Auto-Scale dinâmico: calcula o bounding box real do modelo e redimensiona perfeitamente
+        const bbox = new THREE.Box3().setFromObject(model);
+        const bsize = new THREE.Vector3();
+        bbox.getSize(bsize);
+        const maxD = Math.max(bsize.x, bsize.y, bsize.z) || 1.0;
+        const finalScale = entry.size / maxD;
+
+        model.scale.set(finalScale, finalScale, finalScale);
+        model.position.set(spawnX, spawnY, spawnZ);
+        model.name = entry.name;
+
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            child.userData.parentGroup = model;
+          }
         });
-        logInteractionEvent('🛠️ Novo modelo inserido: ' + val);
-        setStatusBanner('✓ Modelo ' + val + ' inserido na cena!', '#7ee787');
-      }
+
+        targetWorld.add(model);
+
+        const newObs = registerDynamicObstacle({
+          obs: { x: spawnX, z: spawnZ, r: entry.size * 0.5, name: entry.name.toUpperCase() },
+          group: model,
+          mass: 0.85,
+          canTopple: true
+        });
+
+        registerGrabbable({
+          id: 'dev_user_model_' + Date.now(),
+          name: entry.name,
+          group: model,
+          obs: newObs,
+          initX: spawnX, initY: spawnY, initZ: spawnZ, initRotY: 0,
+          grabRadius: entry.size * 1.4
+        });
+
+        // SELECIONA IMEDIATAMENTE COM O TRANSFORMCONTROLS
+        devSelectedObject = model;
+        transformControl.attach(model);
+        devSelectedNameEl.textContent = entry.name;
+        setStatusBanner(`✓ ${entry.name} inserido com sucesso e selecionado!`, '#7ee787');
+        logInteractionEvent(`🛠️ Modelo 3D inserido: ${entry.name}`);
+      }, undefined, (err) => {
+        console.warn('Erro ao inserir modelo:', entry.path, err);
+      });
     });
 
     // Salvar posições dos objetos no localStorage
