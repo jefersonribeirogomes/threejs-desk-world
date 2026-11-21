@@ -1033,32 +1033,48 @@
     // ============================================================================
     const obstacles = [];
 
-    // 1. COPO TÉRMICO COM ÁGUA (Derruba ao bater e cria poça de recarga!)
+    // 1. COPO TÉRMICO STANLEY BRANCO COM ÁGUA (Borda Inox, Tampa Translúcida, Canudo e Logo!)
     const tumblerGroup = new THREE.Group();
     const tumblerPivot = new THREE.Group(); // Pivô na base para tombar!
     tumblerGroup.add(tumblerPivot);
 
+    const inoxMat = new THREE.MeshStandardMaterial({ color: 0xd6dde4, metalness: 0.88, roughness: 0.16 });
+    const tumblerBaseInox = new THREE.Mesh(new THREE.CylinderGeometry(1.46, 1.40, 0.55, 28), inoxMat);
+    tumblerBaseInox.position.y = 0.28;
+    tumblerPivot.add(tumblerBaseInox);
+
     const tumblerBody = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.95, 1.45, 6.0, 28),
-      new THREE.MeshStandardMaterial({ color: 0xf2f4f7, roughness: 0.25 })
+      new THREE.CylinderGeometry(1.95, 1.46, 5.5, 28),
+      new THREE.MeshStandardMaterial({ color: 0xf4f6f9, roughness: 0.22 })
     );
-    tumblerBody.position.y = 3.2;
+    tumblerBody.position.y = 3.3;
     tumblerBody.castShadow = true;
     tumblerPivot.add(tumblerBody);
 
-    const tumblerTopRim = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.98, 1.95, 0.45, 28),
-      new THREE.MeshStandardMaterial({ color: 0xd8dfe6, metalness: 0.85, roughness: 0.18 })
-    );
-    tumblerTopRim.position.y = 6.2;
+    const tumblerTopRim = new THREE.Mesh(new THREE.CylinderGeometry(1.99, 1.95, 0.45, 28), inoxMat);
+    tumblerTopRim.position.y = 6.22;
     tumblerPivot.add(tumblerTopRim);
 
     const cupWaterInside = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.82, 1.82, 0.15, 24),
+      new THREE.CylinderGeometry(1.84, 1.84, 0.15, 24),
       new THREE.MeshBasicMaterial({ color: 0x26d0ff })
     );
-    cupWaterInside.position.y = 6.36;
+    cupWaterInside.position.y = 6.38;
     tumblerPivot.add(cupWaterInside);
+
+    // Tampa acrílica translúcida + Canudo reutilizável
+    const cupLid = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.96, 1.96, 0.22, 28),
+      new THREE.MeshStandardMaterial({ color: 0xe8f4f8, transparent: true, opacity: 0.55, roughness: 0.1 })
+    );
+    cupLid.position.y = 6.52;
+    const cupStraw = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.14, 0.14, 2.2, 16),
+      new THREE.MeshStandardMaterial({ color: 0x35e0ff, roughness: 0.2 })
+    );
+    cupStraw.position.set(0.25, 7.2, 0.15);
+    cupStraw.rotation.z = -0.18;
+    tumblerPivot.add(cupLid, cupStraw);
 
     tumblerGroup.position.set(-26, 0, 14);
     deskWorld.add(tumblerGroup);
@@ -1214,37 +1230,93 @@
       gp.position.set(x, 0.14, z);
       gp.rotation.y = rotY;
 
-      const bodyMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.35 });
-      const darkMat = new THREE.MeshStandardMaterial({ color: accentHex, roughness: 0.4 });
+      const bodyMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.32 });
+      const darkMat = new THREE.MeshStandardMaterial({ color: accentHex, roughness: 0.42 });
 
-      const centerBody = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.6, 1.45), bodyMat);
-      centerBody.position.y = 0.45; centerBody.castShadow = true;
+      // Corpo central ergonômico abaulado
+      const centerBody = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.62, 1.52), bodyMat);
+      centerBody.position.y = 0.46;
+      centerBody.castShadow = true;
       gp.add(centerBody);
 
-      let ledBar = null;
+      // Botões de ombro (Bumpers L1 / R1) na borda traseira frontal do controle
+      [-0.85, 0.85].forEach((bx) => {
+        const bumper = new THREE.Mesh(
+          new THREE.BoxGeometry(0.68, 0.22, 0.25),
+          new THREE.MeshStandardMaterial({ color: 0x111317, roughness: 0.3 })
+        );
+        bumper.position.set(bx, 0.62, -0.74);
+        gp.add(bumper);
+      });
+
       if (isPS5) {
-        const touch = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.64, 0.85), darkMat);
-        touch.position.set(0, 0.47, -0.15);
-        ledBar = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.62, 0.88), new THREE.MeshBasicMaterial({ color: 0x0088ff }));
-        ledBar.position.set(0, 0.46, -0.15);
-        gp.add(ledBar, touch);
+        // Touchpad trapezoidal escuro + Barras de LED Azuis laterais do DualSense + Detalhe inferior preto
+        const touch = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.66, 0.86), darkMat);
+        touch.position.set(0, 0.48, -0.22);
+        const ledBar = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.64, 0.88), new THREE.MeshBasicMaterial({ color: 0x00a2ff }));
+        ledBar.position.set(0, 0.47, -0.22);
+        const lowerTrim = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.63, 0.72), darkMat);
+        lowerTrim.position.set(0, 0.46, 0.42);
+        gp.add(ledBar, touch, lowerTrim);
+      } else {
+        // Botão Xbox Nexus iluminado em branco no topo central
+        const xboxBtn = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.16, 0.16, 0.08, 16),
+          new THREE.MeshBasicMaterial({ color: 0xffffff })
+        );
+        xboxBtn.position.set(0, 0.79, -0.45);
+        gp.add(xboxBtn);
       }
 
-      const gripGeo = new THREE.CylinderGeometry(0.42, 0.3, 2.25, 14);
+      // D-Pad em Cruz (+)
+      const dpadX = isPS5 ? -0.92 : -0.46;
+      const dpadZ = isPS5 ? -0.15 : 0.34;
+      const dpadH = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.12, 0.15), darkMat);
+      dpadH.position.set(dpadX, 0.78, dpadZ);
+      const dpadV = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.12, 0.46), darkMat);
+      dpadV.position.set(dpadX, 0.78, dpadZ);
+      gp.add(dpadH, dpadV);
+
+      // 4 Botões de Ação (ABXY coloridos no Xbox / Botões translúcidos claros no PS5)
+      const abxyColors = isPS5
+        ? [0xdde3ea, 0xdde3ea, 0xdde3ea, 0xdde3ea]
+        : [0xfbc02d, 0xe53935, 0x43a047, 0x1e88e5]; // Y (cima), B (dir), A (baixo), X (esq)
+      const btnOffsets = [[0, -0.22], [0.22, 0], [0, 0.22], [-0.22, 0]];
+      btnOffsets.forEach(([ox, oz], idx) => {
+        const abtn = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.09, 0.09, 0.12, 12),
+          new THREE.MeshStandardMaterial({ color: abxyColors[idx], roughness: 0.2 })
+        );
+        abtn.position.set(0.92 + ox, 0.78, -0.15 + oz);
+        gp.add(abtn);
+      });
+
+      // Grips laterais ergonômicos com pontas arredondadas
+      const gripGeo = new THREE.CylinderGeometry(0.44, 0.28, 2.35, 16);
       const gripL = new THREE.Mesh(gripGeo, bodyMat);
-      gripL.rotation.x = Math.PI / 2.3; gripL.rotation.z = 0.22;
-      gripL.position.set(-1.18, 0.38, 0.38); gripL.castShadow = true;
+      gripL.rotation.x = Math.PI / 2.25; gripL.rotation.z = 0.24;
+      gripL.position.set(-1.24, 0.38, 0.42); gripL.castShadow = true;
 
       const gripR = new THREE.Mesh(gripGeo, bodyMat);
-      gripR.rotation.x = Math.PI / 2.3; gripR.rotation.z = -0.22;
-      gripR.position.set(1.18, 0.38, 0.38); gripR.castShadow = true;
+      gripR.rotation.x = Math.PI / 2.25; gripR.rotation.z = -0.24;
+      gripR.position.set(1.24, 0.38, 0.42); gripR.castShadow = true;
       gp.add(gripL, gripR);
 
-      const stickGeo = new THREE.CylinderGeometry(0.26, 0.18, 0.38, 14);
-      const stickL = new THREE.Mesh(stickGeo, darkMat);
-      stickL.position.set(isPS5 ? -0.58 : -0.78, 0.82, isPS5 ? 0.32 : -0.1);
-      const stickR = new THREE.Mesh(stickGeo, darkMat);
-      stickR.position.set(0.58, 0.82, 0.32);
+      // Analógicos com cabeça côncava emborrachada
+      function createThumbstick(sx, sz) {
+        const sGroup = new THREE.Group();
+        sGroup.position.set(sx, 0.78, sz);
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.28, 12), darkMat);
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.22, 0.09, 18), darkMat);
+        cap.position.y = 0.15;
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 8, 18), darkMat);
+        rim.rotation.x = Math.PI / 2;
+        rim.position.y = 0.19;
+        sGroup.add(post, cap, rim);
+        return sGroup;
+      }
+      const stickL = createThumbstick(isPS5 ? -0.52 : -0.86, isPS5 ? 0.34 : -0.15);
+      const stickR = createThumbstick(0.52, 0.34);
       gp.add(stickL, stickR);
 
       deskWorld.add(gp);
@@ -1589,14 +1661,31 @@
     });
 
     const mugGroup = new THREE.Group();
-    const coaster = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.16, 28), new THREE.MeshStandardMaterial({ color: 0x7d4e38 }));
-    coaster.position.y = 0.08; mugGroup.add(coaster);
-    const corkBase = new THREE.Mesh(new THREE.CylinderGeometry(1.72, 1.65, 0.85, 28), new THREE.MeshStandardMaterial({ color: 0x9c6b49 }));
-    corkBase.position.y = 0.58; mugGroup.add(corkBase);
-    const mugBody = new THREE.Mesh(new THREE.CylinderGeometry(1.75, 1.72, 3.1, 28), new THREE.MeshStandardMaterial({ color: 0x181a1d }));
+    const coaster = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.25, 0.16, 28), new THREE.MeshStandardMaterial({ color: 0x7d4e38, roughness: 0.7 }));
+    coaster.position.y = 0.08; coaster.receiveShadow = true; mugGroup.add(coaster);
+
+    const corkBase = new THREE.Mesh(new THREE.CylinderGeometry(1.72, 1.65, 0.85, 28), new THREE.MeshStandardMaterial({ color: 0x9c6b49, roughness: 0.9 }));
+    corkBase.position.y = 0.58; corkBase.castShadow = true; mugGroup.add(corkBase);
+
+    const mugBody = new THREE.Mesh(new THREE.CylinderGeometry(1.76, 1.72, 3.1, 28), new THREE.MeshStandardMaterial({ color: 0x181a1d, roughness: 0.5 }));
     mugBody.position.y = 2.55; mugBody.castShadow = true; mugGroup.add(mugBody);
+
+    // Borda superior inox + Café quente dentro + Alça 3D
+    const mugRim = new THREE.Mesh(new THREE.CylinderGeometry(1.78, 1.75, 0.24, 28), inoxMat);
+    mugRim.position.y = 4.16;
+    const coffeeInside = new THREE.Mesh(new THREE.CylinderGeometry(1.68, 1.68, 0.12, 28), new THREE.MeshStandardMaterial({ color: 0x241308, roughness: 0.12 }));
+    coffeeInside.position.y = 4.25;
+    const mugHandle = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.18, 12, 24, Math.PI), new THREE.MeshStandardMaterial({ color: 0x181a1d, roughness: 0.5 }));
+    mugHandle.rotation.z = -Math.PI / 2;
+    mugHandle.position.set(1.72, 2.45, 0);
+    mugHandle.castShadow = true;
+
     const emblem = new THREE.Mesh(new THREE.CircleGeometry(0.85, 24), new THREE.MeshBasicMaterial({ color: 0x5da9e9 }));
-    emblem.position.set(-0.4, 2.5, 1.76); emblem.rotation.y = -0.22; mugGroup.add(emblem);
+    emblem.position.set(-0.4, 2.5, 1.77); emblem.rotation.y = -0.22;
+    const emblemInner = new THREE.Mesh(new THREE.CircleGeometry(0.55, 20), new THREE.MeshBasicMaterial({ color: 0xe6f2ff }));
+    emblemInner.position.set(-0.4, 2.5, 1.78); emblemInner.rotation.y = -0.22;
+
+    mugGroup.add(mugRim, coffeeInside, mugHandle, emblem, emblemInner);
     mugGroup.position.set(21.5, 0.14, -2.5);
     deskWorld.add(mugGroup);
     const mugObs = { x: 21.5, z: -2.5, r: 2.35, name: 'CANECA PRETA COM BASE DE CORTIÇA' };
@@ -1712,8 +1801,10 @@
 
     function resetRaceTrackCanvas() {
       rtCtx.clearRect(0, 0, 1024, 600);
-      // Deixa um pedacinho da Faixa de Início já desenhado sob a ponta do Lápis de Cor como dica visual!
-      revealTrackAtWorldPos(-16, 36, 48);
+      // Deixa um pedacinho da Faixa de Início já desenhado sob o Lápis de Cor e sob as primeiras Pilhas Turbo!
+      revealTrackAtWorldPos(-16, 36, 52);
+      revealTrackAtWorldPos(-2, 36.2, 42);
+      revealTrackAtWorldPos(34, 36.2, 42);
     }
     resetRaceTrackCanvas();
 
@@ -1863,66 +1954,216 @@
     createGrowablePlant('cactus', 'CACTO DO DESERTO', -42, -22);
     createGrowablePlant('fern', 'SAMAMBAIA COSTELA-DE-ADÃO', 48, 22);
 
-    // 8. AQUÁRIO COM PEIXES NA LATERAL DA MESA A ~10 CM DA BORDA!
-    // A borda direita da mesa fica em x = +90 (DESK_HALF_W).
-    // Girado em 90° (paralelo à borda lateral), a metade da largura do aquário é 5.3 unidades.
-    // Posicionado em x = 81.2, a parede externa do aquário fica em 86.5 -> exatos 3.5 unidades (~10 cm reais!) da borda lateral!
+    // 8. AQUÁRIO AQUASCAPE PREMIUM COM 3 PEIXES DETALHADOS (A ~10 CM DA BORDA LATERAL DA MESA!)
     const aquariumGroup = new THREE.Group();
     const AQ_X = DESK_HALF_W - 8.8; // 81.2 (a ~10cm da borda x=90)
     const AQ_Z = -4.0;
     aquariumGroup.position.set(AQ_X, 0, AQ_Z);
     aquariumGroup.rotation.y = Math.PI / 2;
 
-    const aqBase = new THREE.Mesh(new THREE.BoxGeometry(18, 0.8, 11), new THREE.MeshStandardMaterial({ color: 0x141619 }));
-    aqBase.position.y = 0.4; aquariumGroup.add(aqBase);
+    const aqFrameMat = new THREE.MeshStandardMaterial({ color: 0x15181d, roughness: 0.3, metalness: 0.5 });
 
-    const aqSand = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.9, 10.2), new THREE.MeshStandardMaterial({ color: 0xd8b888, roughness: 0.9 }));
-    aqSand.position.y = 1.1; aquariumGroup.add(aqSand);
+    // Base estrutural preta com tapete de EVA
+    const aqBase = new THREE.Mesh(new THREE.BoxGeometry(18.6, 0.9, 11.4), aqFrameMat);
+    aqBase.position.y = 0.45;
+    aqBase.castShadow = true;
+    aquariumGroup.add(aqBase);
 
-    const aqWater = new THREE.Mesh(
-      new THREE.BoxGeometry(17.2, 7.5, 10.2),
-      new THREE.MeshStandardMaterial({ color: 0x18b4e8, transparent: true, opacity: 0.42, roughness: 0.1 })
+    // 4 Colunas de canto pretas + Moldura superior fina
+    [[-9.1, -5.5], [9.1, -5.5], [-9.1, 5.5], [9.1, 5.5]].forEach(([cx, cz]) => {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.35, 9.2, 0.35), aqFrameMat);
+      post.position.set(cx, 5.2, cz);
+      aquariumGroup.add(post);
+    });
+    const topRimF = new THREE.Mesh(new THREE.BoxGeometry(18.5, 0.28, 0.32), aqFrameMat);
+    topRimF.position.set(0, 9.7, 5.5);
+    const topRimB = new THREE.Mesh(new THREE.BoxGeometry(18.5, 0.28, 0.32), aqFrameMat);
+    topRimB.position.set(0, 9.7, -5.5);
+    const topRimL = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.28, 11.3), aqFrameMat);
+    topRimL.position.set(-9.1, 9.7, 0);
+    const topRimR = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.28, 11.3), aqFrameMat);
+    topRimR.position.set(9.1, 9.7, 0);
+    aquariumGroup.add(topRimF, topRimB, topRimL, topRimR);
+
+    // Luminária LED Suspensa de Aquário (Overhead Aquascape LED Bar + Hastes Metálicas)
+    [-6.5, 6.5].forEach((lx) => {
+      const rodV = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 3.2, 12), inoxMat);
+      rodV.position.set(lx, 11.2, -5.3);
+      const rodH = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 5.2, 12), inoxMat);
+      rodH.rotation.x = Math.PI / 2;
+      rodH.position.set(lx, 12.7, -2.8);
+      aquariumGroup.add(rodV, rodH);
+    });
+    const ledFixture = new THREE.Mesh(new THREE.BoxGeometry(15.5, 0.35, 2.4), aqFrameMat);
+    ledFixture.position.set(0, 12.7, -0.4);
+    ledFixture.castShadow = true;
+    const ledStrip = new THREE.Mesh(
+      new THREE.PlaneGeometry(14.8, 1.8),
+      new THREE.MeshBasicMaterial({ color: 0xb8f4ff })
     );
-    aqWater.position.y = 5.2; aquariumGroup.add(aqWater);
+    ledStrip.rotation.x = Math.PI / 2;
+    ledStrip.position.set(0, 12.51, -0.4);
+    const aqLight = new THREE.PointLight(0x40e8ff, 0.85, 22);
+    aqLight.position.set(0, 10.5, 0);
+    aquariumGroup.add(ledFixture, ledStrip, aqLight);
 
-    const aqGlass = new THREE.Mesh(
-      new THREE.BoxGeometry(17.6, 8.6, 10.6),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, roughness: 0.05 })
+    // Substrato de Areia de Quartzo e Cascalho de Rio em relevo
+    const aqSand = new THREE.Mesh(
+      new THREE.BoxGeometry(17.8, 1.1, 10.6),
+      new THREE.MeshStandardMaterial({ color: 0xd9be8f, roughness: 0.92 })
     );
-    aqGlass.position.y = 5.2; aquariumGroup.add(aqGlass);
+    aqSand.position.y = 1.25;
+    aquariumGroup.add(aqSand);
 
-    for (let i = 0; i < 6; i++) {
-      const weed = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18, 0.25, 3.5 + (i % 3), 8),
-        new THREE.MeshStandardMaterial({ color: 0x16a05d })
-      );
-      weed.position.set(-6 + i * 2.4, 3.0, -2.5 + (i % 2) * 4);
-      aquariumGroup.add(weed);
+    // Rochas Aquascape (Dragon Stone) + Tronco/Arco Submerso no centro
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x5c636a, roughness: 0.85, flatShading: true });
+    [
+      { x: -5.2, y: 2.6, z: -1.5, s: [1.8, 2.4, 1.5] },
+      { x: -3.5, y: 2.1, z: 1.2, s: [1.3, 1.4, 1.2] },
+      { x: 4.8, y: 2.8, z: -1.8, s: [2.0, 2.8, 1.6] },
+      { x: 3.2, y: 2.0, z: 1.8, s: [1.2, 1.3, 1.4] }
+    ].forEach((rk) => {
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.0, 0), rockMat);
+      rock.position.set(rk.x, rk.y, rk.z);
+      rock.scale.set(...rk.s);
+      rock.rotation.set(0.3, 0.5, 0.2);
+      rock.castShadow = true;
+      aquariumGroup.add(rock);
+    });
+
+    // Arco de Tronco Submerso (Driftwood Arch por onde os 3 peixes nadam!)
+    const woodArch = new THREE.Mesh(
+      new THREE.TorusGeometry(2.3, 0.42, 10, 20, Math.PI),
+      new THREE.MeshStandardMaterial({ color: 0x6e472b, roughness: 0.88, flatShading: true })
+    );
+    woodArch.position.set(0, 1.75, 0.2);
+    woodArch.rotation.y = 0.25;
+    aquariumGroup.add(woodArch);
+
+    // Filtro Interno de Canto + Pedra Porosa com Bolhas de Ar 3D Subindo!
+    const internalFilter = new THREE.Mesh(
+      new THREE.BoxGeometry(1.8, 5.2, 1.8),
+      new THREE.MeshStandardMaterial({ color: 0x1e2229, roughness: 0.4 })
+    );
+    internalFilter.position.set(-7.6, 5.2, -3.9);
+    const airStone = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.55, 0.65, 0.4, 14),
+      new THREE.MeshStandardMaterial({ color: 0x29b6f6, roughness: 0.7 })
+    );
+    airStone.position.set(-6.8, 1.9, 2.6);
+    aquariumGroup.add(internalFilter, airStone);
+
+    // Bolhas de ar 3D que sobem continuamente da pedra porosa
+    const aquariumBubbles = [];
+    const bubbleGeo = new THREE.SphereGeometry(0.14, 10, 10);
+    const bubbleMat = new THREE.MeshBasicMaterial({ color: 0xe0f7fa, transparent: true, opacity: 0.75 });
+    for (let i = 0; i < 12; i++) {
+      const bMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
+      bMesh.position.set(-6.8 + (Math.random() - 0.5) * 0.6, 2.1 + (i / 12) * 6.8, 2.6 + (Math.random() - 0.5) * 0.6);
+      aquariumGroup.add(bMesh);
+      aquariumBubbles.push({
+        mesh: bMesh,
+        speed: 1.8 + Math.random() * 1.1,
+        wobble: Math.random() * Math.PI * 2
+      });
     }
 
+    // Plantas Aquáticas (Vallisneria e Anubias em dois tons de verde)
+    const plantGreen1 = new THREE.MeshStandardMaterial({ color: 0x1ebd68, roughness: 0.4 });
+    const plantGreen2 = new THREE.MeshStandardMaterial({ color: 0x0f8a48, roughness: 0.4 });
+    for (let i = 0; i < 11; i++) {
+      const h = 2.6 + (i % 4) * 1.1;
+      const blade = new THREE.Mesh(
+        new THREE.BoxGeometry(0.32, h, 0.08),
+        i % 2 === 0 ? plantGreen1 : plantGreen2
+      );
+      blade.position.set(-7.2 + i * 1.45, 1.6 + h * 0.5, -3.4 + (i % 3) * 0.9);
+      blade.rotation.z = (i % 2 === 0 ? 1 : -1) * 0.12;
+      aquariumGroup.add(blade);
+    }
+
+    // Água Cristalina Azul-Turquesa + Superfície Superior com Brilho
+    const aqWater = new THREE.Mesh(
+      new THREE.BoxGeometry(17.9, 7.6, 10.7),
+      new THREE.MeshStandardMaterial({ color: 0x16c2f5, transparent: true, opacity: 0.34, roughness: 0.08 })
+    );
+    aqWater.position.y = 5.45;
+    aquariumGroup.add(aqWater);
+
+    // Paredes de Vidro Temperado Cristalino
+    const aqGlass = new THREE.Mesh(
+      new THREE.BoxGeometry(18.2, 8.8, 11.0),
+      new THREE.MeshStandardMaterial({ color: 0xe8faff, transparent: true, opacity: 0.16, roughness: 0.04, metalness: 0.1 })
+    );
+    aqGlass.position.y = 5.25;
+    aquariumGroup.add(aqGlass);
+
+    // APENAS 3 PEIXES TROPICAIS DETALHADOS (1: Peixe-Palhaço Nemo, 2: Blue Tang Dory, 3: Acará-Bandeira Dourado!)
     const fishes = [];
-    const fishColors = [0xff5722, 0xffeb3b, 0xff4081, 0x00e5ff, 0xff9800];
-    for (let i = 0; i < 7; i++) {
+    const fishSpecs = [
+      { name: 'Nemo (Clownfish)', bodyCol: 0xff5722, stripeCol: 0xffffff, finCol: 0xff7043, scale: 1.15, y: 4.2, rx: 5.2, rz: 2.6, speed: 0.95, phase: 0 },
+      { name: 'Dory (Blue Tang)', bodyCol: 0x1565c0, stripeCol: 0x111317, finCol: 0xffea00, scale: 1.25, y: 6.4, rx: 5.6, rz: 2.8, speed: 1.1, phase: 2.1 },
+      { name: 'Gold Angelfish', bodyCol: 0xffca28, stripeCol: 0xff8f00, finCol: 0xffe082, scale: 1.1, y: 5.2, rx: 4.4, rz: 2.2, speed: 0.82, phase: 4.2 }
+    ];
+
+    fishSpecs.forEach((sp) => {
       const fGroup = new THREE.Group();
-      const fMat = new THREE.MeshStandardMaterial({ color: fishColors[i % fishColors.length], roughness: 0.2 });
-      const fBody = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 10), fMat);
-      fBody.scale.set(1.6, 0.9, 0.6);
-      const fTail = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.55, 4), fMat);
-      fTail.rotation.z = Math.PI / 2;
-      fTail.position.x = -0.75;
-      fGroup.add(fBody, fTail);
+      const bodyMat = new THREE.MeshStandardMaterial({ color: sp.bodyCol, roughness: 0.18 });
+      const stripeMat = new THREE.MeshStandardMaterial({ color: sp.stripeCol, roughness: 0.22 });
+      const finMat = new THREE.MeshStandardMaterial({ color: sp.finCol, roughness: 0.25 });
+
+      // Corpo esculpido do peixe
+      const fBody = new THREE.Mesh(new THREE.SphereGeometry(0.52, 18, 14), bodyMat);
+      fBody.scale.set(1.65, 1.05, 0.55);
+      fGroup.add(fBody);
+
+      // Faixas verticais características (como as listras brancas do Peixe-Palhaço!)
+      [-0.18, 0.22].forEach((sx) => {
+        const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.49, 0.49, 0.18, 16), stripeMat);
+        stripe.rotation.z = Math.PI / 2;
+        stripe.scale.set(1.06, 1, 0.58);
+        stripe.position.x = sx;
+        fGroup.add(stripe);
+      });
+
+      // Nadadeira Dorsal Superior + Nadadeira Ventral
+      const dorsal = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.65, 5), finMat);
+      dorsal.rotation.z = 0.55;
+      dorsal.scale.set(1, 1, 0.35);
+      dorsal.position.set(-0.08, 0.58, 0);
+      fGroup.add(dorsal);
+
+      // Cauda Bifurcada Articulada
+      const tailFin = new THREE.Mesh(new THREE.ConeGeometry(0.48, 0.72, 4), finMat);
+      tailFin.rotation.z = Math.PI / 2;
+      tailFin.scale.set(1, 1, 0.32);
+      tailFin.position.x = -0.92;
+      fGroup.add(tailFin);
+
+      // Olhinhos bilateralmente nos dois lados da cabeça
+      [-0.24, 0.24].forEach((ez) => {
+        const eyeWhite = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        eyeWhite.position.set(0.55, 0.12, ez);
+        const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 0x090a0c }));
+        pupil.position.set(0.60, 0.12, ez * 1.15);
+        fGroup.add(eyeWhite, pupil);
+      });
+
+      fGroup.scale.setScalar(sp.scale);
       aquariumGroup.add(fGroup);
       fishes.push({
         group: fGroup,
-        speed: 0.8 + Math.random() * 0.9,
-        radiusX: 3.5 + Math.random() * 3.2,
-        radiusZ: 1.8 + Math.random() * 2.0,
-        y: 3.0 + Math.random() * 4.2,
-        phase: Math.random() * Math.PI * 2
+        tailFin,
+        speed: sp.speed,
+        radiusX: sp.rx,
+        radiusZ: sp.rz,
+        y: sp.y,
+        phase: sp.phase
       });
-    }
+    });
+
     deskWorld.add(aquariumGroup);
-    obstacles.push({ x: AQ_X, z: AQ_Z, r: 8.5, name: 'AQUÁRIO COM PEIXES TROPICAIS (A 10CM DA BORDA LATERAL)' });
+    obstacles.push({ x: AQ_X, z: AQ_Z, r: 8.5, name: 'AQUÁRIO AQUASCAPE COM 3 PEIXES TROPICAIS (A 10CM DA BORDA)' });
 
     // 9. SEGUNDO MONITOR DESLIGADO (MONITOR 2 — AO LADO DO MONITOR 1, LIGA COM O CABO HDMI DO PS5!)
     const monitor2Canvas = document.createElement('canvas');
@@ -1935,7 +2176,6 @@
 
     function updateMonitor2Screen() {
       if (!hdmi2Connected) {
-        // Estado Desligado / Standby
         mon2Ctx.fillStyle = '#090a0d';
         mon2Ctx.fillRect(0, 0, 512, 300);
         mon2Ctx.fillStyle = '#323842';
@@ -1946,7 +2186,6 @@
         mon2Ctx.fillStyle = '#ff9100';
         mon2Ctx.fillText('[CONECTE O CABO HDMI DO PS5 AQUI]', 256, 172);
       } else {
-        // Estado Ligado com o PS5 Conectado!
         const g = mon2Ctx.createLinearGradient(0, 0, 512, 300);
         g.addColorStop(0, '#001d4a');
         g.addColorStop(0.5, '#0043a4');
@@ -1997,7 +2236,6 @@
     mon2Display.position.set(0, 8.2, -0.11);
     monitor2Group.add(mon2Display);
 
-    // LED de status do Monitor 2 (Laranja desligado -> Verde/Azul ligado)
     const mon2PowerLed = new THREE.Mesh(
       new THREE.BoxGeometry(0.45, 0.15, 0.1),
       new THREE.MeshBasicMaterial({ color: 0xff6d00 })
@@ -2008,27 +2246,47 @@
     deskWorld.add(monitor2Group);
     obstacles.push({ x: MON2_X, z: MON2_Z, r: 3.4, name: 'MONITOR 2 (CONECTE O CABO HDMI DO PS5)' });
 
-    // 10. CONSOLE PLAYSTATION 5 (PS5 Vertical ao lado do Monitor 2!)
+    // 10. CONSOLE PLAYSTATION 5 (Design Aprimorado com Gola V-Collar, Portas USB Frontais e Fitas LED Duplas!)
     const ps5ConsoleGroup = new THREE.Group();
     const PS5_X = 47.0, PS5_Z = -21.0;
     ps5ConsoleGroup.position.set(PS5_X, 0, PS5_Z);
     ps5ConsoleGroup.rotation.y = -0.42;
 
-    const ps5Stand = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.8, 0.45, 24), new THREE.MeshStandardMaterial({ color: 0x16181c }));
+    const ps5Stand = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.9, 0.45, 28), new THREE.MeshStandardMaterial({ color: 0x14161a, roughness: 0.35 }));
     ps5Stand.position.y = 0.22; ps5ConsoleGroup.add(ps5Stand);
 
-    const ps5Core = new THREE.Mesh(new THREE.BoxGeometry(2.1, 11.5, 6.8), new THREE.MeshStandardMaterial({ color: 0x121316, roughness: 0.25 }));
+    // Núcleo Central Black Piano Curvado do PS5
+    const ps5Core = new THREE.Mesh(new THREE.BoxGeometry(1.95, 11.6, 6.8), new THREE.MeshStandardMaterial({ color: 0x0b0c0e, roughness: 0.12, metalness: 0.25 }));
     ps5Core.position.y = 6.2; ps5Core.castShadow = true; ps5ConsoleGroup.add(ps5Core);
 
-    const plateMat = new THREE.MeshStandardMaterial({ color: 0xf4f6fa, roughness: 0.3 });
-    const plateL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 12.2, 7.2), plateMat);
-    plateL.position.set(-1.15, 6.3, 0); plateL.castShadow = true;
-    const plateR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 12.2, 7.2), plateMat);
-    plateR.position.set(1.15, 6.3, 0); plateR.castShadow = true;
-    ps5ConsoleGroup.add(plateL, plateR);
+    // Tampas Brancas Laterais com Aletas Superiores Abertas em V (Collar Flare do PS5)
+    const plateMat = new THREE.MeshStandardMaterial({ color: 0xf4f6fa, roughness: 0.25 });
+    [-1, 1].forEach((side) => {
+      const mainPlate = new THREE.Mesh(new THREE.BoxGeometry(0.32, 12.1, 7.2), plateMat);
+      mainPlate.position.set(side * 1.18, 6.25, 0);
+      mainPlate.rotation.z = -side * 0.035;
+      mainPlate.castShadow = true;
+      // Aba superior aberta da gola do PS5
+      const topFlare = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.8, 7.35), plateMat);
+      topFlare.position.set(side * 1.38, 11.7, 0.05);
+      topFlare.rotation.z = -side * 0.14;
+      ps5ConsoleGroup.add(mainPlate, topFlare);
 
-    const ps5Led = new THREE.Mesh(new THREE.BoxGeometry(2.16, 10.8, 0.15), new THREE.MeshBasicMaterial({ color: 0x00a8ff }));
-    ps5Led.position.set(0, 6.2, 3.38); ps5ConsoleGroup.add(ps5Led);
+      // Fitas de LED Azuis Internas nas duas bordas do núcleo
+      const ledBlade = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 10.6, 0.18),
+        new THREE.MeshBasicMaterial({ color: 0x00b4ff })
+      );
+      ledBlade.position.set(side * 0.98, 6.4, 3.38);
+      ps5ConsoleGroup.add(ledBlade);
+    });
+
+    // Portas USB Frontais e Botão Power no núcleo preto do PS5
+    const usbPortA = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.16, 0.1), new THREE.MeshBasicMaterial({ color: 0x0055ff }));
+    usbPortA.position.set(0, 4.2, 3.42);
+    const powerBtnPs5 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.55, 0.1), new THREE.MeshBasicMaterial({ color: 0x88929e }));
+    powerBtnPs5.position.set(0, 2.2, 3.42);
+    ps5ConsoleGroup.add(usbPortA, powerBtnPs5);
 
     deskWorld.add(ps5ConsoleGroup);
     obstacles.push({ x: PS5_X, z: PS5_Z, r: 4.5, name: 'CONSOLE PLAYSTATION 5 (PS5)' });
@@ -2039,11 +2297,9 @@
     const hdmiCables = [];
 
     function createInteractiveHdmiCable(config) {
-      // config: { id, name, startPos, initPlugX, initPlugZ, targetPos, cableColor, badgeColor, onConnect }
       const plugGroup = new THREE.Group();
       plugGroup.position.set(config.initPlugX, 0.28, config.initPlugZ);
 
-      // Corpo do conector HDMI + Ponta Dourada
       const plugHousing = new THREE.Mesh(
         new THREE.BoxGeometry(1.3, 0.48, 1.8),
         new THREE.MeshStandardMaterial({ color: config.badgeColor, roughness: 0.3 })
@@ -2057,7 +2313,6 @@
       plugGroup.add(plugHousing, goldTip);
       deskWorld.add(plugGroup);
 
-      // Fio flexível composto por 14 segmentos articulados entre startPos e plugGroup.position
       const segCount = 14;
       const segMeshes = [];
       const segMat = new THREE.MeshStandardMaterial({ color: config.cableColor, roughness: 0.5 });
@@ -2110,7 +2365,6 @@
         cableRef: cableObj,
         onDrag: () => {
           cableObj.updateCableCurve();
-          // Verifica se chegou perto do monitor destino para conectar automaticamente!
           const distToTarget = Math.hypot(
             plugGroup.position.x - config.targetPos.x,
             plugGroup.position.z - config.targetPos.z
@@ -2132,7 +2386,6 @@
       });
     }
 
-    // Cabo HDMI 1: Do Notebook Acer Nitro (-19, -8) para o Monitor 1 LG UltraGear (6.5, -14.3)
     createInteractiveHdmiCable({
       id: 'hdmi_laptop',
       name: 'Cabo HDMI do Notebook (Conectar no Monitor 1)',
@@ -2151,7 +2404,6 @@
       }
     });
 
-    // Cabo HDMI 2: Do PS5 (47, -21) para o Monitor 2 Desligado (31.5, -15.5)
     createInteractiveHdmiCable({
       id: 'hdmi_ps5',
       name: 'Cabo HDMI do PS5 (Conectar no Monitor 2)',
@@ -2169,33 +2421,61 @@
       }
     });
 
-    // 10. RÁDIO RETRÔ / BOOMBOX (Esquerda Traseira Expandida)
+    // 10. RÁDIO RETRÔ / BOOMBOX (Com Alça Superior, Deck de Fita Cassete, Botões Giratórios e Aros Cromados!)
     const radioGroup = new THREE.Group();
     radioGroup.position.set(-54, 0, -18);
     radioGroup.rotation.y = 0.42;
 
     const radioBody = new THREE.Mesh(
-      new THREE.BoxGeometry(11.5, 5.8, 4.2),
-      new THREE.MeshStandardMaterial({ color: 0xb8332a, roughness: 0.35 })
+      new THREE.BoxGeometry(11.6, 5.8, 4.2),
+      new THREE.MeshStandardMaterial({ color: 0xc03228, roughness: 0.32 })
     );
     radioBody.position.y = 2.9; radioBody.castShadow = true; radioGroup.add(radioBody);
 
-    // Alto-falantes duplos pretos
-    const spkMat = new THREE.MeshStandardMaterial({ color: 0x1c1e22, roughness: 0.6 });
-    const spkL = new THREE.Mesh(new THREE.CylinderGeometry(1.85, 1.85, 0.3, 24), spkMat);
-    spkL.rotation.x = Math.PI / 2; spkL.position.set(-3.1, 2.6, 2.05);
-    const spkR = new THREE.Mesh(new THREE.CylinderGeometry(1.85, 1.85, 0.3, 24), spkMat);
-    spkR.rotation.x = Math.PI / 2; spkR.position.set(3.1, 2.6, 2.05);
-    radioGroup.add(spkL, spkR);
+    // Alça Superior Dobrável Preta e Cromada do Boombox
+    const handlePostL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.2, 0.6), inoxMat);
+    handlePostL.position.set(-4.2, 6.2, 0);
+    const handlePostR = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.2, 0.6), inoxMat);
+    handlePostR.position.set(4.2, 6.2, 0);
+    const handleBar = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.45, 0.7), new THREE.MeshStandardMaterial({ color: 0x16181c }));
+    handleBar.position.set(0, 6.75, 0);
+    radioGroup.add(handlePostL, handlePostR, handleBar);
 
-    // Visor de frequência iluminado + Antena cromada
-    const tuner = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.1), new THREE.MeshBasicMaterial({ color: 0xffea78 }));
-    tuner.position.set(0, 4.6, 2.12); radioGroup.add(tuner);
+    // Alto-falantes duplos com Aros Cromados + Cones Centrais
+    const spkMat = new THREE.MeshStandardMaterial({ color: 0x181a1e, roughness: 0.65 });
+    [-3.3, 3.3].forEach((sx) => {
+      const spk = new THREE.Mesh(new THREE.CylinderGeometry(1.85, 1.85, 0.3, 28), spkMat);
+      spk.rotation.x = Math.PI / 2; spk.position.set(sx, 2.5, 2.05);
+      const chromeRing = new THREE.Mesh(new THREE.TorusGeometry(1.85, 0.12, 12, 28), inoxMat);
+      chromeRing.position.set(sx, 2.5, 2.18);
+      const dustCap = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 12), inoxMat);
+      dustCap.scale.set(1, 1, 0.4);
+      dustCap.position.set(sx, 2.5, 2.16);
+      radioGroup.add(spk, chromeRing, dustCap);
+    });
 
-    const antenna = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.12, 8.5, 10),
-      new THREE.MeshStandardMaterial({ color: 0xd0d7de, metalness: 0.9, roughness: 0.15 })
+    // Deck Central de Fita Cassete + Knobs Cromados de Volume e Sintonia
+    const tapeDeck = new THREE.Mesh(
+      new THREE.BoxGeometry(2.4, 1.5, 0.25),
+      new THREE.MeshStandardMaterial({ color: 0x1b1e24, roughness: 0.2 })
     );
+    tapeDeck.position.set(0, 2.2, 2.08);
+    [-1.6, 1.6].forEach((kx) => {
+      const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.35, 18), inoxMat);
+      knob.rotation.x = Math.PI / 2;
+      knob.position.set(kx, 4.6, 2.16);
+      radioGroup.add(knob);
+    });
+    radioGroup.add(tapeDeck);
+
+    // Visor de frequência iluminado + Ponteiro Vermelho + Antena cromada
+    const tuner = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.05), new THREE.MeshBasicMaterial({ color: 0xfff088 }));
+    tuner.position.set(0, 4.6, 2.12);
+    const tunerNeedle = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.9, 0.05), new THREE.MeshBasicMaterial({ color: 0xff1744 }));
+    tunerNeedle.position.set(0.45, 4.6, 2.15);
+    radioGroup.add(tuner, tunerNeedle);
+
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 8.5, 10), inoxMat);
     antenna.position.set(-4.2, 8.8, -1.2); antenna.rotation.z = -0.25;
     radioGroup.add(antenna);
 
@@ -2207,28 +2487,53 @@
       initX: -54, initY: 0, initZ: -18, initRotY: 0.42, grabRadius: 8.5
     });
 
-    // 11. PILHAS PALITO (AAA BATTERIES ESPALHADAS NA MESA)
-    const batteryPositions = [
-      [-34, 24, 0.4], [-32.2, 25.4, 1.1], [-35.5, 25.8, -0.3],
-      [34, 28, 0.8], [35.8, 27.2, -0.5]
+    // 11. PILHAS PALITO TURBO POSICIONADAS AO LONGO DA PISTA DE CORRIDA (MINI-TURBO BOOST AO PASSAR POR CIMA!)
+    // Coordenadas exatas distribuídas ao longo das retas e curvas do circuito da pista de corrida!
+    const turboBatteries = [];
+    const trackBatteryCoords = [
+      [-2, 36.2, 0],         // Reta frontal após a largada
+      [34, 36.2, 0],         // Reta frontal direita
+      [65.5, 14, Math.PI/2], // Reta lateral direita
+      [65.5, -14, Math.PI/2],// Curva nordeste
+      [26, -36.2, Math.PI],  // Reta traseira direita
+      [-26, -36.2, Math.PI], // Reta traseira esquerda
+      [-65.5, -14, -Math.PI/2], // Lateral esquerda traseira
+      [-65.5, 14, -Math.PI/2]   // Lateral esquerda frontal
     ];
-    batteryPositions.forEach(([bx, bz, brot]) => {
+
+    const batBlackMat = new THREE.MeshStandardMaterial({ color: 0x16181c, roughness: 0.25, metalness: 0.3 });
+    const batCopperMat = new THREE.MeshStandardMaterial({ color: 0xd9822b, metalness: 0.75, roughness: 0.2 });
+    const turboRingMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.72, side: THREE.DoubleSide });
+
+    trackBatteryCoords.forEach(([bx, bz, brot], idx) => {
       const bat = new THREE.Group();
-      bat.position.set(bx, 0.38, bz);
+      bat.position.set(bx, 0.42, bz);
       bat.rotation.y = brot;
 
-      // Corpo preto e dourado (estilo Duracell/Alcalina)
-      const bBlack = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 1.5, 16), new THREE.MeshStandardMaterial({ color: 0x181a1d, roughness: 0.3 }));
+      // Corpo preto + Topo Cobre Metálico (Duracell Turbo) + Polo Positivo Cromado
+      const bBlack = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.65, 20), batBlackMat);
       bBlack.rotation.z = Math.PI / 2;
-      const bGold = new THREE.Mesh(new THREE.CylinderGeometry(0.385, 0.385, 0.7, 16), new THREE.MeshStandardMaterial({ color: 0xd4882a, metalness: 0.6, roughness: 0.25 }));
-      bGold.rotation.z = Math.PI / 2; bGold.position.x = 0.85;
-      const bTip = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.2, 12), new THREE.MeshStandardMaterial({ color: 0xd0d7de, metalness: 0.9 }));
-      bTip.rotation.z = Math.PI / 2; bTip.position.x = 1.25;
+      bBlack.castShadow = true;
+      const bGold = new THREE.Mesh(new THREE.CylinderGeometry(0.425, 0.425, 0.82, 20), batCopperMat);
+      bGold.rotation.z = Math.PI / 2; bGold.position.x = 0.95;
+      const bTip = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.24, 14), inoxMat);
+      bTip.rotation.z = Math.PI / 2; bTip.position.x = 1.42;
 
-      bat.add(bBlack, bGold, bTip);
+      // Anel Luminoso de Energia Turbo no chão sob a pilha!
+      const turboRing = new THREE.Mesh(new THREE.RingGeometry(1.45, 1.85, 24), turboRingMat);
+      turboRing.rotation.x = -Math.PI / 2;
+      turboRing.position.set(0.2, -0.24, 0);
+
+      bat.add(bBlack, bGold, bTip, turboRing);
       deskWorld.add(bat);
+      turboBatteries.push({
+        id: 'bat_' + idx,
+        x: bx, z: bz,
+        group: bat,
+        ring: turboRing,
+        lastBoostTime: -10
+      });
     });
-    obstacles.push({ x: -34, z: 25, r: 2.2, name: 'PILHAS PALITO ALCALINAS (AAA)' });
 
     // 12. CABOS USB ENROLADOS NA MESA
     function createCoiledUsbCable(x, z, colorHex) {
@@ -3192,10 +3497,34 @@
 
     let carSpeed = 0;
     let carAngle = -0.55;
-    const maxSpeed = 0.36;
+    const baseMaxSpeed = 0.36;
     const acceleration = 0.016;
     const friction = 0.93;
     const turnSpeed = 0.048;
+
+    // Sistema de Mini-Turbo ao passar por cima das Pilhas Palito na Pista!
+    let turboBoostTimer = 0;
+    const turboSparks = [];
+    const sparkGeo = new THREE.SphereGeometry(0.16, 8, 8);
+    const sparkMatCyan = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+    const sparkMatGold = new THREE.MeshBasicMaterial({ color: 0xffea00 });
+
+    function spawnTurboSpark() {
+      const sp = new THREE.Mesh(sparkGeo, Math.random() > 0.5 ? sparkMatCyan : sparkMatGold);
+      const backX = vehicle.position.x - Math.sin(carAngle) * 1.9 + (Math.random() - 0.5) * 0.8;
+      const backZ = vehicle.position.z - Math.cos(carAngle) * 1.9 + (Math.random() - 0.5) * 0.8;
+      sp.position.set(backX, vehicle.position.y + 0.55 + Math.random() * 0.4, backZ);
+      scene.add(sp);
+      turboSparks.push({
+        mesh: sp,
+        vel: new THREE.Vector3(
+          -Math.sin(carAngle) * 0.25 + (Math.random() - 0.5) * 0.12,
+          0.06 + Math.random() * 0.08,
+          -Math.cos(carAngle) * 0.25 + (Math.random() - 0.5) * 0.12
+        ),
+        life: 22
+      });
+    }
 
     let lastTypeTime = 0;
     const codeSnippets = [
@@ -3225,7 +3554,7 @@
       const dt = Math.min(0.1, elapsedTime - prevTime);
       prevTime = elapsedTime;
 
-      // 1. Animação dos Peixinhos no Aquário
+      // 1. Animação dos 3 Peixes Detalhados + Bolhas de Ar Subindo no Aquário Aquascape!
       fishes.forEach((f) => {
         const t = elapsedTime * f.speed + f.phase;
         const fx = Math.cos(t) * f.radiusX;
@@ -3234,6 +3563,23 @@
         const nextFz = Math.sin((t + 0.05) * 1.3) * f.radiusZ;
         f.group.position.set(fx, f.y + Math.sin(t * 2) * 0.25, fz);
         f.group.rotation.y = Math.atan2(-(nextFz - fz), nextFx - fx);
+        if (f.tailFin) {
+          f.tailFin.rotation.y = Math.sin(elapsedTime * 14 + f.phase) * 0.38;
+        }
+      });
+
+      aquariumBubbles.forEach((b) => {
+        b.mesh.position.y += b.speed * dt;
+        b.mesh.position.x = -6.8 + Math.sin(elapsedTime * 4 + b.wobble) * 0.25;
+        if (b.mesh.position.y > 8.8) {
+          b.mesh.position.y = 2.1;
+        }
+      });
+
+      // Animação dos anéis luminosos das Pilhas Palito Turbo na pista
+      turboBatteries.forEach((tb, idx) => {
+        const s = 1.0 + Math.sin(elapsedTime * 5 + idx) * 0.1;
+        tb.ring.scale.set(s, s, 1);
       });
 
       // 2. Expansão da Poça de Água se o Copo foi derrubado
@@ -3327,8 +3673,16 @@
             accelContinuousTime = 0;
           }
 
-          if (keys.forward) carSpeed = Math.min(carSpeed + acceleration, maxSpeed);
-          else if (keys.backward) carSpeed = Math.max(carSpeed - acceleration, -maxSpeed * 0.65);
+          // Verifica e aplica o Mini-Turbo ativo das Pilhas Palito!
+          if (turboBoostTimer > 0) {
+            turboBoostTimer -= dt;
+            spawnTurboSpark();
+          }
+          const currentMaxSpeed = turboBoostTimer > 0 ? baseMaxSpeed * 1.9 : baseMaxSpeed;
+
+          if (keys.forward) carSpeed = Math.min(carSpeed + acceleration * (turboBoostTimer > 0 ? 2.4 : 1), currentMaxSpeed);
+          else if (keys.backward) carSpeed = Math.max(carSpeed - acceleration, -currentMaxSpeed * 0.65);
+          else if (turboBoostTimer > 0) carSpeed = Math.max(carSpeed, baseMaxSpeed * 1.65);
           else carSpeed *= friction;
 
           if (Math.abs(carSpeed) > 0.004) {
@@ -3400,11 +3754,28 @@
             }
           }
 
-          // Altura do carrinho sobre o Deskmat e sobre o Teclado Mecânico
+          // Altura do carrinho sobre o Deskmat, Pilhas Turbo e Teclado Mecânico
           let targetY = 0;
           if (nextX > -26 && nextX < 42 && nextZ > -11 && nextZ < 23) {
             targetY = 0.14;
           }
+
+          // Passando por cima das PILHAS PALITO NA PISTA -> Ativa MINI-TURBO BOOST!
+          turboBatteries.forEach((tb) => {
+            const distBat = Math.hypot(nextX - tb.x, nextZ - tb.z);
+            if (distBat < 2.65) {
+              targetY = Math.max(targetY, 0.52);
+              if (elapsedTime - tb.lastBoostTime > 1.2) {
+                tb.lastBoostTime = elapsedTime;
+                turboBoostTimer = 1.65;
+                carSpeed = baseMaxSpeed * 1.85;
+                revealTrackAtWorldPos(tb.x, tb.z, 54);
+                showCarSpeech('⚡ MINI TURBO!', 1800);
+                setStatusBanner('⚡ MINI TURBO ATIVADO PELA PILHA PALITO!', '#00e5ff');
+                logInteractionEvent('⚡ Passou por cima da Pilha Palito: MINI TURBO!');
+              }
+            }
+          });
 
           // Passando por cima do Teclado Mecânico -> Digita na tela e acumula Autodestruição!
           if (nextX > -3.2 && nextX < 12.2 && nextZ > 0.8 && nextZ < 7.2) {
@@ -3460,12 +3831,24 @@
           }
 
           carBodyGroup.rotation.x = -carSpeed * 0.25;
-          carBodyGroup.rotation.z = (keys.left ? 0.06 : keys.right ? -0.06 : 0) * (Math.abs(carSpeed) / maxSpeed);
+          carBodyGroup.rotation.z = (keys.left ? 0.06 : keys.right ? -0.06 : 0) * (Math.abs(carSpeed) / currentMaxSpeed);
 
           wheels.forEach((w, idx) => {
             w.rotation.x += carSpeed * 1.9;
             if (idx < 2) w.rotation.y = keys.left ? 0.35 : keys.right ? -0.35 : 0;
           });
+        }
+      }
+
+      // Atualiza partículas elétricas do Mini-Turbo
+      for (let i = turboSparks.length - 1; i >= 0; i--) {
+        const sp = turboSparks[i];
+        sp.mesh.position.add(sp.vel);
+        sp.life--;
+        sp.mesh.scale.setScalar(sp.life / 22);
+        if (sp.life <= 0) {
+          scene.remove(sp.mesh);
+          turboSparks.splice(i, 1);
         }
       }
 
