@@ -452,7 +452,9 @@
     <div id="cam-controls">
       <button class="btn-cam active" id="btn-cam-iso">Visão Mesa</button>
       <button class="btn-cam" id="btn-cam-close">Close Carrinho</button>
-      <button class="btn-cam" id="btn-cam-gear">Close G915 & G502</button>
+      <button class="btn-cam" id="btn-cam-gear">Close G213 & G502</button>
+      <button class="btn-cam" id="btn-cam-mug">Close Caneca MuleSoft</button>
+      <button class="btn-cam" id="btn-cam-arm">Close Suporte Articulado & Nitro</button>
       <button class="btn-cam" id="btn-cam-wide">Mesa 3x Completa</button>
     </div>
     <!-- Mini Log de Eventos de Interação -->
@@ -544,6 +546,12 @@
     });
     document.getElementById('btn-cam-gear').addEventListener('click', (e) => {
       camMode = 'gear'; zoomFactor = 0.85; setActiveBtn(e.target);
+    });
+    document.getElementById('btn-cam-mug').addEventListener('click', (e) => {
+      camMode = 'mug'; zoomFactor = 0.85; setActiveBtn(e.target);
+    });
+    document.getElementById('btn-cam-arm').addEventListener('click', (e) => {
+      camMode = 'arm'; zoomFactor = 0.95; setActiveBtn(e.target);
     });
     document.getElementById('btn-cam-wide').addEventListener('click', (e) => {
       camMode = 'wide'; zoomFactor = 1.65; setActiveBtn(e.target);
@@ -830,57 +838,354 @@
     }
     updateMonitorScreen();
 
-    // Textura do Alumínio Escovado Gunmetal + Barra Superior do Logitech G915
-    function createG915DeckTexture() {
+    // Texturas de Alta Fidelidade com Base nas Fotos Reais do Setup
+    // ----------------------------------------------------------------------------
+    function createMulesoftMentorTexture() {
       const c = document.createElement('canvas');
-      c.width = 1024;
-      c.height = 384;
+      c.width = 512; c.height = 512;
       const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, 512, 512);
 
-      // Fundo alumínio escovado gunmetal escuro (#3c4149)
-      const grad = ctx.createLinearGradient(0, 0, 1024, 0);
-      grad.addColorStop(0, '#444952');
-      grad.addColorStop(0.5, '#373c44');
-      grad.addColorStop(1, '#434851');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 1024, 384);
+      const cx = 256, cy = 256, rOuter = 232;
 
-      // Linhas horizontais finas do metal escovado
-      for (let y = 0; y < 384; y += 2) {
-        ctx.fillStyle = y % 4 === 0 ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.06)';
-        ctx.fillRect(0, y, 1024, 1);
+      // Círculo base azul escuro / navy profundo (#071520)
+      ctx.fillStyle = '#071520';
+      ctx.beginPath();
+      ctx.arc(cx, cy, rOuter, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Borda externa azul ciano MuleSoft (#00a1e0)
+      ctx.strokeStyle = '#00a1e0';
+      ctx.lineWidth = 14;
+      ctx.stroke();
+
+      // Anel interno fino concêntrico
+      ctx.beginPath();
+      ctx.arc(cx, cy, 192, 0, Math.PI * 2);
+      ctx.strokeStyle = '#0087be';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+
+      // Texto circular superior: "M U L E S O F T"
+      ctx.save();
+      ctx.translate(cx, cy);
+      const textTop = "M U L E S O F T";
+      ctx.font = '900 34px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const angleSpreadTop = Math.PI * 0.76;
+      const startAngleTop = -Math.PI / 2 - angleSpreadTop / 2;
+      const stepTop = angleSpreadTop / (textTop.length - 1);
+      for (let i = 0; i < textTop.length; i++) {
+        const angle = startAngleTop + i * stepTop;
+        ctx.save();
+        ctx.rotate(angle + Math.PI / 2);
+        ctx.translate(0, -156);
+        ctx.fillText(textTop[i], 0, 0);
+        ctx.restore();
       }
 
-      // Logo "G" Ciano Iluminado no canto superior esquerdo (x: 48, y: 36)
-      ctx.fillStyle = '#00d2ff';
-      ctx.shadowColor = '#00d2ff';
-      ctx.shadowBlur = 12;
-      ctx.font = '900 38px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('G', 32, 48);
-      ctx.shadowBlur = 0;
+      // Texto circular inferior: "M E N T O R"
+      const textBottom = "M E N T O R";
+      ctx.font = '900 36px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      const angleSpreadBottom = Math.PI * 0.54;
+      const startAngleBottom = Math.PI / 2 + angleSpreadBottom / 2;
+      const stepBottom = angleSpreadBottom / (textBottom.length - 1);
+      for (let i = 0; i < textBottom.length; i++) {
+        const angle = startAngleBottom - i * stepBottom;
+        ctx.save();
+        ctx.rotate(angle - Math.PI / 2);
+        ctx.translate(0, 156);
+        ctx.fillText(textBottom[i], 0, 0);
+        ctx.restore();
+      }
+      ctx.restore();
 
-      // Badge central escuro "LIGHTSPEED" no topo
-      ctx.fillStyle = '#1b1d21';
+      // Círculo central azul claro céu com gradiente suave
+      const rCenter = 126;
+      const centerGrad = ctx.createRadialGradient(cx, cy - 20, 10, cx, cy, rCenter);
+      centerGrad.addColorStop(0, '#ebf6fd');
+      centerGrad.addColorStop(0.65, '#c5e7f9');
+      centerGrad.addColorStop(1, '#9ad3f3');
+      ctx.fillStyle = centerGrad;
       ctx.beginPath();
-      ctx.roundRect(365, 2, 106, 56, [0, 0, 10, 10]);
+      ctx.arc(cx, cy, rCenter, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#7c828d';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillText('LIGHTSPEED', 383, 44);
+      ctx.strokeStyle = '#00a1e0';
+      ctx.lineWidth = 4;
+      ctx.stroke();
 
-      // LEDs de status: BATTERY (verde brilhante) e CAPS LOCK
-      ctx.fillStyle = '#00ff66';
-      ctx.beginPath(); ctx.arc(496, 22, 4.5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#8b929e';
-      ctx.font = 'bold 8px sans-serif';
-      ctx.fillText('BATTERY', 508, 25);
+      // Estrelinhas cintilantes de 4 pontas ao redor do cubo
+      function drawSparkle(sx, sy, sz) {
+        ctx.fillStyle = '#00a1e0';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - sz);
+        ctx.quadraticCurveTo(sx, sy, sx + sz, sy);
+        ctx.quadraticCurveTo(sx, sy, sx, sy + sz);
+        ctx.quadraticCurveTo(sx, sy, sx - sz, sy);
+        ctx.quadraticCurveTo(sx, sy, sx, sy - sz);
+        ctx.fill();
+      }
+      drawSparkle(cx - 72, cy - 54, 8);
+      drawSparkle(cx + 74, cy - 48, 7);
+      drawSparkle(cx - 68, cy + 32, 6);
+      drawSparkle(cx + 70, cy + 36, 6);
 
-      ctx.fillStyle = '#454a54';
-      ctx.beginPath(); ctx.arc(496, 42, 4.5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#8b929e';
-      ctx.fillText('CAPS LOCK', 508, 45);
+      // Cubo Isométrico 3D MuleSoft no centro
+      const bx = cx, by = cy - 8, bw = 46, bh = 26;
+      // Face superior do cubo
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#00a1e0';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(bx, by - bh);
+      ctx.lineTo(bx + bw, by);
+      ctx.lineTo(bx, by + bh);
+      ctx.lineTo(bx - bw, by);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Emblema "M" da MuleSoft na face superior do cubo
+      ctx.fillStyle = '#00a1e0';
+      ctx.beginPath();
+      ctx.arc(bx, by, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('M', bx, by + 1);
+
+      // Face esquerda do cubo
+      ctx.fillStyle = '#d7effb';
+      ctx.beginPath();
+      ctx.moveTo(bx - bw, by);
+      ctx.lineTo(bx, by + bh);
+      ctx.lineTo(bx, by + bh + 48);
+      ctx.lineTo(bx - bw, by + 48);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Face direita do cubo
+      ctx.fillStyle = '#bfe4f8';
+      ctx.beginPath();
+      ctx.moveTo(bx, by + bh);
+      ctx.lineTo(bx + bw, by);
+      ctx.lineTo(bx + bw, by + 48);
+      ctx.lineTo(bx, by + bh + 48);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      // Duas mãos estilizadas segurando o cubo de baixo
+      ctx.strokeStyle = '#00a1e0';
+      ctx.fillStyle = '#ffffff';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // Mão esquerda
+      ctx.beginPath();
+      ctx.moveTo(bx - 48, by + 74);
+      ctx.lineTo(bx - 48, by + 26);
+      ctx.lineTo(bx - 36, by + 18);
+      ctx.lineTo(bx - 36, by + 74);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(bx - 26, by + 26);
+      ctx.lineTo(bx - 26, by + 74);
+      ctx.stroke();
+
+      // Mão direita
+      ctx.beginPath();
+      ctx.moveTo(bx + 48, by + 74);
+      ctx.lineTo(bx + 48, by + 26);
+      ctx.lineTo(bx + 36, by + 18);
+      ctx.lineTo(bx + 36, by + 74);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(bx + 26, by + 26);
+      ctx.lineTo(bx + 26, by + 74);
+      ctx.stroke();
 
       return new THREE.CanvasTexture(c);
+    }
+
+    function createLeatherCoasterTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#78432a';
+      ctx.fillRect(0, 0, 256, 256);
+      // Grão de couro suave
+      for (let i = 0; i < 700; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.04)';
+        ctx.fillRect(Math.random() * 256, Math.random() * 256, 2, 2);
+      }
+      // Costura perimetral pontilhada clara
+      ctx.strokeStyle = '#ebd9c6';
+      ctx.lineWidth = 3.0;
+      ctx.setLineDash([7, 6]);
+      ctx.beginPath();
+      ctx.arc(128, 128, 114, 0, Math.PI * 2);
+      ctx.stroke();
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createCorkTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#b7885b';
+      ctx.fillRect(0, 0, 256, 128);
+      const corkColors = ['#9b6b40', '#cf9e6f', '#784d28', '#dcb284', '#663f1e'];
+      for (let i = 0; i < 900; i++) {
+        ctx.fillStyle = corkColors[Math.floor(Math.random() * corkColors.length)];
+        const w = 2 + Math.random() * 5;
+        const h = 2 + Math.random() * 3;
+        ctx.fillRect(Math.random() * 256, Math.random() * 128, w, h);
+      }
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createCopilotStickerTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 180;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, 256, 180);
+
+      // Borda externa branca do sticker
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0,0,0,0.35)';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(14, 14, 228, 152, 40);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Fita em laço com gradiente icônico do Microsoft Copilot
+      const grad1 = ctx.createLinearGradient(35, 35, 140, 145);
+      grad1.addColorStop(0, '#0078d4');
+      grad1.addColorStop(0.5, '#00d2ff');
+      grad1.addColorStop(1, '#107c41');
+
+      const grad2 = ctx.createLinearGradient(120, 35, 220, 145);
+      grad2.addColorStop(0, '#ffb900');
+      grad2.addColorStop(0.45, '#e81123');
+      grad2.addColorStop(0.8, '#b4009e');
+      grad2.addColorStop(1, '#5c2d91');
+
+      ctx.fillStyle = grad1;
+      ctx.beginPath();
+      ctx.roundRect(32, 32, 94, 116, 28);
+      ctx.fill();
+
+      ctx.fillStyle = grad2;
+      ctx.beginPath();
+      ctx.roundRect(102, 32, 120, 116, 32);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(75, 54, 102, 72, 22);
+      ctx.fill();
+
+      const gradCore = ctx.createLinearGradient(85, 60, 170, 120);
+      gradCore.addColorStop(0, '#26d0ce');
+      gradCore.addColorStop(0.5, '#a770ef');
+      gradCore.addColorStop(1, '#ff6a00');
+      ctx.fillStyle = gradCore;
+      ctx.beginPath();
+      ctx.roundRect(84, 62, 84, 56, 16);
+      ctx.fill();
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createElgTagTexture() {
+      const c = document.createElement('canvas');
+      c.width = 128; c.height = 64;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#b37850';
+      ctx.fillRect(0, 0, 128, 64);
+      ctx.strokeStyle = '#e6c8a8';
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(5, 5, 118, 54);
+      ctx.fillStyle = '#5c3116';
+      ctx.font = 'bold 36px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('elg', 64, 33);
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createWarningStickerTexture() {
+      const c = document.createElement('canvas');
+      c.width = 128; c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, 128, 128);
+      ctx.fillStyle = '#f7d117';
+      ctx.beginPath();
+      ctx.moveTo(64, 12);
+      ctx.lineTo(122, 114);
+      ctx.lineTo(6, 114);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#111111';
+      ctx.lineWidth = 8;
+      ctx.stroke();
+      ctx.fillStyle = '#111111';
+      ctx.font = '900 68px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('!', 64, 78);
+      return new THREE.CanvasTexture(c);
+    }
+
+    // Textura do Chassi Preto Grafite do Logitech G213 Prodigy
+    function createG213DeckTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 480;
+      const ctx = c.getContext('2d');
+
+      // Fundo preto grafite fosco (#1b1e22)
+      ctx.fillStyle = '#1b1e22';
+      ctx.fillRect(0, 0, 1024, 480);
+
+      // Logo "G" Ciano Iluminado no canto superior esquerdo (acima do Esc)
+      ctx.fillStyle = '#00a8ff';
+      ctx.shadowColor = '#00a8ff';
+      ctx.shadowBlur = 14;
+      ctx.font = '900 44px "Segoe UI", Arial, sans-serif';
+      ctx.fillText('G', 42, 54);
+      ctx.shadowBlur = 0;
+
+      // Inscrição sutil do modelo "G213" no perfil da borda direita
+      ctx.fillStyle = '#3a404a';
+      ctx.font = 'bold 24px "Segoe UI", sans-serif';
+      ctx.fillText('G213', 940, 455);
+
+      // LEDs de status no centro do topo (Caps Lock, Num Lock, Scroll Lock)
+      const leds = ['CAPS', 'NUM', 'SCROLL'];
+      leds.forEach((name, i) => {
+        const lx = 470 + i * 42;
+        ctx.fillStyle = '#00e5ff';
+        ctx.beginPath(); ctx.arc(lx, 26, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#677180';
+        ctx.font = 'bold 8px sans-serif';
+        ctx.fillText(name, lx - 10, 42);
+      });
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    // Textura de alumínio escovado para compatibilidade
+    function createG915DeckTexture() {
+      return createG213DeckTexture();
     }
 
     function createLaptopScreenTexture() {
@@ -998,6 +1303,15 @@
     deskmat.receiveShadow = true;
     deskWorld.add(deskmat);
 
+    // Etiqueta de couro sintético caramelo "elg" costurada na borda frontal do mousepad
+    const elgTag = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.4, 1.2),
+      new THREE.MeshStandardMaterial({ map: createElgTagTexture(), roughness: 0.65 })
+    );
+    elgTag.rotation.x = -Math.PI / 2;
+    elgTag.position.set(38.5, 0.16, 21.2);
+    deskWorld.add(elgTag);
+
     // ============================================================================
     // RAMPA DE PAPELÃO NA LATERAL ESQUERDA DA MESA (ACESSO AO CENÁRIO DO QUARTO)
     // ============================================================================
@@ -1105,22 +1419,111 @@
     };
     obstacles.push(cupObstacle);
 
-    // 2. NOTEBOOK ACER NITRO V 15 NO SUPORTE (Esquerda)
+    // 2 & 3. SUPORTE ARTICULADO A GÁS DUPLO (DUAL ARM COM MORSA NA MESA) + NOTEBOOK ACER NITRO V 15 + MONITOR LG ULTRAGEAR™ 45"
+    // ============================================================================
+    const dualArmGroup = new THREE.Group();
+    const armMat = new THREE.MeshStandardMaterial({ color: 0x181a1e, roughness: 0.35, metalness: 0.5 });
+    const armGlossMat = new THREE.MeshStandardMaterial({ color: 0x111215, roughness: 0.15, metalness: 0.4 });
+    const cableMat = new THREE.MeshStandardMaterial({ color: 0x0c0d0f, roughness: 0.8 });
+
+    // Base de Fixação com Morsa (C-Clamp) na borda traseira da mesa
+    const clampBase = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.85, 3.8), armMat);
+    clampBase.position.set(-4.5, 0.42, -20.2);
+    clampBase.castShadow = true;
+    const clampLip = new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.2, 0.9), armMat);
+    clampLip.position.set(-4.5, -0.9, -21.6);
+    const clampScrew = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.4, 16), armGlossMat);
+    clampScrew.position.set(-4.5, -1.6, -20.4);
+    const clampPost = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.92, 5.2, 24), armMat);
+    clampPost.position.set(-4.5, 2.8, -20.2);
+    clampPost.castShadow = true;
+    dualArmGroup.add(clampBase, clampLip, clampScrew, clampPost);
+
+    // --- BRAÇO 1 (DIREITO) -> Segura o Monitor LG UltraGear 45" Curvo por VESA 100x100 ---
+    const arm1Swivel = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 1.2, 20), armGlossMat);
+    arm1Swivel.position.set(-4.5, 4.4, -20.2);
+    const arm1Lower = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.1, 7.8), armMat);
+    arm1Lower.position.set(-0.8, 4.6, -18.2);
+    arm1Lower.rotation.y = 0.52;
+    arm1Lower.castShadow = true;
+    const arm1Elbow = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.92, 1.35, 20), armGlossMat);
+    arm1Elbow.position.set(2.4, 4.6, -15.5);
+    // Pistão / Braço Superior a Gás inclinado subindo até o VESA
+    const arm1Upper = new THREE.Mesh(new THREE.BoxGeometry(1.35, 1.3, 7.2), armMat);
+    arm1Upper.position.set(4.2, 7.2, -14.6);
+    arm1Upper.rotation.x = -0.42;
+    arm1Upper.rotation.y = 0.35;
+    arm1Upper.castShadow = true;
+    // Etiqueta Triangular Amarela de Aviso "⚠️ Spring Tension" no cotovelo do braço do monitor!
+    const warningMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.1, 1.1),
+      new THREE.MeshBasicMaterial({ map: createWarningStickerTexture(), transparent: true })
+    );
+    warningMesh.position.set(2.95, 5.3, -15.2);
+    warningMesh.rotation.y = 0.45;
+    // Cabeça VESA articulada
+    const vesaHead = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.4, 0.6), armGlossMat);
+    vesaHead.position.set(6.5, 9.2, -13.6);
+    dualArmGroup.add(arm1Swivel, arm1Lower, arm1Elbow, arm1Upper, warningMesh, vesaHead);
+
+    // Cabos do monitor descendo pelo braço articulado
+    const monCable1 = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 8.5, 8), cableMat);
+    monCable1.position.set(4.4, 6.8, -14.3);
+    monCable1.rotation.x = -0.42; monCable1.rotation.y = 0.35;
+    const monCable2 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 7.6, 8), cableMat);
+    monCable2.position.set(-0.6, 4.2, -18.4);
+    monCable2.rotation.y = 0.52;
+    dualArmGroup.add(monCable1, monCable2);
+
+    // --- BRAÇO 2 (ESQUERDO) -> Segura a Bandeja Inclinada do Notebook Acer Nitro V 15 ---
+    const arm2Swivel = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.92, 1.1, 20), armGlossMat);
+    arm2Swivel.position.set(-4.5, 3.2, -20.2);
+    const arm2Lower = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.0, 9.2), armMat);
+    arm2Lower.position.set(-10.2, 3.4, -17.5);
+    arm2Lower.rotation.y = -0.62;
+    arm2Lower.castShadow = true;
+    const arm2Elbow = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, 1.2, 20), armGlossMat);
+    arm2Elbow.position.set(-15.4, 3.4, -14.2);
+    const arm2Upper = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.1, 7.4), armMat);
+    arm2Upper.position.set(-17.6, 3.2, -10.8);
+    arm2Upper.rotation.y = 0.28;
+    arm2Upper.castShadow = true;
+    // Bandeja de aço preto perfurada de suporte do notebook (inclinada)
+    const laptopTray = new THREE.Mesh(
+      new THREE.BoxGeometry(14.8, 0.32, 10.6),
+      new THREE.MeshStandardMaterial({ color: 0x14161a, roughness: 0.45, metalness: 0.6 })
+    );
+    laptopTray.position.set(-19.0, 2.5, -8.0);
+    laptopTray.rotation.x = 0.32;
+    laptopTray.rotation.y = 0.24;
+    laptopTray.castShadow = true;
+    // Abas frontais de retenção da bandeja
+    const trayLip = new THREE.Mesh(new THREE.BoxGeometry(14.8, 0.72, 0.26), armMat);
+    trayLip.position.set(0, 0.32, 5.25);
+    laptopTray.add(trayLip);
+    dualArmGroup.add(arm2Swivel, arm2Lower, arm2Elbow, arm2Upper, laptopTray);
+    deskWorld.add(dualArmGroup);
+
+    // --- NOTEBOOK ACER NITRO V 15 (Instalado na Bandeja Inclinada do Braço com Cabos Reais!) ---
     const laptopGroup = new THREE.Group();
-    const laptopChassisMat = new THREE.MeshStandardMaterial({ color: 0x24272c, roughness: 0.38, metalness: 0.35 });
-    const standBase = new THREE.Mesh(new THREE.BoxGeometry(11, 2.2, 8), new THREE.MeshStandardMaterial({ color: 0x16181b }));
-    standBase.position.set(0, 1.1, 0); standBase.castShadow = true;
-    laptopGroup.add(standBase);
+    const laptopChassisMat = new THREE.MeshStandardMaterial({ color: 0x1e2024, roughness: 0.35, metalness: 0.3 });
 
     const lapBaseGroup = new THREE.Group();
-    lapBaseGroup.position.set(0, 2.6, 0.5); lapBaseGroup.rotation.x = 0.32;
-    const lapDeck = new THREE.Mesh(new THREE.BoxGeometry(14.5, 0.5, 10.2), laptopChassisMat);
+    lapBaseGroup.position.set(0, 0.35, 0);
+    const lapDeck = new THREE.Mesh(new THREE.BoxGeometry(14.4, 0.48, 10.0), laptopChassisMat);
     lapDeck.castShadow = true; lapBaseGroup.add(lapDeck);
-    const lapKeys = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.15, 5.4), new THREE.MeshStandardMaterial({ color: 0x141619 }));
-    lapKeys.position.set(0, 0.28, -1.2); lapBaseGroup.add(lapKeys);
-    const touchpad = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.08, 2.6), new THREE.MeshStandardMaterial({ color: 0x2f333a }));
-    touchpad.position.set(-1.1, 0.27, 3.1); lapBaseGroup.add(touchpad);
 
+    // Teclado integrado com iluminação vermelha suave no estilo Nitro
+    const lapKeys = new THREE.Mesh(new THREE.BoxGeometry(13.1, 0.12, 5.3), new THREE.MeshStandardMaterial({ color: 0x111316, roughness: 0.5 }));
+    lapKeys.position.set(0, 0.26, -1.2); lapBaseGroup.add(lapKeys);
+    // Teclas WASD em branco/vermelho características
+    const wasdAccent = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.08, 0.8), new THREE.MeshBasicMaterial({ color: 0xff3b30 }));
+    wasdAccent.position.set(-4.2, 0.32, -1.2); lapBaseGroup.add(wasdAccent);
+
+    const touchpad = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.06, 2.6), new THREE.MeshStandardMaterial({ color: 0x272b32 }));
+    touchpad.position.set(-1.1, 0.26, 3.1); lapBaseGroup.add(touchpad);
+
+    // Adesivos reais no palmrest do notebook (Intel Core, GeForce RTX e Fita do Autismo!)
     const stickerIntel = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.65), new THREE.MeshBasicMaterial({ color: 0x0071c5 }));
     stickerIntel.rotation.x = -Math.PI / 2; stickerIntel.position.set(-5.8, 0.28, 2.3);
     const stickerRtx = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.65), new THREE.MeshBasicMaterial({ color: 0x76b900 }));
@@ -1129,56 +1532,44 @@
     stickerHeart.rotation.x = -Math.PI / 2; stickerHeart.position.set(-5.2, 0.28, 3.7);
     lapBaseGroup.add(stickerIntel, stickerRtx, stickerHeart);
 
+    // Cabos conectados na lateral esquerda do Notebook (Conector 90° de Força + HDMI + Hub USB com Velcro!)
+    const pwrPlug = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.38, 0.9), armGlossMat);
+    pwrPlug.position.set(-7.4, 0.12, -3.8);
+    const pwrCord = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.8, 8), cableMat);
+    pwrCord.rotation.z = Math.PI / 2; pwrCord.position.set(-8.8, 0.12, -3.8);
+    const hdmiPlug = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.34, 1.1), armGlossMat);
+    hdmiPlug.position.set(-7.4, 0.12, -2.2);
+    const usbHubPlug = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.32, 1.8), armGlossMat);
+    usbHubPlug.position.set(-7.4, 0.12, -0.3);
+    // Presilha de Velcro Preta prendendo os cabos do hub
+    const velcroTie = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.65, 12), new THREE.MeshStandardMaterial({ color: 0x1f1f1f, roughness: 0.9 }));
+    velcroTie.rotation.z = Math.PI / 2; velcroTie.position.set(-9.2, 0.05, -1.2);
+    lapBaseGroup.add(pwrPlug, pwrCord, hdmiPlug, usbHubPlug, velcroTie);
+
+    // Tela do Notebook com Moldura Fina, Adesivo "144Hz" e Webcam no topo
     const lapScreenGroup = new THREE.Group();
     lapScreenGroup.position.set(0, 0.25, -4.9); lapScreenGroup.rotation.x = -0.38;
-    const lapLid = new THREE.Mesh(new THREE.BoxGeometry(14.5, 9.4, 0.35), laptopChassisMat);
+    const lapLid = new THREE.Mesh(new THREE.BoxGeometry(14.4, 9.4, 0.35), laptopChassisMat);
     lapLid.position.set(0, 4.7, 0); lapLid.castShadow = true; lapScreenGroup.add(lapLid);
-    const lapDisplay = new THREE.Mesh(new THREE.PlaneGeometry(13.7, 8.4), new THREE.MeshBasicMaterial({ map: createLaptopScreenTexture() }));
+    const lapDisplay = new THREE.Mesh(new THREE.PlaneGeometry(13.6, 8.4), new THREE.MeshBasicMaterial({ map: createLaptopScreenTexture() }));
     lapDisplay.position.set(0, 4.7, 0.19); lapScreenGroup.add(lapDisplay);
+    // Webcam no topo da moldura
+    const lapWebcam = new THREE.Mesh(new THREE.CircleGeometry(0.09, 12), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+    lapWebcam.position.set(0, 9.15, 0.19); lapScreenGroup.add(lapWebcam);
+    // Selo "144Hz" na moldura inferior esquerda da tela
+    const badge144 = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 0.35), new THREE.MeshBasicMaterial({ color: 0xd4af37 }));
+    badge144.position.set(-6.1, 0.42, 0.19); lapScreenGroup.add(badge144);
 
     lapBaseGroup.add(lapScreenGroup);
     laptopGroup.add(lapBaseGroup);
-    laptopGroup.position.set(-19, 0, -8);
+    laptopGroup.position.set(-19, 2.5, -8);
+    laptopGroup.rotation.x = 0.32;
     laptopGroup.rotation.y = 0.24;
     deskWorld.add(laptopGroup);
-    obstacles.push({ x: -19, z: -8, r: 7.2, name: 'NOTEBOOK ACER NITRO V 15' });
+    obstacles.push({ x: -19, z: -8, r: 7.2, name: 'NOTEBOOK ACER NITRO V 15 NO BRAÇO ARTICULADO' });
 
-    // 3. MONITOR LG ULTRAGEAR™ OLED 45" CURVO 800R (Com Pedestal Hexagonal + Recorte de Cabo!)
+    // --- MONITOR LG ULTRAGEAR™ OLED 45" CURVO 800R (Suspenso pelo Braço Articulado a Gás!) ---
     const monitorGroup = new THREE.Group();
-    const lgStandMat = new THREE.MeshStandardMaterial({ color: 0x262930, roughness: 0.35, metalness: 0.45 });
-
-    // Base Hexagonal Plana do LG UltraGear 45"
-    const lgBase = new THREE.Mesh(new THREE.CylinderGeometry(4.6, 4.8, 0.28, 6), lgStandMat);
-    lgBase.rotation.y = Math.PI / 6;
-    lgBase.position.set(0, 0.14, -1.8);
-    lgBase.castShadow = true;
-    lgBase.receiveShadow = true;
-    monitorGroup.add(lgBase);
-
-    // Coluna Vertical Larga com Furo Horizontal (Cable Routing Window) idêntico à foto!
-    const pillarLeft = new THREE.Mesh(new THREE.BoxGeometry(1.1, 7.5, 0.65), lgStandMat);
-    pillarLeft.position.set(-1.35, 3.8, -2.2);
-    pillarLeft.castShadow = true;
-    const pillarRight = new THREE.Mesh(new THREE.BoxGeometry(1.1, 7.5, 0.65), lgStandMat);
-    pillarRight.position.set(1.35, 3.8, -2.2);
-    pillarRight.castShadow = true;
-    const pillarBottom = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.7, 0.65), lgStandMat);
-    pillarBottom.position.set(0, 1.45, -2.2);
-    const pillarTop = new THREE.Mesh(new THREE.BoxGeometry(1.6, 3.6, 0.65), lgStandMat);
-    pillarTop.position.set(0, 5.7, -2.2);
-    // Aro interno lilás/metálico do furo passador de cabos
-    const holeRim = new THREE.Mesh(
-      new THREE.BoxGeometry(1.65, 0.72, 0.7),
-      new THREE.MeshStandardMaterial({ color: 0x5c6274, metalness: 0.7, roughness: 0.2 })
-    );
-    holeRim.position.set(0, 3.35, -2.2);
-    const holeVoid = new THREE.Mesh(
-      new THREE.BoxGeometry(1.45, 0.44, 0.76),
-      new THREE.MeshBasicMaterial({ color: 0xd5cfc7 })
-    );
-    holeVoid.position.set(0, 3.35, -2.2);
-    monitorGroup.add(pillarLeft, pillarRight, pillarBottom, pillarTop, holeRim, holeVoid);
-
     const monitorHeadGroup = new THREE.Group();
     monitorGroup.add(monitorHeadGroup);
 
@@ -1250,14 +1641,32 @@
       });
 
       if (isPS5) {
-        // Touchpad trapezoidal escuro + Barras de LED Azuis laterais do DualSense + Detalhe inferior preto
-        const touch = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.66, 0.86), darkMat);
+        // Touchpad trapezoidal preto acetinado + Barras de LED Ciano laterais do DualSense + Detalhe inferior preto
+        const touch = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.66, 0.88), darkMat);
         touch.position.set(0, 0.48, -0.22);
-        const ledBar = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.64, 0.88), new THREE.MeshBasicMaterial({ color: 0x00a2ff }));
+        const ledBar = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.64, 0.90), new THREE.MeshBasicMaterial({ color: 0x00b4d8 }));
         ledBar.position.set(0, 0.47, -0.22);
         const lowerTrim = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.63, 0.72), darkMat);
         lowerTrim.position.set(0, 0.46, 0.42);
-        gp.add(ledBar, touch, lowerTrim);
+
+        // Botão PlayStation (Logo PS) estilizado entre os analógicos
+        const psBtn = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.18), darkMat);
+        psBtn.position.set(0, 0.79, 0.28);
+        // Botão horizontal de Mute do microfone com ponto LED âmbar
+        const muteBtn = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.09), darkMat);
+        muteBtn.position.set(0, 0.79, 0.46);
+        const muteLed = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.04), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
+        muteLed.position.set(0, 0.80, 0.46);
+
+        // Pinos de carregamento de dock dourados e fone P2 na frente inferior
+        const dockPins = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.06, 0.08), new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8 }));
+        dockPins.position.set(0, 0.24, 0.74);
+
+        // Porta USB-C na parte traseira
+        const usbcPort = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.09, 0.12), new THREE.MeshBasicMaterial({ color: 0x090a0c }));
+        usbcPort.position.set(0, 0.58, -0.76);
+
+        gp.add(ledBar, touch, lowerTrim, psBtn, muteBtn, muteLed, dockPins, usbcPort);
       } else {
         // Botão Xbox Nexus iluminado em branco no topo central
         const xboxBtn = new THREE.Mesh(
@@ -1344,7 +1753,7 @@
     }
 
     createBreakableGamepad('CONTROLE XBOX ONE', -0.5, -7.2, 0.08, 0x1e2024, 0x111214, false);
-    createBreakableGamepad('CONTROLE PS5 DUALSENSE', 25.0, 11.5, -0.45, 0xf2f4f8, 0x181a1e, true);
+    createBreakableGamepad('CONTROLE PS5 PRO MIDNIGHT BLACK', 25.0, 11.5, -0.45, 0x16181b, 0x111214, true);
 
     function hitController(ctrl, impactSpeed) {
       const now = performance.now();
@@ -1406,124 +1815,102 @@
       setStatusBanner(`💥 ${ctrl.name}: Estágio ${ctrl.stage}/5 (${ctrl.hits}/20 batidas)!`);
     }
 
-    // 5. TECLADO MECÂNICO LOGITECH G915 LIGHTSPEED (Alumínio Escovado + Rolo de Volume + RGB Wave!)
+    // 5. TECLADO GAMER LOGITECH G213 PRODIGY (Descanso de Pulso Integrado + Adesivo Copilot + Iluminação ABNT2!)
     const kbGroup = new THREE.Group();
-    const kbBaseMat = new THREE.MeshStandardMaterial({ color: 0x16181c, roughness: 0.45 });
+    const kbBaseMat = new THREE.MeshStandardMaterial({ color: 0x181a1e, roughness: 0.45 });
     const kbDeckMat = new THREE.MeshStandardMaterial({
-      map: createG915DeckTexture(),
-      roughness: 0.28,
-      metalness: 0.65
+      map: createG213DeckTexture(),
+      roughness: 0.35,
+      metalness: 0.25
     });
 
-    // Chassi inferior fino (Low-Profile do G915)
-    const kbChassis = new THREE.Mesh(new THREE.BoxGeometry(15.6, 0.32, 5.4), kbBaseMat);
-    kbChassis.position.set(0, 0.16, -1.1);
+    // Chassi inteiriço com perfil ergonômico do G213 Prodigy
+    const kbChassis = new THREE.Mesh(new THREE.BoxGeometry(16.8, 0.42, 8.4), kbBaseMat);
+    kbChassis.position.set(0, 0.21, 0.1);
     kbChassis.castShadow = true;
     kbChassis.receiveShadow = true;
     kbGroup.add(kbChassis);
 
-    // Placa superior em alumínio escovado gunmetal
-    const kbTopPlate = new THREE.Mesh(new THREE.BoxGeometry(15.5, 0.12, 5.3), kbDeckMat);
-    kbTopPlate.position.set(0, 0.38, -1.1);
+    // Placa superior com chanfro e textura das marcações G213
+    const kbTopPlate = new THREE.Mesh(new THREE.BoxGeometry(16.6, 0.12, 8.2), kbDeckMat);
+    kbTopPlate.position.set(0, 0.43, 0.1);
     kbTopPlate.receiveShadow = true;
     kbGroup.add(kbTopPlate);
 
-    // 4 Botões Redondos Superiores Esquerdos (Lightspeed, Bluetooth, Game Mode, Brilho)
-    const roundBtnGeo = new THREE.CylinderGeometry(0.26, 0.28, 0.12, 20);
-    const roundBtnMat = new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.5 });
-    [-5.1, -4.35, -3.6, -2.85].forEach((bx, idx) => {
-      const btn = new THREE.Mesh(roundBtnGeo, roundBtnMat);
-      btn.position.set(bx, 0.46, -3.22);
-      const dot = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.11, 0.11, 0.13, 12),
-        new THREE.MeshBasicMaterial({ color: idx === 3 ? 0x66ff66 : idx === 0 ? 0xffffff : 0x88929e })
-      );
-      dot.position.set(bx, 0.465, -3.22);
-      kbGroup.add(btn, dot);
-    });
-
-    // 4 Botões Redondos de Mídia Superiores Direitos (|<<, >||, >>|, Mute em Lilás/Roxo)
-    [1.8, 2.55, 3.3, 4.05].forEach((bx) => {
-      const btn = new THREE.Mesh(roundBtnGeo, roundBtnMat);
-      btn.position.set(bx, 0.46, -3.22);
-      const dot = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.12, 0.12, 0.13, 12),
-        new THREE.MeshBasicMaterial({ color: 0xd580ff })
-      );
-      dot.position.set(bx, 0.465, -3.22);
-      kbGroup.add(btn, dot);
-    });
-
-    // Rolo de Volume Cilíndrico Metálico Característico do Logitech G915 (Canto Superior Direito!)
-    const rollerCradle = new THREE.Mesh(
-      new THREE.BoxGeometry(2.1, 0.22, 0.68),
-      new THREE.MeshStandardMaterial({ color: 0x111316, roughness: 0.3 })
-    );
-    rollerCradle.position.set(6.2, 0.44, -3.26);
-    const volumeRoller = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.24, 0.24, 1.55, 24),
-      new THREE.MeshStandardMaterial({ color: 0x9aa3ad, metalness: 0.85, roughness: 0.2 })
-    );
-    volumeRoller.rotation.z = Math.PI / 2;
-    volumeRoller.position.set(6.2, 0.52, -3.26);
-    kbGroup.add(rollerCradle, volumeRoller);
-
-    // Apoio de pulso integrado frontal + Adesivo Hexagonal Colorido
-    const wristRest = new THREE.Mesh(new THREE.BoxGeometry(15.5, 0.28, 2.3), kbBaseMat);
-    wristRest.position.set(0, 0.14, 2.75);
-    wristRest.rotation.x = 0.06;
+    // Apoio de Pulso Integrado com Caimento Ergonômico Suave para Frente
+    const wristRest = new THREE.Mesh(new THREE.BoxGeometry(16.6, 0.32, 2.9), kbBaseMat);
+    wristRest.position.set(0, 0.22, 2.95);
+    wristRest.rotation.x = 0.08;
     kbGroup.add(wristRest);
 
-    const hexSticker = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.3, 1.15),
-      new THREE.MeshBasicMaterial({ map: createHexStickerTexture(), transparent: true })
+    // Grande Adesivo Colorido do Microsoft Copilot no Descanso de Pulso Esquerdo (Exato da Foto!)
+    const copilotSticker = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.5, 1.7),
+      new THREE.MeshBasicMaterial({ map: createCopilotStickerTexture(), transparent: true })
     );
-    hexSticker.rotation.x = -Math.PI / 2 + 0.06;
-    hexSticker.position.set(-5.6, 0.30, 2.8);
-    kbGroup.add(hexSticker);
+    copilotSticker.rotation.x = -Math.PI / 2 + 0.08;
+    copilotSticker.position.set(-5.6, 0.40, 2.95);
+    kbGroup.add(copilotSticker);
 
-    // Teclas Low-Profile GL com Iluminação RGB Rainbow Wave (Azul -> Verde -> Amarelo -> Laranja -> Vermelho -> Roxo -> Ciano)
-    function getG915RainbowColor(colNormalized) {
-      const stops = [
-        new THREE.Color(0x0088ff), // Azul (ESC/TAB/CTRL)
-        new THREE.Color(0x00e676), // Verde (WASD / F1-F4)
-        new THREE.Color(0xffea00), // Amarelo (TGB / F5)
-        new THREE.Color(0xff6d00), // Laranja (YUIHJNM / F6-F7)
-        new THREE.Color(0xff1744), // Vermelho/Rosa (OPKL / F8-F9)
-        new THREE.Color(0xd500f9), // Roxo/Lilás (Enter/Shift / F10-F12)
-        new THREE.Color(0x00e5ff)  // Ciano (Setas / Ins-Home-PgUp)
-      ];
-      const pos = Math.max(0, Math.min(1, colNormalized)) * (stops.length - 1);
-      const idx = Math.floor(pos);
-      const frac = pos - idx;
-      if (idx >= stops.length - 1) return stops[stops.length - 1];
-      return stops[idx].clone().lerp(stops[idx + 1], frac);
-    }
+    // Botões Redondos de Modo Jogo e Iluminação no Topo Superior Direito
+    const roundBtnGeo = new THREE.CylinderGeometry(0.24, 0.26, 0.12, 18);
+    const roundBtnMat = new THREE.MeshStandardMaterial({ color: 0x131518, roughness: 0.5 });
+    [3.2, 4.0].forEach((bx, idx) => {
+      const btn = new THREE.Mesh(roundBtnGeo, roundBtnMat);
+      btn.position.set(bx, 0.50, -3.4);
+      const dot = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.10, 0.10, 0.13, 12),
+        new THREE.MeshBasicMaterial({ color: idx === 0 ? 0x00d2ff : 0xffffff })
+      );
+      dot.position.set(bx, 0.505, -3.4);
+      kbGroup.add(btn, dot);
+    });
 
-    const keyCapMat = new THREE.MeshStandardMaterial({ color: 0x17191d, roughness: 0.32 });
+    // Bloco de Mídia Dedicado do G213: Mute, Barra de Volume (+/-), Stop, Prev, Play/Pause, Next
+    const muteBtn = new THREE.Mesh(roundBtnGeo, roundBtnMat);
+    muteBtn.position.set(5.1, 0.50, -3.4);
+    const volumeRocker = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4, 0.14, 0.44),
+      new THREE.MeshStandardMaterial({ color: 0x111316, roughness: 0.4 })
+    );
+    volumeRocker.position.set(6.3, 0.51, -3.4);
+    kbGroup.add(muteBtn, volumeRocker);
+
+    // 4 Botões de Reprodução (Stop, Back, Play, Next)
+    [4.6, 5.3, 6.0, 6.7].forEach((bx) => {
+      const pbtn = new THREE.Mesh(roundBtnGeo, roundBtnMat);
+      pbtn.position.set(bx, 0.50, -2.7);
+      kbGroup.add(pbtn);
+    });
+
+    // Cabo USB Preto Saindo do Topo Central do Teclado até a Borda Traseira
+    const kbCord = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.12, 14.5, 8),
+      new THREE.MeshStandardMaterial({ color: 0x111215, roughness: 0.7 })
+    );
+    kbCord.rotation.x = Math.PI / 2;
+    kbCord.position.set(0, 0.25, -10.5);
+    kbGroup.add(kbCord);
+
+    // Teclas com Perfil Completo ABNT2 e Iluminação Ciano Suave (#00b4d8)
+    const keyCapMat = new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.35 });
+    const keyGlowMat = new THREE.MeshBasicMaterial({ color: 0x00b4d8 });
     for (let row = 0; row < 6; row++) {
       for (let col = 0; col < 18; col++) {
-        // Espaçamentos reais das teclas F e bloco de navegação do G915
         if (row === 0 && (col === 1 || col === 6 || col === 11)) continue;
         if (col === 14 && row > 0 && row < 4) continue;
         if (row === 4 && (col === 14 || col === 15 || col === 17)) continue;
 
-        const kx = -6.9 + col * 0.81;
-        const kz = -2.65 + row * 0.68 + (row > 0 ? 0.14 : 0);
-        const rgbCol = getG915RainbowColor(col / 17);
+        const kx = -7.0 + col * 0.82;
+        const kz = -2.6 + row * 0.72 + (row > 0 ? 0.16 : 0);
 
-        // Keycap low-profile preta
-        const kCap = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.18, 0.56), keyCapMat);
-        kCap.position.set(kx, 0.56, kz);
+        const kCap = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.22, 0.58), keyCapMat);
+        kCap.position.set(kx, 0.58, kz);
         kCap.castShadow = true;
 
-        // Topo iluminado com a cor RGB da onda do G915
-        const kGlow = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.42, 0.16),
-          new THREE.MeshBasicMaterial({ color: rgbCol })
-        );
+        const kGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.18), keyGlowMat);
         kGlow.rotation.x = -Math.PI / 2;
-        kGlow.position.set(kx, 0.655, kz - 0.08);
+        kGlow.position.set(kx, 0.695, kz - 0.08);
 
         kbGroup.add(kCap, kGlow);
       }
@@ -1531,14 +1918,29 @@
     kbGroup.position.set(4.5, 0.14, 4.5);
     deskWorld.add(kbGroup);
 
-    // 6. MOUSE GAMER LOGITECH G502 LIGHTSPEED (Design Esculpido Angular + 3 LEDs DPI + Botões G7/G8/G9!)
+    // 6. MOUSE GAMER LOGITECH G502 HERO (Com Fio, Cabo Frontal, Scroll Metálico e LEDs DPI!)
     const mouseGroup = new THREE.Group();
-    const g502BodyMat = new THREE.MeshStandardMaterial({ color: 0x1d2025, roughness: 0.35, metalness: 0.1 });
-    const g502GripMat = new THREE.MeshStandardMaterial({ color: 0x131518, roughness: 0.75 });
-    const g502GlossMat = new THREE.MeshStandardMaterial({ color: 0x0b0c0e, roughness: 0.08, metalness: 0.3 });
+    const g502BodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1d22, roughness: 0.35, metalness: 0.15 });
+    const g502GripMat = new THREE.MeshStandardMaterial({ color: 0x121417, roughness: 0.8 });
+    const g502GlossMat = new THREE.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 0.06, metalness: 0.4 });
     const g502CyanMat = new THREE.MeshBasicMaterial({ color: 0x00d8ff });
 
-    // Aba Lateral Esquerda Ergonômica para o Polegar (Thumb Wing característica do G502!)
+    // Cabo USB com Protetor de Alívio de Tensão Frontal saindo do bico do mouse!
+    const mouseRelief = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.14, 0.18, 0.65, 8),
+      new THREE.MeshStandardMaterial({ color: 0x16181b, roughness: 0.9 })
+    );
+    mouseRelief.rotation.x = Math.PI / 2;
+    mouseRelief.position.set(0.02, 0.42, -2.25);
+    const mouseCord = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.10, 0.10, 18.0, 8),
+      new THREE.MeshStandardMaterial({ color: 0x111215, roughness: 0.85 })
+    );
+    mouseCord.rotation.x = Math.PI / 2;
+    mouseCord.position.set(0.02, 0.20, -11.5);
+    mouseGroup.add(mouseRelief, mouseCord);
+
+    // Aba Lateral Esquerda Ergonômica para o Polegar (Thumb Wing)
     const wingShape = new THREE.Shape();
     wingShape.moveTo(-1.0, -1.2);
     wingShape.quadraticCurveTo(-1.85, -0.3, -1.92, 0.55);
@@ -1553,37 +1955,30 @@
     wingMesh.castShadow = true;
     mouseGroup.add(wingMesh);
 
-    // Corpo Principal Esculpido do G502 (Traseira arredondada + Frente angulada)
+    // Dorso Anatômico Esculpido do G502
     const palmDomed = new THREE.Mesh(new THREE.SphereGeometry(1.18, 28, 20), g502BodyMat);
     palmDomed.scale.set(0.95, 0.68, 1.45);
     palmDomed.position.set(0.05, 0.42, 0.55);
     palmDomed.castShadow = true;
     mouseGroup.add(palmDomed);
 
-    // Gatilho Esquerdo (LMB) e Gatilho Direito (RMB mais longo e pontudo na frente!)
+    // Botões LMB e RMB Angulados
     const lmbMesh = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.26, 1.95), g502BodyMat);
     lmbMesh.position.set(-0.52, 0.72, -0.95);
-    lmbMesh.rotation.x = 0.24;
-    lmbMesh.rotation.y = 0.04;
-    lmbMesh.castShadow = true;
-
+    lmbMesh.rotation.x = 0.24; lmbMesh.rotation.y = 0.04; lmbMesh.castShadow = true;
     const rmbMesh = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.26, 2.25), g502BodyMat);
     rmbMesh.position.set(0.56, 0.70, -1.08);
-    rmbMesh.rotation.x = 0.25;
-    rmbMesh.rotation.y = -0.05;
-    rmbMesh.castShadow = true;
+    rmbMesh.rotation.x = 0.25; rmbMesh.rotation.y = -0.05; rmbMesh.castShadow = true;
     mouseGroup.add(lmbMesh, rmbMesh);
 
-    // Botões G8 e G7 na borda esquerda do clique principal
+    // Botões G8 e G7
     const g8Btn = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.58), g502GlossMat);
-    g8Btn.position.set(-0.98, 0.68, -1.42);
-    g8Btn.rotation.x = 0.25;
+    g8Btn.position.set(-0.98, 0.68, -1.42); g8Btn.rotation.x = 0.25;
     const g7Btn = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.58), g502GlossMat);
-    g7Btn.position.set(-0.98, 0.76, -0.78);
-    g7Btn.rotation.x = 0.22;
+    g7Btn.position.set(-0.98, 0.76, -0.78); g7Btn.rotation.x = 0.22;
     mouseGroup.add(g8Btn, g7Btn);
 
-    // Os 3 Traços Luminosos Ciano de Indicador de DPI (///) na lateral esquerda!
+    // Os 3 Traços Luminosos Ciano de Indicador de DPI (///)
     for (let i = 0; i < 3; i++) {
       const dpiSlash = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.22), g502CyanMat);
       dpiSlash.position.set(-1.05, 0.74 - i * 0.03, -0.25 + i * 0.26);
@@ -1591,19 +1986,25 @@
       mouseGroup.add(dpiSlash);
     }
 
-    // Canal Central Black Piano + Scroll Wheel Metálico + Botão Destravar Scroll + Botão G9
+    // Scroll Wheel Metálico Aberto com Raios Cromados + Faixa de Borracha Central
     const centerSpine = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.35, 2.15), g502GlossMat);
     centerSpine.position.set(0.02, 0.70, -0.85);
     centerSpine.rotation.x = 0.18;
     mouseGroup.add(centerSpine);
 
-    const g502Wheel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.32, 0.32, 0.24, 24),
-      new THREE.MeshStandardMaterial({ color: 0x7c848e, metalness: 0.85, roughness: 0.25 })
+    const g502WheelRim = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.34, 0.34, 0.24, 24),
+      new THREE.MeshStandardMaterial({ color: 0xd8dde4, metalness: 0.95, roughness: 0.15 })
     );
-    g502Wheel.rotation.z = Math.PI / 2;
-    g502Wheel.position.set(0.02, 0.82, -1.25);
-    mouseGroup.add(g502Wheel);
+    g502WheelRim.rotation.z = Math.PI / 2;
+    g502WheelRim.position.set(0.02, 0.82, -1.25);
+    const g502WheelTire = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.35, 0.12, 24),
+      new THREE.MeshStandardMaterial({ color: 0x111316, roughness: 0.85 })
+    );
+    g502WheelTire.rotation.z = Math.PI / 2;
+    g502WheelTire.position.set(0.02, 0.82, -1.25);
+    mouseGroup.add(g502WheelRim, g502WheelTire);
 
     const freeSpinBtn = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.26), g502BodyMat);
     freeSpinBtn.position.set(0.02, 0.88, -0.62);
@@ -1611,13 +2012,7 @@
     g9Btn.position.set(0.02, 0.92, -0.24);
     mouseGroup.add(freeSpinBtn, g9Btn);
 
-    // Faixa Diagonal Black Piano (Y-Accent) cortando o dorso do G502 (acima do topo do dome y=1.18)
-    const yStrip = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.08, 0.14), g502GlossMat);
-    yStrip.position.set(0.02, 1.19, 0.15);
-    yStrip.rotation.y = 0.22;
-    mouseGroup.add(yStrip);
-
-    // Logo "G" Ciano Iluminado no dorso esquerdo do G502!
+    // Logo "G" Ciano Iluminado
     function createG502LogoTexture() {
       const c = document.createElement('canvas');
       c.width = 128; c.height = 128;
@@ -1627,8 +2022,7 @@
       ctx.shadowColor = '#00e5ff';
       ctx.shadowBlur = 12;
       ctx.font = '900 92px "Segoe UI", Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('G', 64, 66);
       return new THREE.CanvasTexture(c);
     }
@@ -1645,7 +2039,6 @@
     let heldItem = null;
 
     function registerGrabbable(config) {
-      // config: { id, name, group, obs, grabRadius, yOffset, onGrab, onDrag, onRelease }
       grabbableItems.push(config);
       return config;
     }
@@ -1653,45 +2046,70 @@
     mouseGroup.position.set(15.6, 0.14, 4.6);
     mouseGroup.rotation.y = -0.12;
     deskWorld.add(mouseGroup);
-    const mouseObs = { x: 15.6, z: 4.6, r: 2.3, name: 'MOUSE LOGITECH G502 LIGHTSPEED' };
+    const mouseObs = { x: 15.6, z: 4.6, r: 2.3, name: 'MOUSE LOGITECH G502 HERO (COM FIO)' };
     obstacles.push(mouseObs);
     registerGrabbable({
-      id: 'mouse', name: 'Mouse Logitech G502', group: mouseGroup, obs: mouseObs,
+      id: 'mouse', name: 'Mouse Logitech G502 HERO', group: mouseGroup, obs: mouseObs,
       initX: 15.6, initY: 0.14, initZ: 4.6, initRotY: -0.12, grabRadius: 5.0
     });
 
+    // 7. CANECA PRETA MULESOFT MENTOR COM BASE DE CORTIÇA E PORTA-COPOS DE COURO COSTURADO
     const mugGroup = new THREE.Group();
-    const coaster = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.25, 0.16, 28), new THREE.MeshStandardMaterial({ color: 0x7d4e38, roughness: 0.7 }));
+    // Porta-copos (Coaster) em Couro Marrom com Costura Clara Perimetral
+    const coaster = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.35, 2.35, 0.16, 32),
+      new THREE.MeshStandardMaterial({ map: createLeatherCoasterTexture(), roughness: 0.7 })
+    );
     coaster.position.y = 0.08; coaster.receiveShadow = true; mugGroup.add(coaster);
 
-    const corkBase = new THREE.Mesh(new THREE.CylinderGeometry(1.72, 1.65, 0.85, 28), new THREE.MeshStandardMaterial({ color: 0x9c6b49, roughness: 0.9 }));
-    corkBase.position.y = 0.58; corkBase.castShadow = true; mugGroup.add(corkBase);
+    // Base Inferior de Cortiça da Própria Caneca
+    const corkBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.72, 1.66, 0.95, 32),
+      new THREE.MeshStandardMaterial({ map: createCorkTexture(), roughness: 0.92 })
+    );
+    corkBase.position.y = 0.63; corkBase.castShadow = true; mugGroup.add(corkBase);
 
-    const mugBody = new THREE.Mesh(new THREE.CylinderGeometry(1.76, 1.72, 3.1, 28), new THREE.MeshStandardMaterial({ color: 0x181a1d, roughness: 0.5 }));
-    mugBody.position.y = 2.55; mugBody.castShadow = true; mugGroup.add(mugBody);
+    // Corpo Preto Fosco da Caneca
+    const mugBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.76, 1.72, 2.95, 32),
+      new THREE.MeshStandardMaterial({ color: 0x17191d, roughness: 0.55 })
+    );
+    mugBody.position.y = 2.58; mugBody.castShadow = true; mugGroup.add(mugBody);
 
-    // Borda superior inox + Café quente dentro + Alça 3D
-    const mugRim = new THREE.Mesh(new THREE.CylinderGeometry(1.78, 1.75, 0.24, 28), inoxMat);
-    mugRim.position.y = 4.16;
-    const coffeeInside = new THREE.Mesh(new THREE.CylinderGeometry(1.68, 1.68, 0.12, 28), new THREE.MeshStandardMaterial({ color: 0x241308, roughness: 0.12 }));
+    // Borda Superior de Aço Inox Escovado
+    const mugRim = new THREE.Mesh(new THREE.CylinderGeometry(1.78, 1.75, 0.28, 32), inoxMat);
+    mugRim.position.y = 4.19;
+    // Café Escuro Quente Dentro
+    const coffeeInside = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.68, 1.68, 0.12, 32),
+      new THREE.MeshStandardMaterial({ color: 0x221106, roughness: 0.12 })
+    );
     coffeeInside.position.y = 4.25;
-    const mugHandle = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.18, 12, 24, Math.PI), new THREE.MeshStandardMaterial({ color: 0x181a1d, roughness: 0.5 }));
-    mugHandle.rotation.z = -Math.PI / 2;
-    mugHandle.position.set(1.72, 2.45, 0);
-    mugHandle.castShadow = true;
 
-    const emblem = new THREE.Mesh(new THREE.CircleGeometry(0.85, 24), new THREE.MeshBasicMaterial({ color: 0x5da9e9 }));
-    emblem.position.set(-0.4, 2.5, 1.77); emblem.rotation.y = -0.22;
-    const emblemInner = new THREE.Mesh(new THREE.CircleGeometry(0.55, 20), new THREE.MeshBasicMaterial({ color: 0xe6f2ff }));
-    emblemInner.position.set(-0.4, 2.5, 1.78); emblemInner.rotation.y = -0.22;
+    // Alça Retangular Metálica Moderna com Cantos Suaves (Exata da Foto do Usuário!)
+    const handleMat = new THREE.MeshStandardMaterial({ color: 0x17191d, roughness: 0.45, metalness: 0.4 });
+    const handleTop = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.22, 0.22), handleMat);
+    handleTop.position.set(2.32, 3.45, 0);
+    const handleSide = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.95, 0.22), handleMat);
+    handleSide.position.set(2.86, 2.50, 0);
+    const handleBottom = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.22, 0.22), handleMat);
+    handleBottom.position.set(2.32, 1.55, 0);
+    mugGroup.add(mugRim, coffeeInside, handleTop, handleSide, handleBottom);
 
-    mugGroup.add(mugRim, coffeeInside, mugHandle, emblem, emblemInner);
+    // Emblema Oficial em Alta Fidelidade "MULESOFT MENTOR" no corpo da caneca
+    const emblem = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.35, 2.35),
+      new THREE.MeshBasicMaterial({ map: createMulesoftMentorTexture(), transparent: true })
+    );
+    emblem.position.set(0, 2.62, 1.77);
+    mugGroup.add(emblem);
+
     mugGroup.position.set(21.5, 0.14, -2.5);
     deskWorld.add(mugGroup);
-    const mugObs = { x: 21.5, z: -2.5, r: 2.35, name: 'CANECA PRETA COM BASE DE CORTIÇA' };
+    const mugObs = { x: 21.5, z: -2.5, r: 2.35, name: 'CANECA MULESOFT MENTOR COM CORTIÇA' };
     obstacles.push(mugObs);
     registerGrabbable({
-      id: 'mug', name: 'Caneca Preta de Café', group: mugGroup, obs: mugObs,
+      id: 'mug', name: 'Caneca MuleSoft Mentor', group: mugGroup, obs: mugObs,
       initX: 21.5, initY: 0.14, initZ: -2.5, initRotY: 0, grabRadius: 5.2
     });
 
@@ -3930,6 +4348,12 @@
       } else if (camMode === 'gear') {
         camOffset = new THREE.Vector3(1.5 * zoomFactor, 15.5 * zoomFactor, 16.5 * zoomFactor);
         lookTarget = new THREE.Vector3(8.5, 1.5, 2.0);
+      } else if (camMode === 'mug') {
+        camOffset = new THREE.Vector3(2.5 * zoomFactor, 10.0 * zoomFactor, 13.5 * zoomFactor);
+        lookTarget = new THREE.Vector3(21.5, 2.8, -2.5);
+      } else if (camMode === 'arm') {
+        camOffset = new THREE.Vector3(-6 * zoomFactor, 16 * zoomFactor, 22 * zoomFactor);
+        lookTarget = new THREE.Vector3(-8.0, 5.5, -13.0);
       } else if (camMode === 'wide') {
         camOffset = new THREE.Vector3(0, 68 * zoomFactor, 95 * zoomFactor);
         lookTarget = new THREE.Vector3(0, 2, 0);
