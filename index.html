@@ -3,8 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Setup Desk Playground - Fire Engine Edition</title>
+  <title>Setup Desk & Room Playground - Fire Engine Edition (Bruno Simon DS)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --ds-brand: #ffceca;
+      --ds-accent: #c21515;
+      --ds-bg-plum: radial-gradient(at 0 0, rgba(37, 31, 43, 0.94), rgba(29, 23, 33, 0.96));
+      --ds-font-title: 'Amatic SC', cursive, sans-serif;
+      --ds-font-body: 'Nunito', system-ui, -apple-system, sans-serif;
+    }
     * {
       box-sizing: border-box;
       margin: 0;
@@ -17,8 +27,8 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: #d8d4cf;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: #1d1721;
+      font-family: var(--ds-font-body);
       touch-action: none;
     }
     canvas.webgl {
@@ -30,154 +40,209 @@
       outline: none;
       display: block;
     }
-    /* Botão Flutuante para Abrir/Fechar o Menu Oculto */
+
+    /* Botão Flutuante Bruno Simon Navbar Trigger */
     #btn-toggle-menu {
       position: fixed;
       top: 14px;
       left: 14px;
       z-index: 45;
-      background: rgba(20, 22, 26, 0.85);
-      color: #fff;
-      border: 1.5px solid rgba(255, 255, 255, 0.22);
-      padding: 9px 14px;
-      border-radius: 12px;
-      font-size: 12.5px;
+      background: var(--ds-bg-plum);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: var(--ds-font-body);
+      font-size: 13px;
       font-weight: 800;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       backdrop-filter: blur(8px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-      transition: all 0.15s;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: fixed;
+    }
+    #btn-toggle-menu::after {
+      content: "";
+      position: absolute;
+      inset: 2.5px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      pointer-events: none;
     }
     #btn-toggle-menu:hover {
-      background: #ff5722;
-      border-color: #ff9e80;
+      color: var(--ds-brand);
+      border-color: var(--ds-brand);
+      background: radial-gradient(at 100% 0, rgba(194, 21, 21, 0.45), rgba(70, 18, 59, 0.55));
+      transform: translateY(-1px);
     }
     #mini-water-pill {
-      background: rgba(0, 168, 255, 0.25);
-      border: 1px solid rgba(53, 224, 255, 0.5);
-      color: #35e0ff;
-      padding: 2px 7px;
-      border-radius: 6px;
+      background: rgba(255, 206, 202, 0.12);
+      border: 1px solid rgba(255, 206, 202, 0.45);
+      color: var(--ds-brand);
+      padding: 2px 8px;
+      border-radius: 5px;
       font-size: 11px;
+      font-weight: 800;
     }
 
+    /* Painel Flutuante Bruno Simon Split-Pane Dialog */
     #ui-overlay {
       position: fixed;
-      top: 56px;
+      top: 60px;
       left: 14px;
-      color: #e8eaed;
-      background: rgba(20, 22, 26, 0.94);
-      backdrop-filter: blur(12px);
-      padding: 14px 18px;
-      border-radius: 14px;
-      box-shadow: 0 14px 36px rgba(0,0,0,0.45);
+      color: #ffffff;
+      background: var(--ds-bg-plum);
+      backdrop-filter: blur(14px);
+      padding: 18px 22px;
+      border-radius: 12px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.65);
       z-index: 40;
-      border: 1px solid rgba(255,255,255,0.15);
-      max-width: 360px;
-      display: none; /* Oculto por padrão! Só aparece ao clicar no botão */
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      max-width: 380px;
+      display: none;
+      position: fixed;
+    }
+    #ui-overlay::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 9px;
+      pointer-events: none;
     }
     #ui-overlay.open {
       display: block;
+      animation: dsFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes dsFadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     #ui-overlay h1 {
-      font-size: 14px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 4px;
-      color: #ff5722;
+      font-family: var(--ds-font-title);
+      font-size: 2.1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      margin-bottom: 6px;
+      color: var(--ds-brand);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
     #ui-overlay p {
-      font-size: 11.5px;
-      line-height: 1.35;
-      color: #c4c9d0;
-      margin-bottom: 6px;
+      font-family: var(--ds-font-body);
+      font-size: 12px;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.82);
+      margin-bottom: 8px;
     }
     /* Barra de Nível de Água do Carrinho */
     #water-hud {
-      margin-top: 8px;
-      background: rgba(0,0,0,0.45);
-      padding: 8px 10px;
-      border-radius: 9px;
-      border: 1px solid rgba(53, 208, 186, 0.35);
+      margin-top: 10px;
+      background: rgba(15, 12, 18, 0.65);
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 206, 202, 0.25);
+      position: relative;
     }
     .water-header {
       display: flex;
       justify-content: space-between;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 800;
-      color: #35e0ff;
-      margin-bottom: 5px;
+      color: var(--ds-brand);
+      margin-bottom: 6px;
+      letter-spacing: 0.05em;
     }
     .water-bar-bg {
       width: 100%;
-      height: 10px;
-      background: #1b222c;
+      height: 9px;
+      background: rgba(0, 0, 0, 0.6);
       border-radius: 5px;
       overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
     #water-bar-fill {
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, #0099ff, #35e0ff);
-      transition: width 0.1s;
+      background: linear-gradient(90deg, #c21515, #ff784e, #ffceca);
+      transition: width 0.15s;
     }
     #status-banner {
-      margin-top: 6px;
-      font-size: 11px;
+      margin-top: 8px;
+      font-size: 11.5px;
       font-weight: 700;
       color: #ffd24c;
-      min-height: 15px;
+      min-height: 16px;
     }
-    /* Mini Log de Eventos de Interação (dentro do menu oculto) */
+    /* Mini Log de Eventos de Interação */
     #event-log-container {
-      margin-top: 10px;
-      background: rgba(10, 12, 16, 0.65);
-      border: 1px solid rgba(255,255,255,0.1);
+      margin-top: 12px;
+      background: rgba(12, 10, 15, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 8px;
-      padding: 8px 10px;
+      padding: 10px 12px;
     }
     #event-log-container h3 {
-      font-size: 10.5px;
+      font-family: var(--ds-font-body);
+      font-size: 11px;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.7px;
-      color: #9aa3ad;
-      margin-bottom: 5px;
+      letter-spacing: 0.08em;
+      color: var(--ds-brand);
+      margin-bottom: 6px;
     }
     #event-log-list {
       list-style: none;
-      max-height: 115px;
+      max-height: 110px;
       overflow-y: auto;
       font-size: 11px;
-      font-family: monospace;
-      color: #cfd6e0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: rgba(255, 255, 255, 0.78);
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
     #event-log-list li {
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      padding-bottom: 2px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 3px;
     }
 
-    /* BALÃO DE CONVERSA INTERATIVO EM CIMA DO CARRINHO DO RAVI */
+    /* BALÃO DE CONVERSA INTERATIVO NO ESTILO BRUNO SIMON */
     #car-speech-bubble {
       position: fixed;
       top: 0;
       left: 0;
       transform: translate(-50%, -100%);
       background: #ffffff;
-      color: #1b1d22;
-      padding: 8px 15px;
-      border-radius: 16px;
+      color: #1d1721;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-family: var(--ds-font-body);
       font-weight: 900;
       font-size: 14px;
+      letter-spacing: 0.02em;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      pointer-events: none;
+      z-index: 50;
+      white-space: nowrap;
+      display: none;
+      border: 2px solid var(--ds-brand);
+    }
+    #car-speech-bubble::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 8px 7px 0 7px;
+      border-style: solid;
+      border-color: #ffffff transparent transparent transparent;
+    }
       letter-spacing: 0.3px;
       box-shadow: 0 8px 22px rgba(0,0,0,0.32);
       border: 2.5px solid #ff5722;
@@ -203,40 +268,49 @@
     .keys-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 6px;
-      font-size: 11px;
+      gap: 6px;
+      margin-top: 10px;
+      font-size: 11.5px;
       align-items: center;
+      color: rgba(255, 255, 255, 0.75);
     }
     .keys {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-weight: 700;
-      background: #2d3139;
-      border: 1px solid #454b57;
-      padding: 2px 6px;
-      border-radius: 5px;
+      background: rgba(20, 20, 20, 0.75);
+      border: 1px solid rgba(255, 206, 202, 0.32);
+      padding: 2px 7px;
+      border-radius: 4px;
       font-size: 10.5px;
-      color: #35d0ba;
+      color: var(--ds-brand);
     }
     #cam-controls {
-      margin-top: 8px;
+      margin-top: 10px;
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 6px;
     }
     .btn-cam {
-      background: #2b3038;
-      color: #fff;
-      border: 1px solid #48505e;
-      padding: 4px 9px;
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 5px 12px;
       border-radius: 6px;
-      font-size: 10.5px;
-      font-weight: 600;
+      font-family: var(--ds-font-body);
+      font-size: 11px;
+      font-weight: 700;
       cursor: pointer;
       transition: all 0.15s;
     }
-    .btn-cam:hover, .btn-cam.active {
-      background: #ff5722;
-      border-color: #ff784e;
+    .btn-cam:hover {
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .btn-cam.active {
+      color: var(--ds-brand);
+      border-color: var(--ds-brand);
+      background: radial-gradient(at 100% 0, rgba(194, 21, 21, 0.45), rgba(70, 18, 59, 0.55));
     }
 
     /* Alerta de Autodestruição / Incêndio no Monitor */
@@ -244,29 +318,38 @@
       position: fixed;
       top: 16px;
       right: 16px;
-      background: rgba(180, 20, 20, 0.92);
-      color: #fff;
-      padding: 12px 18px;
-      border-radius: 12px;
+      background: radial-gradient(at 0 0, rgba(194, 21, 21, 0.95), rgba(70, 18, 59, 0.95));
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-family: var(--ds-font-body);
       font-weight: 800;
       font-size: 13px;
-      border: 2px solid #ffeb3b;
-      box-shadow: 0 0 25px rgba(255, 60, 0, 0.7);
-      z-index: 25;
+      border: 1px solid #ffd24c;
+      box-shadow: 0 0 30px rgba(255, 60, 0, 0.75);
+      z-index: 55;
       display: none;
       animation: pulseAlert 0.6s infinite alternate;
+      position: fixed;
+    }
+    #fire-alert::after {
+      content: "";
+      position: absolute;
+      inset: 2.5px;
+      border: 1px solid rgba(255, 210, 76, 0.4);
+      border-radius: 7px;
+      pointer-events: none;
     }
     @keyframes pulseAlert {
       from { transform: scale(1); }
-      to { transform: scale(1.04); }
+      to { transform: scale(1.03); }
     }
 
-    /* Oculto na tela principal conforme solicitado (eventos vão para o mini log no menu) */
     #interaction-prompt {
       display: none !important;
     }
 
-    /* CONTROLES VIRTUAIS TOUCH / MOBILE ESMAECIDOS */
+    /* CONTROLES VIRTUAIS TOUCH / MOBILE NO DESIGN SYSTEM BRUNO SIMON */
     #touch-controls {
       position: fixed;
       bottom: 20px;
@@ -281,33 +364,42 @@
     }
     .dpad-grid {
       display: grid;
-      grid-template-columns: repeat(3, 54px);
-      grid-template-rows: repeat(2, 54px);
+      grid-template-columns: repeat(3, 56px);
+      grid-template-rows: repeat(2, 56px);
       gap: 8px;
       pointer-events: auto;
     }
     .touch-btn {
-      width: 54px;
-      height: 54px;
-      border-radius: 14px;
-      background: rgba(25, 28, 34, 0.38);
-      border: 1.5px solid rgba(255, 255, 255, 0.25);
-      color: rgba(255, 255, 255, 0.78);
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: rgba(37, 31, 43, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: rgba(255, 255, 255, 0.85);
       font-size: 20px;
       font-weight: 900;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      backdrop-filter: blur(4px);
-      transition: background 0.1s, transform 0.1s;
+      backdrop-filter: blur(8px);
+      transition: background 0.1s, transform 0.1s, border-color 0.1s;
       pointer-events: auto;
+      position: relative;
+    }
+    .touch-btn::after {
+      content: "";
+      position: absolute;
+      inset: 2.5px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 9px;
+      pointer-events: none;
     }
     .touch-btn:active, .touch-btn.pressed {
-      background: rgba(255, 87, 34, 0.75);
-      color: #fff;
-      border-color: #fff;
-      transform: scale(0.94);
+      background: radial-gradient(at 100% 0, rgba(194, 21, 21, 0.75), rgba(70, 18, 59, 0.85));
+      color: var(--ds-brand);
+      border-color: var(--ds-brand);
+      transform: scale(0.93);
     }
     .action-pad {
       display: flex;
@@ -320,9 +412,10 @@
       width: 68px;
       height: 68px;
       border-radius: 50%;
-      background: rgba(255, 193, 7, 0.34);
-      border: 2px solid rgba(255, 213, 79, 0.45);
-      color: rgba(255, 255, 255, 0.88);
+      background: rgba(37, 31, 43, 0.6);
+      border: 1.5px solid rgba(255, 206, 202, 0.45);
+      color: var(--ds-brand);
+      font-family: var(--ds-font-body);
       font-size: 11.5px;
       font-weight: 800;
       display: flex;
@@ -331,86 +424,104 @@
       justify-content: center;
       gap: 2px;
       cursor: pointer;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(8px);
+      position: relative;
     }
     .touch-btn-grab.holding {
-      background: rgba(76, 175, 80, 0.85);
-      border-color: #fff;
-      color: #fff;
+      background: radial-gradient(at 100% 0, rgba(46, 125, 50, 0.8), rgba(27, 94, 32, 0.9));
+      border-color: #69f0ae;
+      color: #ffffff;
     }
     .touch-btn-water {
-      width: 78px;
-      height: 78px;
+      width: 76px;
+      height: 76px;
       border-radius: 50%;
-      background: rgba(0, 168, 255, 0.36);
-      border: 2px solid rgba(53, 224, 255, 0.45);
-      color: rgba(255, 255, 255, 0.85);
-      font-size: 13px;
-      font-weight: 800;
+      background: radial-gradient(at 0 0, rgba(194, 21, 21, 0.6), rgba(70, 18, 59, 0.7));
+      border: 2px solid var(--ds-brand);
+      color: #ffffff;
+      font-family: var(--ds-font-body);
+      font-size: 12.5px;
+      font-weight: 900;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 2px;
       cursor: pointer;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(8px);
     }
     .touch-btn-water:active, .touch-btn-water.pressed {
-      background: rgba(0, 195, 255, 0.85);
-      color: #fff;
-      transform: scale(0.94);
+      transform: scale(0.92);
+      background: radial-gradient(at 100% 0, #c21515, #ff5722);
     }
 
-    /* MODAL DE QUEDA DA MESA / RAMPA DE PAPELÃO */
+    /* MODAL DE REINICIAR (BRUNO SIMON SPLIT-PANE DIALOG) */
     #modal-backdrop {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(10, 12, 16, 0.78);
-      backdrop-filter: blur(6px);
+      background: rgba(18, 14, 22, 0.82);
+      backdrop-filter: blur(10px);
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 100;
     }
     #modal-box {
-      background: #1c1f26;
-      border: 2px solid #ff5722;
-      border-radius: 18px;
-      padding: 28px 32px;
-      max-width: 430px;
+      background: var(--ds-bg-plum);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 16px;
+      padding: 32px 38px;
+      max-width: 440px;
       width: 90%;
       text-align: center;
-      color: #fff;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.65);
+      color: #ffffff;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.75);
+      position: relative;
+    }
+    #modal-box::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 13px;
+      pointer-events: none;
     }
     #modal-box h2 {
-      font-size: 20px;
-      margin-bottom: 10px;
-      color: #ff784e;
+      font-family: var(--ds-font-title);
+      font-size: 2.4rem;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      margin-bottom: 12px;
+      color: var(--ds-brand);
     }
     #modal-box p {
+      font-family: var(--ds-font-body);
       font-size: 14px;
-      line-height: 1.5;
-      color: #cfd4dc;
-      margin-bottom: 22px;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.82);
+      margin-bottom: 24px;
     }
     #modal-btn {
-      background: linear-gradient(135deg, #ff5722, #ff3d00);
-      color: #fff;
-      border: none;
-      padding: 12px 26px;
-      border-radius: 10px;
+      background: radial-gradient(at 100% 0, #c21515, #ff5722);
+      color: #ffffff;
+      border: 1px solid var(--ds-brand);
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-family: var(--ds-font-body);
       font-size: 14px;
       font-weight: 800;
+      letter-spacing: 0.03em;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(255, 87, 34, 0.45);
-      transition: transform 0.15s;
+      box-shadow: 0 8px 25px rgba(194, 21, 21, 0.5);
+      transition: all 0.18s;
+      position: relative;
     }
     #modal-btn:hover {
-      transform: scale(1.04);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(194, 21, 21, 0.7);
     }
 
     @media (max-width: 650px) {
@@ -451,6 +562,9 @@
     </div>
     <div id="cam-controls">
       <button class="btn-cam active" id="btn-cam-iso">Visão Mesa</button>
+      <button class="btn-cam" id="btn-cam-room">Cenário Quarto</button>
+      <button class="btn-cam" id="btn-cam-chair">Cadeira Elements</button>
+      <button class="btn-cam" id="btn-cam-plant">Planta da Sala</button>
       <button class="btn-cam" id="btn-cam-close">Close Carrinho</button>
       <button class="btn-cam" id="btn-cam-gear">Close G213 & G502</button>
       <button class="btn-cam" id="btn-cam-mug">Close Caneca MuleSoft</button>
@@ -530,6 +644,16 @@
     });
 
     let closeAngleIndex = 0; // 0: 3/4 Frontal, 1: Perfil Lateral, 2: Traseira & Teto
+
+        document.getElementById('btn-cam-room').addEventListener('click', (e) => {
+      camMode = 'room'; zoomFactor = 1.0; setActiveBtn(e.target);
+    });
+    document.getElementById('btn-cam-chair').addEventListener('click', (e) => {
+      camMode = 'chair'; zoomFactor = 0.9; setActiveBtn(e.target);
+    });
+    document.getElementById('btn-cam-plant').addEventListener('click', (e) => {
+      camMode = 'plant'; zoomFactor = 0.9; setActiveBtn(e.target);
+    });
 
     document.getElementById('btn-cam-iso').addEventListener('click', (e) => {
       camMode = 'iso'; zoomFactor = 1.0; setActiveBtn(e.target);
@@ -1241,6 +1365,154 @@
       return new THREE.CanvasTexture(c);
     }
 
+        function createTileFloorTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#eae7e1';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.strokeStyle = '#b8b4ab';
+      ctx.lineWidth = 3;
+      for (let i = 0; i <= 512; i += 128) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(512, i); ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      for (let x = 0; x < 512; x += 128) {
+        for (let y = 0; y < 512; y += 128) {
+          ctx.fillRect(x + 4, y + 4, 120, 3);
+          ctx.fillRect(x + 4, y + 4, 3, 120);
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(8, 6);
+      return tex;
+    }
+
+    function createStripedRugTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#18191c';
+      ctx.fillRect(0, 0, 512, 512);
+      for (let y = 0; y < 512; y += 14) {
+        const isWhite = (Math.sin(y * 0.16) > -0.25);
+        ctx.fillStyle = isWhite ? '#ededeb' : '#22252a';
+        ctx.fillRect(0, y, 512, isWhite ? 7 : 7);
+        for (let x = 0; x < 512; x += 8) {
+          if (Math.random() > 0.45) {
+            ctx.fillStyle = isWhite ? '#2e3238' : '#d2d2d0';
+            ctx.fillRect(x, y + Math.random() * 4, 3, 2);
+          }
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(2, 2);
+      return tex;
+    }
+
+    function createClayPebblesTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#3a1e12';
+      ctx.fillRect(0, 0, 256, 256);
+      const cols = ['#9e472a', '#b85c37', '#80381e', '#6e3019', '#ca6c44'];
+      for (let i = 0; i < 110; i++) {
+        const px = (i * 41) % 256;
+        const py = (i * 67) % 256;
+        const r = 9 + (i % 7);
+        const grad = ctx.createRadialGradient(px - r * 0.35, py - r * 0.35, r * 0.1, px, py, r);
+        grad.addColorStop(0, cols[i % cols.length]);
+        grad.addColorStop(1, '#231109');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createPegboardTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#16171a';
+      ctx.fillRect(0, 0, 256, 512);
+      ctx.fillStyle = '#08080a';
+      for (let y = 16; y < 512; y += 22) {
+        for (let x = 16; x < 256; x += 22) {
+          ctx.beginPath();
+          ctx.arc(x, y, 4.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createDeskControlTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 64;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#111215';
+      ctx.fillRect(0, 0, 256, 64);
+      ctx.fillStyle = '#00e5ff';
+      ctx.font = 'bold 22px monospace';
+      ctx.fillText('73.5', 22, 40);
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText('cm', 82, 40);
+      ctx.fillStyle = '#8e96a3';
+      ctx.font = 'bold 17px sans-serif';
+      ctx.fillText('▲  ▼  1  2  3  M', 115, 39);
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createElementsChairTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#18191c';
+      ctx.fillRect(0, 0, 256, 128);
+      ctx.fillStyle = '#22252a';
+      ctx.beginPath();
+      ctx.roundRect(24, 34, 208, 60, 10);
+      ctx.fill();
+      ctx.fillStyle = '#e01616';
+      ctx.fillRect(38, 48, 8, 32);
+      ctx.fillStyle = '#f0f3f6';
+      ctx.font = '900 24px "Nunito", sans-serif';
+      ctx.letterSpacing = '3px';
+      ctx.fillText('ELEMENTS', 56, 72);
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createReturnCardboardTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#b58555';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.strokeStyle = 'rgba(90, 55, 25, 0.18)';
+      ctx.lineWidth = 3;
+      for (let y = 0; y < 512; y += 8) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(215, 195, 160, 0.8)';
+      ctx.fillRect(0, 40, 512, 45);
+      ctx.fillStyle = '#2b1b0e';
+      ctx.font = 'bold 28px "Nunito", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⬆ SUBIDA PARA A MESA ⬆', 256, 230);
+      ctx.font = 'bold 22px monospace';
+      ctx.fillStyle = '#1b5e20';
+      ctx.fillText('(RETORNO AO DESK)', 256, 275);
+      return new THREE.CanvasTexture(c);
+    }
+
     function createCardboardTexture() {
       const c = document.createElement('canvas');
       c.width = 512; c.height = 512;
@@ -1261,7 +1533,8 @@
       ctx.fillText('⬇ RAMPA: CENÁRIO QUARTO ⬇', 256, 230);
       ctx.font = 'bold 22px monospace';
       ctx.fillStyle = '#8c1d18';
-      ctx.fillText('(EM CONSTRUÇÃO)', 256, 275);
+      ctx.fillStyle = '#00796b';
+      ctx.fillText('✓ PISTA LIBERADA!', 256, 275);
       return new THREE.CanvasTexture(c);
     }
 
@@ -1312,40 +1585,423 @@
     elgTag.position.set(38.5, 0.16, 21.2);
     deskWorld.add(elgTag);
 
+    // ESTRUTURAS GLOBAIS DE OBSTÁCULOS, PLANTAS E ITENS ARRASTÁVEIS
+    const obstacles = [];
+    const growablePlants = [];
+    const grabbableItems = [];
+    let heldItem = null;
+    function registerGrabbable(config) {
+      grabbableItems.push(config);
+      return config;
+    }
+
     // ============================================================================
-    // RAMPA DE PAPELÃO NA LATERAL ESQUERDA DA MESA (ACESSO AO CENÁRIO DO QUARTO)
+    // SISTEMA DE RAMPAS CONTÍNUAS DE PAPELÃO (DESCIDA E SUBIDA MESA <-> QUARTO)
     // ============================================================================
     const rampGroup = new THREE.Group();
     const rampMat = new THREE.MeshStandardMaterial({ map: createCardboardTexture(), roughness: 0.85 });
+    const returnRampMat = new THREE.MeshStandardMaterial({ map: createReturnCardboardTexture(), roughness: 0.85 });
 
-    // Aba superior de papelão apoiada sobre a mesa (convite para descer)
-    const rampLip = new THREE.Mesh(new THREE.BoxGeometry(12, 0.25, 16), rampMat);
-    rampLip.position.set(-DESK_HALF_W + 6, 0.12, 18);
+    // Dimensões exatas da rampa: de x = -90 (mesa, y = 0) até x = -135 (chão, y = -35.85)
+    // Comprimento da diagonal: sqrt(45^2 + 35.85^2) ≈ 57.53 unidades! Ângulo: 0.673 rad.
+    const RAMP_LEN = 57.53;
+    const RAMP_ANGLE = Math.atan2(35.85, 45); // 0.673 rad (38.5°)
+
+    // 1. RAMPA DE DESCIDA (Mesa -> Quarto) posicionada em z = 18
+    const rampLip = new THREE.Mesh(new THREE.BoxGeometry(10, 0.25, 16), rampMat);
+    rampLip.position.set(-DESK_HALF_W + 5, 0.12, 18);
     rampLip.receiveShadow = true;
     rampGroup.add(rampLip);
 
-    // Rampa inclinada descendo para fora da mesa
-    const rampGeo = new THREE.BoxGeometry(24, 0.35, 16);
-    const rampMesh = new THREE.Mesh(rampGeo, rampMat);
-    rampMesh.rotation.z = 0.28;
-    rampMesh.position.set(-DESK_HALF_W - 11, -3.1, 18);
+    const rampMesh = new THREE.Mesh(new THREE.BoxGeometry(RAMP_LEN, 0.35, 16), rampMat);
+    rampMesh.rotation.z = RAMP_ANGLE;
+    rampMesh.position.set(-112.5, -17.925, 18);
     rampMesh.castShadow = true;
     rampMesh.receiveShadow = true;
     rampGroup.add(rampMesh);
 
-    // Abas laterais de papelão da rampa
+    // Abas laterais de papelão da rampa de descida
     [-7.8, 7.8].forEach((rz) => {
-      const rail = new THREE.Mesh(new THREE.BoxGeometry(24, 1.3, 0.35), rampMat);
-      rail.rotation.z = 0.28;
-      rail.position.set(-DESK_HALF_W - 11, -2.5, 18 + rz);
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(RAMP_LEN, 1.8, 0.35), rampMat);
+      rail.rotation.z = RAMP_ANGLE;
+      rail.position.set(-112.5, -17.2, 18 + rz);
       rampGroup.add(rail);
     });
-    deskWorld.add(rampGroup);
+
+    // 2. RAMPA DE SUBIDA / RETORNO (Quarto -> Mesa) posicionada paralelamente em z = 38
+    const returnLip = new THREE.Mesh(new THREE.BoxGeometry(10, 0.25, 16), returnRampMat);
+    returnLip.position.set(-DESK_HALF_W + 5, 0.12, 38);
+    returnLip.receiveShadow = true;
+    rampGroup.add(returnLip);
+
+    const returnMesh = new THREE.Mesh(new THREE.BoxGeometry(RAMP_LEN, 0.35, 16), returnRampMat);
+    returnMesh.rotation.z = RAMP_ANGLE;
+    returnMesh.position.set(-112.5, -17.925, 38);
+    returnMesh.castShadow = true;
+    returnMesh.receiveShadow = true;
+    rampGroup.add(returnMesh);
+
+    // Abas laterais de papelão da rampa de subida
+    [-7.8, 7.8].forEach((rz) => {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(RAMP_LEN, 1.8, 0.35), returnRampMat);
+      rail.rotation.z = RAMP_ANGLE;
+      rail.position.set(-112.5, -17.2, 38 + rz);
+      rampGroup.add(rail);
+    });
+
+    deskWorld.add(rampGroup); // << ADICIONA AS RAMPAS À CENA!
+
+
+    // ============================================================================
+    // CENÁRIO COMPLETO DO QUARTO & ESCRITÓRIO REAL (CHÃO y = -36.0)
+    // ============================================================================
+    const bedroomWorld = new THREE.Group();
+    scene.add(bedroomWorld);
+
+    // 1. CHÃO DE AZULEJO CERÂMICO CLARO DO QUARTO (y = -36.0)
+    const floorGeo = new THREE.PlaneGeometry(360, 260);
+    const floorMat = new THREE.MeshStandardMaterial({
+      map: createTileFloorTexture(),
+      roughness: 0.38,
+      metalness: 0.05
+    });
+    const bedroomFloor = new THREE.Mesh(floorGeo, floorMat);
+    bedroomFloor.rotation.x = -Math.PI / 2;
+    bedroomFloor.position.set(0, -36.0, 15);
+    bedroomFloor.receiveShadow = true;
+    bedroomWorld.add(bedroomFloor);
+
+    // 2. TAPETE LISTRADO PRETO E BRANCO (Estilo Tear Artesanal da Foto Real!)
+    const rugMat = new THREE.MeshStandardMaterial({
+      map: createStripedRugTexture(),
+      roughness: 0.95
+    });
+    const stripedRug = new THREE.Mesh(new THREE.BoxGeometry(112, 0.16, 72), rugMat);
+    stripedRug.position.set(-16, -35.92, 34);
+    stripedRug.receiveShadow = true;
+    bedroomWorld.add(stripedRug);
+
+    // 3. ESTRUTURA METÁLICA MOTORIZADA DA MESA STANDING DESK (Colunas Telescópicas em T)
+    const deskLegMat = new THREE.MeshStandardMaterial({ color: 0x111215, roughness: 0.32, metalness: 0.7 });
+    // Sapatas horizontais de aço no chão
+    [-68, 68].forEach((lx) => {
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(6, 1.3, 42), deskLegMat);
+      foot.position.set(lx, -35.35, 0);
+      foot.castShadow = true;
+      foot.receiveShadow = true;
+      bedroomWorld.add(foot);
+
+      // Colunas telescópicas duplas motorizadas
+      const col = new THREE.Mesh(new THREE.BoxGeometry(4.8, 35.0, 4.8), deskLegMat);
+      col.position.set(lx, -17.5, 0);
+      col.castShadow = true;
+      bedroomWorld.add(col);
+
+      // Registra obstáculos para as colunas no chão
+      obstacles.push({ x: lx, z: 0, r: 4.8, name: 'COLUNA STANDING DESK MOTORIZADA' });
+    });
+
+    // Travessa de reforço horizontal sob a mesa
+    const crossbeam = new THREE.Mesh(new THREE.BoxGeometry(136, 2.4, 3.2), deskLegMat);
+    crossbeam.position.set(0, -2.1, 0);
+    bedroomWorld.add(crossbeam);
+
+    // Controlador Digital com Display LED da Standing Desk
+    const deskCtrlMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(6.4, 1.8, 0.25),
+      new THREE.MeshStandardMaterial({ map: createDeskControlTexture(), roughness: 0.4 })
+    );
+    deskCtrlMesh.position.set(48, -1.2, 53.9);
+    bedroomWorld.add(deskCtrlMesh);
+
+    // 4. CADEIRA GAMER ELEMENTS (Base Estrela 5 Pontas, Rodinhas, Pistão, Assento e Logo!)
+    const elementsChairGroup = new THREE.Group();
+    elementsChairGroup.position.set(-18, -36.0, 42);
+
+    const chairFabricMat = new THREE.MeshStandardMaterial({ color: 0x18191c, roughness: 0.85 });
+    const chairBlackPlastMat = new THREE.MeshStandardMaterial({ color: 0x101114, roughness: 0.4, metalness: 0.2 });
+    const chairChromeMat = new THREE.MeshStandardMaterial({ color: 0xdde3ea, metalness: 0.9, roughness: 0.15 });
+
+    // Base Estrela de 5 Pontas com Rodinhas Duplas
+    for (let i = 0; i < 5; i++) {
+      const spokeAng = (i / 5) * Math.PI * 2;
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.2, 7.2), chairBlackPlastMat);
+      spoke.rotation.y = spokeAng;
+      spoke.position.set(Math.sin(spokeAng) * 3.6, 0.8, Math.cos(spokeAng) * 3.6);
+      spoke.castShadow = true;
+      elementsChairGroup.add(spoke);
+
+      // Rodinha dupla
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.85, 14), chairBlackPlastMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(Math.sin(spokeAng) * 7.2, 0.55, Math.cos(spokeAng) * 7.2);
+      elementsChairGroup.add(wheel);
+    }
+
+    // Pistão a Gás Hidráulico
+    const pistonOuter = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.45, 6.0, 18), chairBlackPlastMat);
+    pistonOuter.position.y = 3.6;
+    const pistonShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 6.2, 18), chairChromeMat);
+    pistonShaft.position.y = 8.5;
+    elementsChairGroup.add(pistonOuter, pistonShaft);
+
+    // Assento Ergonômico com Abas Laterais Esportivas
+    const seatBase = new THREE.Mesh(new THREE.BoxGeometry(13.5, 2.5, 13.5), chairFabricMat);
+    seatBase.position.y = 11.2;
+    seatBase.castShadow = true;
+    elementsChairGroup.add(seatBase);
+
+    [-6.2, 6.2].forEach((sx) => {
+      const bolster = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.8, 13.0), chairFabricMat);
+      bolster.rotation.z = sx > 0 ? -0.25 : 0.25;
+      bolster.position.set(sx, 12.4, 0);
+      elementsChairGroup.add(bolster);
+    });
+
+    // Encosto Alto Gamer com Aberturas de Cinto e Almofada Lombar
+    const chairBack = new THREE.Mesh(new THREE.BoxGeometry(12.5, 22.0, 2.6), chairFabricMat);
+    chairBack.position.set(0, 22.5, -5.8);
+    chairBack.rotation.x = -0.06;
+    chairBack.castShadow = true;
+    elementsChairGroup.add(chairBack);
+
+    // Almofada Lombar Ergonômica
+    const lumbarCushion = new THREE.Mesh(
+      new THREE.BoxGeometry(10.5, 5.2, 2.2),
+      new THREE.MeshStandardMaterial({ color: 0x222428, roughness: 0.8 })
+    );
+    lumbarCushion.position.set(0, 15.0, -4.6);
+    elementsChairGroup.add(lumbarCushion);
+
+    // Almofada de Cabeça com Logo Bordado "ELEMENTS"
+    const headrestPillow = new THREE.Mesh(
+      new THREE.BoxGeometry(7.5, 4.2, 2.4),
+      new THREE.MeshStandardMaterial({ map: createElementsChairTexture(), roughness: 0.75 })
+    );
+    headrestPillow.position.set(0, 30.5, -4.8);
+    headrestPillow.castShadow = true;
+    elementsChairGroup.add(headrestPillow);
+
+    // Braços 3D com Apoio Almofadado (o braço direito tem o descanso de punho cinza da foto!)
+    [-7.8, 7.8].forEach((ax, idx) => {
+      const armPost = new THREE.Mesh(new THREE.BoxGeometry(1.2, 7.2, 1.4), chairBlackPlastMat);
+      armPost.position.set(ax, 15.2, 0.5);
+      const armPad = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.1, 7.8), chairBlackPlastMat);
+      armPad.position.set(ax, 18.8, 0.5);
+      elementsChairGroup.add(armPost, armPad);
+
+      if (idx === 1) {
+        // Almofada ergonômica de espuma cinza pousada sobre o braço (visível na foto do quarto!)
+        const extraPad = new THREE.Mesh(
+          new THREE.BoxGeometry(3.0, 1.2, 8.2),
+          new THREE.MeshStandardMaterial({ color: 0x484d54, roughness: 0.9 })
+        );
+        extraPad.position.set(ax, 19.8, 0.5);
+        elementsChairGroup.add(extraPad);
+      }
+    });
+
+    bedroomWorld.add(elementsChairGroup);
+    obstacles.push({ x: -18, z: 42, r: 8.8, name: 'CADEIRA GAMER ELEMENTS' });
+
+    // 5. APOIO PARA PÉS DE ESCRITÓRIO SOB A MESA (Funciona como MINI RAMPA DE SALTO!)
+    const footrestGroup = new THREE.Group();
+    footrestGroup.position.set(4, -36.0, -10);
+    const footTubeMat = new THREE.MeshStandardMaterial({ color: 0x1e2025, metalness: 0.6, roughness: 0.35 });
+    const footFrame = new THREE.Mesh(new THREE.BoxGeometry(17, 0.6, 13), footTubeMat);
+    footFrame.position.y = 0.3;
+    const footPlate = new THREE.Mesh(
+      new THREE.BoxGeometry(15, 1.1, 11),
+      new THREE.MeshStandardMaterial({ color: 0x141518, roughness: 0.85 })
+    );
+    footPlate.rotation.x = -0.38; // Inclinação de 22° virada para o usuário (rampinha!)
+    footPlate.position.set(0, 2.5, 0);
+    footPlate.castShadow = true;
+    footrestGroup.add(footFrame, footPlate);
+    bedroomWorld.add(footrestGroup);
+    // Registra como obstáculo suave / rampa jogável no chão
+
+    // 6. GRANDE VASO OVAL COM DRACENA / YUCCA E ARGILA EXPANDIDA (Ao Lado Direito da Mesa!)
+    const bigPlantGroup = new THREE.Group();
+    bigPlantGroup.position.set(72, -36.0, 28);
+
+    // Vaso Oval / Cápsula em Tom Grafite Fosco
+    const planterMat = new THREE.MeshStandardMaterial({ color: 0x222428, roughness: 0.75 });
+    const planterBody = new THREE.Mesh(new THREE.CylinderGeometry(8.5, 7.4, 9.8, 32), planterMat);
+    planterBody.scale.set(1.4, 1.0, 0.85); // Formato oval/alongado
+    planterBody.position.y = 4.9;
+    planterBody.castShadow = true;
+    bigPlantGroup.add(planterBody);
+
+    // Revestimento superior de Argila Expandida (Bolinhas de Argila Terracota!)
+    const clayTop = new THREE.Mesh(
+      new THREE.CylinderGeometry(8.2, 8.2, 0.6, 32),
+      new THREE.MeshStandardMaterial({ map: createClayPebblesTexture(), roughness: 0.9 })
+    );
+    clayTop.scale.set(1.38, 1.0, 0.84);
+    clayTop.position.y = 9.8;
+    bigPlantGroup.add(clayTop);
+
+    // 2 Troncos Amadeirados de Yucca/Dracena Amarrados com Barbante (Exatos da Foto!)
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a412a, roughness: 0.92 });
+    const stringMat = new THREE.MeshStandardMaterial({ color: 0xd5cca8, roughness: 0.8 });
+
+    // Tronco Alto (34 unidades de altura)
+    const trunkTall = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.1, 34, 16), trunkMat);
+    trunkTall.position.set(-2.5, 23.5, 0);
+    trunkTall.rotation.z = 0.04;
+    trunkTall.castShadow = true;
+
+    // Tronco Médio (24 unidades de altura)
+    const trunkShort = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 1.0, 24, 16), trunkMat);
+    trunkShort.position.set(2.5, 18.5, 0);
+    trunkShort.rotation.z = -0.04;
+    trunkShort.castShadow = true;
+
+    // Amarras de barbante claro segurando os troncos
+    [16, 24].forEach((sy) => {
+      const twine = new THREE.Mesh(new THREE.TorusGeometry(3.4, 0.22, 8, 20), stringMat);
+      twine.rotation.x = Math.PI / 2;
+      twine.position.set(0, sy, 0);
+      bigPlantGroup.add(twine);
+    });
+
+    bigPlantGroup.add(trunkTall, trunkShort);
+
+    // Copa Verde Radiante com Folhas Longas e Pontiagudas
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x1f7a36, roughness: 0.45 });
+    function createDracaenaCrown(cx, cy, cz, count, radius) {
+      const crown = new THREE.Group();
+      crown.position.set(cx, cy, cz);
+      for (let i = 0; i < count; i++) {
+        const phi = (i / count) * Math.PI * 2;
+        const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.35, radius, 0.08), leafMat);
+        leaf.rotation.z = Math.sin(phi) * 0.78;
+        leaf.rotation.x = Math.cos(phi) * 0.78;
+        leaf.position.set(Math.sin(phi) * (radius * 0.35), radius * 0.45, Math.cos(phi) * (radius * 0.35));
+        crown.add(leaf);
+      }
+      return crown;
+    }
+    const crownTall = createDracaenaCrown(-2.5, 38.0, 0, 28, 12.5);
+    const crownShort = createDracaenaCrown(2.5, 29.0, 0, 22, 10.0);
+    bigPlantGroup.add(crownTall, crownShort);
+
+    bedroomWorld.add(bigPlantGroup);
+    obstacles.push({ x: 72, z: 28, r: 8.5, name: 'VASO COM YUCCA/DRACENA E ARGILA' });
+
+    // Registra a grande planta do quarto como regável!
+    growablePlants.push({
+      mesh: bigPlantGroup,
+      name: 'Yucca / Dracena do Quarto',
+      x: 72, z: 28,
+      isWatered: false,
+      growthElapsed: 0,
+      level: 1,
+      foliageMeshes: [crownTall, crownShort]
+    });
+
+    // 7. CESTO DE LIXO DE ESCRITÓRIO EM FELTRO CINZA (Sob a Mesa à Direita)
+    const trashBinGroup = new THREE.Group();
+    trashBinGroup.position.set(54, -36.0, 8);
+    const binMat = new THREE.MeshStandardMaterial({ color: 0x5a6068, roughness: 0.95 });
+    const binMesh = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 2.8, 8.5, 24, 1, true), binMat);
+    binMesh.position.y = 4.25;
+    binMesh.castShadow = true;
+    trashBinGroup.add(binMesh);
+    // Bolinha de papel amassado branco dentro do cesto
+    const paperBall = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(1.2, 1),
+      new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.9 })
+    );
+    paperBall.position.set(0.4, 2.8, 0.3);
+    trashBinGroup.add(paperBall);
+    bedroomWorld.add(trashBinGroup);
+    obstacles.push({ x: 54, z: 8, r: 3.8, name: 'CESTO DE LIXO' });
+
+    // 8. FILTRO DE LINHA / RÉGUA DE TOMADAS COM CHAVE VERMELHA ILUMINADA
+    const powerStripGroup = new THREE.Group();
+    powerStripGroup.position.set(18, -35.9, -22);
+    const stripMat = new THREE.MeshStandardMaterial({ color: 0x141619, roughness: 0.4 });
+    const stripBody = new THREE.Mesh(new THREE.BoxGeometry(4.5, 1.2, 16.0), stripMat);
+    stripBody.position.y = 0.6;
+    powerStripGroup.add(stripBody);
+    // 6 Tomadas em relevo
+    for (let i = -2.5; i <= 2.5; i++) {
+      const outlet = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.8, 0.8, 0.15, 16),
+        new THREE.MeshStandardMaterial({ color: 0x22262c, roughness: 0.6 })
+      );
+      outlet.position.set(0, 1.22, i * 2.5);
+      powerStripGroup.add(outlet);
+    }
+    // Chave gangorra com LED vermelho aceso
+    const switchRed = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.4, 1.8),
+      new THREE.MeshBasicMaterial({ color: 0xff2200 })
+    );
+    switchRed.position.set(0, 1.35, -6.8);
+    const switchLight = new THREE.PointLight(0xff2200, 0.6, 8);
+    switchLight.position.set(0, 2.2, -6.8);
+    powerStripGroup.add(switchRed, switchLight);
+    bedroomWorld.add(powerStripGroup);
+
+    // 9. PAINEL PERFURADO (PEGBOARD) PRETO NA PAREDE ESQUERDA
+    const pegboardGroup = new THREE.Group();
+    pegboardGroup.position.set(-96, 8, -20);
+    const pegMat = new THREE.MeshStandardMaterial({ map: createPegboardTexture(), roughness: 0.8 });
+    const pegBoard = new THREE.Mesh(new THREE.BoxGeometry(0.8, 38, 26), pegMat);
+    pegboardGroup.add(pegBoard);
+    // Headset gamer pendurado no pegboard
+    const headsetBand = new THREE.Mesh(
+      new THREE.TorusGeometry(3.8, 0.5, 12, 24, Math.PI),
+      new THREE.MeshStandardMaterial({ color: 0x1a1c20, roughness: 0.4 })
+    );
+    headsetBand.rotation.y = Math.PI / 2;
+    headsetBand.position.set(1.4, 6, -2);
+    pegboardGroup.add(headsetBand);
+    bedroomWorld.add(pegboardGroup);
+
+    // 10. MINI SUCULENTA EM VASO TRIPÉ NA MESA (Visível ao lado da caneca MuleSoft!)
+    const tripodSucculentGroup = new THREE.Group();
+    tripodSucculentGroup.position.set(-1.8, 0.14, -8.5);
+    const potMat = new THREE.MeshStandardMaterial({ color: 0xf8f9fa, roughness: 0.3 });
+    const succulentPot = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.1, 1.8, 18), potMat);
+    succulentPot.position.y = 1.6;
+    succulentPot.castShadow = true;
+    tripodSucculentGroup.add(succulentPot);
+    // 3 Pernas finas de madeira do tripé
+    const legWoodMat = new THREE.MeshStandardMaterial({ color: 0xb58555, roughness: 0.7 });
+    for (let i = 0; i < 3; i++) {
+      const ang = (i / 3) * Math.PI * 2;
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 1.8, 10), legWoodMat);
+      leg.rotation.z = Math.sin(ang) * 0.22;
+      leg.rotation.x = Math.cos(ang) * 0.22;
+      leg.position.set(Math.sin(ang) * 0.9, 0.8, Math.cos(ang) * 0.9);
+      tripodSucculentGroup.add(leg);
+    }
+    // Folhas da suculenta
+    const succMat = new THREE.MeshStandardMaterial({ color: 0x48b874, roughness: 0.4 });
+    for (let i = 0; i < 9; i++) {
+      const fang = (i / 9) * Math.PI * 2;
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.1, 6), succMat);
+      leaf.rotation.x = Math.PI / 2 + 0.35;
+      leaf.rotation.y = fang;
+      leaf.position.set(Math.sin(fang) * 0.65, 2.6, Math.cos(fang) * 0.65);
+      tripodSucculentGroup.add(leaf);
+    }
+    deskWorld.add(tripodSucculentGroup);
+    registerGrabbable({
+      id: 'tripod_succulent', name: 'Suculenta no Tripé', group: tripodSucculentGroup,
+      obs: { x: -1.8, z: -8.5, r: 1.8, name: 'VASINHO TRIPÉ COM SUCULENTA' },
+      initX: -1.8, initY: 0.14, initZ: -8.5, initRotY: 0, grabRadius: 4.5
+    });
+
 
     // ============================================================================
     // LISTA DE OBSTÁCULOS E OBJETOS INTERATIVOS DA MESA
     // ============================================================================
-    const obstacles = [];
+    // obstacles already declared
 
     // 1. COPO TÉRMICO STANLEY BRANCO COM ÁGUA (Borda Inox, Tampa Translúcida, Canudo e Logo!)
     const tumblerGroup = new THREE.Group();
@@ -2035,13 +2691,7 @@
     mouseGroup.add(g502Logo);
 
     // Lista de objetos que o carrinho pode segurar e arrastar pela mesa!
-    const grabbableItems = [];
-    let heldItem = null;
-
-    function registerGrabbable(config) {
-      grabbableItems.push(config);
-      return config;
-    }
+    // grabbableItems already declared
 
     mouseGroup.position.set(15.6, 0.14, 4.6);
     mouseGroup.rotation.y = -0.12;
@@ -2279,7 +2929,7 @@
     // ============================================================================
 
     // 7. TRÊS PLANTAS DIFERENTES COM CRESCIMENTO GRADUAL (ENTRE 2 A 5 MINUTOS = 180s!)
-    const growablePlants = [];
+    // growablePlants already declared
     const PLANT_GROWTH_DURATION = 180.0; // 3 minutos (180 segundos) para crescer gradualmente ao Nível 2!
 
     function createGrowablePlant(type, name, x, z) {
@@ -3806,15 +4456,16 @@
 
       // Resetar Plantas para o Nível 1
       growablePlants.forEach((p) => {
-        p.x = p.initX;
-        p.z = p.initZ;
+        p.x = p.initX !== undefined ? p.initX : p.x;
+        p.z = p.initZ !== undefined ? p.initZ : p.z;
         p.isWatered = false;
         p.growthElapsed = 0;
         p.level = 1;
         p.targetScale = 1.0;
-        p.foliageGroup.scale.set(1, 1, 1);
-        p.flowersGroup.visible = false;
-        p.obs.name = `${p.name} (NÍVEL 1)`;
+        if (p.foliageGroup && p.foliageGroup.scale) p.foliageGroup.scale.set(1, 1, 1);
+        if (p.foliageMeshes) p.foliageMeshes.forEach(m => m.scale.set(1, 1, 1));
+        if (p.flowersGroup) p.flowersGroup.visible = false;
+        if (p.obs) p.obs.name = `${p.name} (NÍVEL 1)`;
       });
 
       // Resetar Controles e limpar pedacinhos quebrados
@@ -4112,17 +4763,67 @@
           let nextX = vehicle.position.x + Math.sin(carAngle) * carSpeed;
           let nextZ = vehicle.position.z + Math.cos(carAngle) * carSpeed;
 
-          // Verificar se entrou na RAMPA DE PAPELÃO na lateral esquerda
-          if (nextX < -DESK_HALF_W + 1.5 && nextZ > 9 && nextZ < 27) {
-            openModal(
-              '🚧 Cenário em Construção!',
-              'Esta rampa de papelão leva ao cenário do Escritório / Quarto, que ainda não está pronto! A descida foi bloqueada e o jogo será reiniciado.'
-            );
+          // VERIFICAÇÃO DE SUPERFÍCIE: MESA (y = 0), RAMPA DE DESCIDA, RAMPA DE SUBIDA OU CHÃO DO QUARTO (y = -36)
+          let targetY = 0.14;
+          let onRamp = false;
+
+          // 1. Rampa de Descida (x entre -90 e -138, z entre 8.5 e 27.5)
+          if (nextX <= -DESK_HALF_W + 2.0 && nextX >= -138 && nextZ >= 8.5 && nextZ <= 27.5) {
+            onRamp = true;
+            const progress = Math.max(0, Math.min(1, (-DESK_HALF_W - nextX) / 45.0));
+            targetY = 0.14 - progress * 35.85;
+            carBodyGroup.rotation.z = -0.67 * Math.cos(carAngle);
+
+            if (!window.hasDescendedToRoom && nextX < -DESK_HALF_W - 3) {
+              window.hasDescendedToRoom = true;
+              showCarSpeech('Uuuuh descendo pro quarto!', 3200);
+              logInteractionEvent('🛝 Ravi descendo pela rampa de papelão para o quarto!');
+            }
           }
-          // Verificar se saiu das bordas da mesa (queda livre para resetar!)
-          else if (Math.abs(nextX) > DESK_HALF_W + 1.2 || Math.abs(nextZ) > DESK_HALF_D + 1.2) {
-            isFallingOff = true;
-            fallVelocityY = -0.15;
+          // 2. Rampa de Subida / Retorno (x entre -90 e -138, z entre 28.5 e 47.5)
+          else if (nextX <= -DESK_HALF_W + 2.0 && nextX >= -138 && nextZ > 28.5 && nextZ <= 47.5) {
+            onRamp = true;
+            const progress = Math.max(0, Math.min(1, (-DESK_HALF_W - nextX) / 45.0));
+            targetY = 0.14 - progress * 35.85;
+            carBodyGroup.rotation.z = 0.67 * Math.cos(carAngle);
+
+            if (nextX > -DESK_HALF_W - 2 && window.hasDescendedToRoom) {
+              window.hasDescendedToRoom = false;
+              showCarSpeech('Voltando pra mesa!', 2600);
+              logInteractionEvent('🏎️ Ravi subiu a rampa de volta para a mesa!');
+            }
+          }
+          // 3. No Chão do Quarto (y = -36.0, altura do carro = -35.71)
+          else if (nextX < -DESK_HALF_W || vehicle.position.y < -15) {
+            targetY = -35.71;
+
+            // Mini Rampa de Salto no Apoio para Pés (footrest) sob a mesa!
+            if (nextX >= -4 && nextX <= 12 && nextZ >= -16 && nextZ <= -4) {
+              const footProgress = (-4 - nextZ) / 12.0;
+              targetY = -35.71 + Math.max(0, footProgress * 2.8);
+              if (Math.abs(carSpeed) > 0.24 && !isFallingOff) {
+                fallVelocityY = 0.28; // Dá um salto divertido no ar!
+              }
+            }
+
+            // Queda para fora dos limites do quarto (limites ampliados do quarto: x de -175 a 125, z de -75 a 95)
+            if (nextX < -175 || nextX > 125 || nextZ < -75 || nextZ > 95) {
+              isFallingOff = true;
+              fallVelocityY = -0.15;
+            }
+          }
+          // 4. No Topo da Mesa de Trabalho
+          else {
+            targetY = 0.14;
+            // Verificar se saiu das bordas da mesa onde NÃO há rampa
+            if (Math.abs(nextX) > DESK_HALF_W + 1.2 || Math.abs(nextZ) > DESK_HALF_D + 1.2) {
+              isFallingOff = true;
+              fallVelocityY = -0.15;
+            }
+          }
+
+          if (!isFallingOff) {
+            // smooth lerp handled below
           }
 
           // Colisões com Obstáculos (ignorando o objeto atualmente segurado pelo carrinho)
@@ -4172,10 +4873,11 @@
             }
           }
 
-          // Altura do carrinho sobre o Deskmat, Pilhas Turbo e Teclado Mecânico
-          let targetY = 0;
-          if (nextX > -26 && nextX < 42 && nextZ > -11 && nextZ < 23) {
-            targetY = 0.14;
+          // Altura sobre o Deskmat, Pilhas Turbo e Teclado Mecânico (somente quando na mesa)
+          if (targetY > -5) {
+            if (nextX > -26 && nextX < 42 && nextZ > -11 && nextZ < 23) {
+              targetY = 0.14;
+            }
           }
 
           // Passando por cima das PILHAS PALITO NA PISTA -> Ativa MINI-TURBO BOOST!
@@ -4196,7 +4898,7 @@
           });
 
           // Passando por cima do Teclado Mecânico -> Digita na tela e acumula Autodestruição!
-          if (nextX > -3.2 && nextX < 12.2 && nextZ > 0.8 && nextZ < 7.2) {
+          if (targetY > -5 && nextX > -3.2 && nextX < 12.2 && nextZ > 0.8 && nextZ < 7.2) {
             targetY = 0.78 + Math.sin(nextX * 5 + nextZ * 5) * 0.06;
 
             if (Math.abs(carSpeed) > 0.02 && monitorState === 'normal') {
@@ -4345,6 +5047,15 @@
           Math.cos(viewAngle) * distCam * zoomFactor
         );
         lookTarget = new THREE.Vector3(vehicle.position.x, vehicle.position.y + 1.35, vehicle.position.z);
+      } else if (camMode === 'room') {
+        camOffset = new THREE.Vector3(88 * zoomFactor, 74 * zoomFactor, 118 * zoomFactor);
+        lookTarget = new THREE.Vector3(0, -18, 15);
+      } else if (camMode === 'chair') {
+        camOffset = new THREE.Vector3(28 * zoomFactor, 24 * zoomFactor, 32 * zoomFactor);
+        lookTarget = new THREE.Vector3(-18, -24, 38);
+      } else if (camMode === 'plant') {
+        camOffset = new THREE.Vector3(28 * zoomFactor, 22 * zoomFactor, 30 * zoomFactor);
+        lookTarget = new THREE.Vector3(72, -16, 28);
       } else if (camMode === 'gear') {
         camOffset = new THREE.Vector3(1.5 * zoomFactor, 15.5 * zoomFactor, 16.5 * zoomFactor);
         lookTarget = new THREE.Vector3(8.5, 1.5, 2.0);
