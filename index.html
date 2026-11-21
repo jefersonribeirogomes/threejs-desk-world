@@ -3395,13 +3395,14 @@
     updateMonitor2Screen();
 
     const monitor2Group = new THREE.Group();
+    const monStandMat = new THREE.MeshStandardMaterial({ color: 0x121316, roughness: 0.35, metalness: 0.6 });
     const MON2_X = 31.5, MON2_Z = -15.5;
     monitor2Group.position.set(MON2_X, 0, MON2_Z);
     monitor2Group.rotation.y = -0.34;
 
-    const mon2Base = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.3, 4.2), legMat);
+    const mon2Base = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.3, 4.2), monStandMat);
     mon2Base.position.y = 0.15; monitor2Group.add(mon2Base);
-    const mon2Neck = new THREE.Mesh(new THREE.BoxGeometry(1.4, 6.5, 0.7), legMat);
+    const mon2Neck = new THREE.Mesh(new THREE.BoxGeometry(1.4, 6.5, 0.7), monStandMat);
     mon2Neck.position.set(0, 3.4, -1.0); monitor2Group.add(mon2Neck);
 
     const mon2Frame = new THREE.Mesh(
