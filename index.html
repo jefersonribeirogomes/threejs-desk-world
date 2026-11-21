@@ -84,7 +84,13 @@
     .hud-water .bar.battery .fill { background: var(--ds-success); }
     .hud-water .bar.battery.is-turbo .fill { background: linear-gradient(90deg, var(--ds-success), #fff6a8); }
     .hud-water .bar.battery.is-low .fill { background: var(--ds-danger); animation: ds-pulse-fill .6s ease-in-out infinite alternate; }
-    .hud-water .bar.battery .mark-60 { position: absolute; top: 2px; bottom: 2px; left: 60%; width: 2px; background: #fff; opacity: .55; }
+    /* Escala da barra vai até 140%: marcas em 60% (turbo), 100% (cheia) e 120% (nitro) */
+    .hud-water .bar.battery .mark-60 { position: absolute; top: 2px; bottom: 2px; left: calc(60 / 140 * 100%); width: 2px; background: #fff; opacity: .55; }
+    .hud-water .bar.battery .mark-100 { position: absolute; top: 2px; bottom: 2px; left: calc(100 / 140 * 100%); width: 2px; background: #fff; opacity: .8; }
+    .hud-water .bar.battery .mark-120 { position: absolute; top: 2px; bottom: 2px; left: calc(120 / 140 * 100%); width: 2px; background: #6fd6ff; opacity: .9; }
+    .hud-water .bar.battery.is-over .fill { background: linear-gradient(90deg, var(--ds-success) 0%, #fff6a8 70%, #ffb703 100%); }
+    .hud-water .bar.battery.is-nitro .fill { background: linear-gradient(90deg, #ffb703, #6fd6ff 75%, #ffffff); animation: ds-pulse-fill .35s ease-in-out infinite alternate; }
+    .hud-water .bar.battery.is-danger .fill { background: linear-gradient(90deg, #ff6a3d, #ff2a2a); animation: ds-pulse-fill .18s ease-in-out infinite alternate; }
     @keyframes ds-pulse-fill { from { opacity: 1; } to { opacity: .45; } }
     .hud-water.is-low .pct { color: var(--ds-danger); }
     .hud-water .status { margin-top: 8px; font-size: .7rem; line-height: 1.35; color: var(--ds-text-soft); min-height: 1.35em; }
@@ -158,6 +164,58 @@
     html.is-mode-touch .interact-prompt .key { display: none; }
     html.is-mode-touch .grab-prompt .key { display: inline-block; }
     .modals .modal.island .island-actions { flex-wrap: wrap; }
+    /* Marcos de carreira: mural de madeira laranja, título Amatic, faixa roxa, setas roxas e miniaturas */
+    .modals .modal.career .content.career-board {
+      width: min(1100px, calc(100vw - 32px)); max-width: none; max-height: calc(100vh - 32px); overflow: auto;
+      display: grid; grid-template-columns: 1fr 220px; gap: 18px; padding: 18px;
+      background: linear-gradient(#e98f4f, #d9773a); border: 6px solid #b85f2a; border-radius: 14px;
+      box-shadow: inset 0 0 0 3px #f6a868, 0 20px 60px #0008; color: #fff;
+    }
+    .modals .modal.career .content.career-board { position: relative; overflow: visible; }
+    .career-board .close { z-index: 3; position: absolute; top: -18px; right: -18px; background: #a43ad8; border-radius: 50%; box-shadow: 0 4px 0 #6e1f98; }
+    .career-stage { display: flex; flex-direction: column; min-width: 0; }
+    .career-sign { position: relative; background: repeating-linear-gradient(90deg, #a95a2c 0 64px, #9c5228 64px 66px); border-radius: 8px; padding: 14px 16px 30px; text-align: center; box-shadow: inset 0 -4px 0 #0002; }
+    .career-title { font-family: var(--ds-font-title); font-size: clamp(36px, 6vw, 64px); line-height: 1; letter-spacing: .02em; color: #ffe9dc; text-shadow: 0 3px 0 #0003; }
+    .career-pill { position: absolute; left: 50%; bottom: -16px; transform: translateX(-50%); white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis;
+      font-family: var(--ds-font-title); font-size: clamp(18px, 2.6vw, 28px); font-weight: 700; color: #fff; background: #a43ad8; padding: 2px 16px; border-radius: 6px; box-shadow: 0 3px 0 #6e1f98; }
+    .career-main { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; gap: 10px; margin-top: 28px; }
+    .career-arrow { height: 64px; border: 0; border-radius: 8px; background: #a43ad8; color: #fff; font-size: 30px; font-weight: 700; cursor: pointer; box-shadow: 0 5px 0 #6e1f98; transition: transform .15s; }
+    .career-arrow:hover, .career-arrow.gp-focus { transform: translateY(-2px); background: #b955e8; }
+    .career-screen { display: grid; grid-template-columns: minmax(140px, 34%) 1fr; gap: 18px; min-height: 340px; padding: 18px; border-radius: 6px;
+      background: radial-gradient(at 20% 0%, #2c2236, #120d17); border: 5px solid #b85f2a; box-shadow: inset 0 0 40px #000a; }
+    .career-art { position: relative; display: grid; place-items: center; border-radius: 10px; background: radial-gradient(circle at 50% 40%, var(--career-color, #a43ad8), #120d17 75%); min-height: 220px; }
+    .career-emoji { font-size: clamp(72px, 11vw, 132px); filter: drop-shadow(0 10px 18px #0009); animation: career-bob 2.6s ease-in-out infinite; }
+    @keyframes career-bob { 50% { transform: translateY(-8px) rotate(-3deg); } }
+    .career-portal { position: absolute; left: 10px; top: 10px; font-family: var(--ds-font-title); font-size: 26px; font-weight: 700; background: #0006; padding: 0 10px; border-radius: 6px; }
+    .career-info { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-family: var(--ds-font-body); }
+    .career-role { font-family: var(--ds-font-title); font-size: clamp(26px, 3.4vw, 38px); font-weight: 700; line-height: 1.05; color: #ffceca; }
+    .career-meta { font-size: 14px; opacity: .8; }
+    .career-intro { margin: 2px 0; font-size: 15px; font-style: italic; color: #ffe9dc; }
+    .career-bullets { margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 14.5px; line-height: 1.45; }
+    .career-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 6px; }
+    .career-tags span { font-size: 12.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: #ffffff1a; border: 1px solid #ffffff33; }
+    .career-thumbs { display: flex; flex-direction: column; gap: 10px; }
+    .career-thumb { position: relative; display: grid; place-items: center; height: 84px; border: 4px solid #b85f2a; border-radius: 6px; cursor: pointer;
+      background: radial-gradient(circle at 50% 40%, var(--career-color, #a43ad8), #120d17 80%); font-size: 40px; padding: 0; transition: transform .15s; }
+    .career-thumb .lbl { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-family: var(--ds-font-title); font-size: 21px; font-weight: 700; color: #fff; background: #e98f4f; padding: 0 10px; border-radius: 4px; box-shadow: 0 2px 0 #b85f2a; }
+    .career-thumb.is-active { border-color: #fff; transform: scale(1.04); }
+    .career-thumb:hover, .career-thumb.gp-focus { transform: scale(1.05); }
+    @media (max-width: 820px) {
+      .modals .modal.career .content.career-board { grid-template-columns: 1fr; }
+      .career-screen { grid-template-columns: 1fr; min-height: 0; }
+      .career-art { min-height: 120px; }
+      .career-main { grid-template-columns: 40px 1fr 40px; }
+      .career-thumbs { flex-direction: row; overflow-x: auto; padding-bottom: 14px; }
+      .career-thumb { flex: 0 0 110px; height: 70px; font-size: 30px; }
+    }
+    /* Convite da corrida: pódio dos recordes */
+    .race-invite-records { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 6px; }
+    .race-invite-records li { display: grid; grid-template-columns: 2.2em 1fr auto; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.08); font-size: 1.05em; }
+    .race-invite-records li:first-child { background: rgba(255, 196, 0, 0.22); }
+    .race-invite-records li.is-empty { display: block; text-align: center; opacity: 0.8; }
+    .race-invite-records .pos { font-size: 1.2em; text-align: center; }
+    .race-invite-records .name { font-weight: 700; letter-spacing: 0.12em; }
+    .race-invite-records .time { font-variant-numeric: tabular-nums; opacity: 0.9; }
 
     /* Foco de navegação pelo controle (DS: contorno pêssego) */
     .gp-focus { outline: 3px solid var(--ds-peach) !important; outline-offset: 3px; }
@@ -224,7 +282,12 @@
       text-align: center; padding: 20px;
     }
     .intro.is-hidden { opacity: 0; pointer-events: none; }
-    .intro .ring { width: 110px; height: 110px; transform: rotate(-90deg); }
+    .intro .ring-wrap { position: relative; width: 168px; height: 168px; }
+    .intro .ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+    /* A foto é o selo "Agentblazer Champion": ampliada para mostrar só o retrato do meio */
+    .intro .intro-photo { position: absolute; inset: 12px; border-radius: 50%; overflow: hidden; background: #000; box-shadow: 0 6px 24px #0008; }
+    .intro .intro-photo img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.7); transform-origin: 50% 50%; display: block; }
+    @media (max-width: 600px) { .intro .title { font-size: 2.1rem; } }
     .intro .ring circle { fill: none; stroke-width: 3; }
     .intro .ring .track { stroke: #ffffff26; }
     .intro .ring .progress { stroke: var(--ds-reveal); stroke-linecap: round; transition: stroke-dashoffset .25s; }
@@ -357,11 +420,15 @@
 
   <!-- ===== INTRO / CARREGAMENTO ===== -->
   <div class="intro" id="intro">
-    <svg class="ring" viewBox="0 0 110 110" aria-hidden="true">
-      <circle class="track" cx="55" cy="55" r="50"></circle>
-      <circle class="progress" id="intro-progress" cx="55" cy="55" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"></circle>
-    </svg>
-    <div class="title">//Fire Engine// <span class="accent">Desk World</span></div>
+    <div class="ring-wrap">
+      <!-- Foto do Jeferson no centro do círculo de carregamento (some sozinha se o arquivo não existir) -->
+      <div class="intro-photo"><img src="./assets/foto-jeferson.jpg" alt="Jeferson Ribeiro Gomes" onerror="this.parentNode.style.display='none'"></div>
+      <svg class="ring" viewBox="0 0 110 110" aria-hidden="true">
+        <circle class="track" cx="55" cy="55" r="50"></circle>
+        <circle class="progress" id="intro-progress" cx="55" cy="55" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"></circle>
+      </svg>
+    </div>
+    <div class="title">// Jeferson Ribeiro Gomes // <span class="accent">Desk World</span></div>
     <p class="text" id="intro-text">Carregando a mesa do Ravi…</p>
     <button class="button is-disabled" id="intro-start" type="button">Começar</button>
   </div>
@@ -377,7 +444,7 @@
       <div class="title">Bateria</div>
       <span class="pct" id="battery-pct">100%</span>
     </div>
-    <div class="bar battery" id="battery-bar"><div class="fill" id="battery-bar-fill"></div><div class="mark-60"></div></div>
+    <div class="bar battery" id="battery-bar"><div class="fill" id="battery-bar-fill"></div><div class="mark-60"></div><div class="mark-100"></div><div class="mark-120"></div></div>
     <div class="status" id="status-banner">Pronto para patrulhar a mesa!</div>
     <div class="keys-hint">
       <span class="key">WASD</span> dirigir · <span class="key">ESPAÇO</span> água · <span class="key">F</span> pular · <span class="key">E</span> pegar · <span class="key">V</span> câmera · <span class="key">M</span> mapa · <span class="key">ENTER</span> interagir · <span class="key">R</span> largada
@@ -479,7 +546,7 @@
             <div class="content-inner">
               <div class="title">//Fire Engine// Desk World</div>
               <p class="text">Dirija o caminhãozinho de bombeiro do <strong>Ravi</strong> por uma mesa de desenvolvedor gigante e pelo quarto.</p>
-              <p class="text">Derrube o <strong>copo d'água</strong> para encher o tanque, <strong>regue as plantas</strong>, desenhe a <strong>pista secreta</strong> com o lápis, conecte os <strong>cabos HDMI</strong> e apague o <strong>incêndio do monitor</strong> se alguém digitar demais no teclado!</p>
+              <p class="text">Derrube o <strong>copo d'água</strong> para encher o tanque, <strong>regue as plantas</strong>, desenhe a <strong>pista secreta</strong> com o lápis, conecte o <strong>cabo HDMI</strong> e apague o <strong>incêndio do monitor</strong> se alguém digitar demais no teclado!</p>
               <p class="text">Use a <strong>rampa de papelão</strong> para descer até o quarto — ou simplesmente pule da mesa.</p>
               <div class="horizontal-group" style="justify-content:flex-start">
                 <button class="button" id="menu-btn-play" type="button">Jogar</button>
@@ -687,6 +754,46 @@
         <div class="title" id="island-title">Ilha</div>
         <p class="text" id="island-text"></p>
         <div class="horizontal-group island-actions" id="island-actions"></div>
+      </div>
+    </div>
+    <!-- Marcos de carreira (quadro de madeira no estilo do mural de projetos do DS) -->
+    <div class="modal career" id="career-modal" data-name="career">
+      <div class="content career-board">
+        <button class="close js-close" id="career-close" type="button" aria-label="Fechar"><img class="icon is-default" src="./assets/ui/close.svg" alt=""></button>
+        <div class="career-stage">
+          <div class="career-sign">
+            <div class="career-title" id="career-title">Marco</div>
+            <div class="career-pill" id="career-pill">Empresa</div>
+          </div>
+          <div class="career-main">
+            <button class="career-arrow is-prev" id="career-prev" type="button" aria-label="Marco anterior">←</button>
+            <div class="career-screen" id="career-screen">
+              <div class="career-art" id="career-art"><span class="career-emoji" id="career-emoji"></span><span class="career-portal" id="career-portal"></span></div>
+              <div class="career-info">
+                <div class="career-role" id="career-role"></div>
+                <div class="career-meta" id="career-meta"></div>
+                <p class="career-intro" id="career-intro"></p>
+                <ul class="career-bullets" id="career-bullets"></ul>
+                <div class="career-tags" id="career-tags"></div>
+              </div>
+            </div>
+            <button class="career-arrow is-next" id="career-next" type="button" aria-label="Próximo marco">→</button>
+          </div>
+        </div>
+        <div class="career-thumbs" id="career-thumbs"></div>
+      </div>
+    </div>
+    <!-- Convite para correr (aparece ao passar pela largada) -->
+    <div class="modal island race-invite" id="race-invite-modal" data-name="race-invite">
+      <div class="content">
+        <button class="close js-close" id="race-invite-close" type="button" aria-label="Fechar"><img class="icon is-default" src="./assets/ui/close.svg" alt=""></button>
+        <div class="title">Circuito do Ravi 🏁</div>
+        <p class="text">Quer correr e fazer história? Complete a volta passando pelos portais. Estes são os recordes atuais:</p>
+        <ol class="race-invite-records" id="race-invite-records"></ol>
+        <div class="horizontal-group island-actions">
+          <button class="button" id="race-invite-go" type="button">🏁 Correr e fazer história!</button>
+          <button class="button" id="race-invite-no" type="button">Agora não</button>
+        </div>
       </div>
     </div>
     <!-- Reinício -->
@@ -3433,6 +3540,331 @@
     createRaceGate(-140, 60, 'floor', 'PORTAL 6');
 
     // ============================================================================
+    // MARCOS DE CARREIRA — cada portal tem um objeto especial e uma "ilha" de evento
+    // (dados do currículo do Jeferson; objetos fixos, um pouco maiores que o carrinho)
+    // ============================================================================
+    const CAREER_MILESTONES = [
+      {
+        portal: 1, title: 'Magnum Bank', company: 'Sciensa', role: 'Desenvolvedor MuleSoft e Java',
+        period: 'abr. 2022 – mai. 2023 · 1 ano 2 meses', place: 'São Paulo, SP · Tempo integral',
+        emoji: '🐷', color: '#8338ec', label: 'Sciensa',
+        intro: 'A virada: transição de carreira para desenvolvedor MuleSoft, começando num banco digital.',
+        bullets: [
+          'Projeto MAGNUM BANK (Fintech / Banco Digital): APIs de microsserviços de alta velocidade com Java (Spring Boot, Quarkus) e Apache Kafka para streaming de transações financeiras em tempo real.',
+          'Qualidade & cobertura de código: pipeline CI/CD com TDD/BDD, SonarQube e Jenkins, mantendo cobertura de testes automatizados acima de 85%.'
+        ],
+        tags: ['MuleSoft', 'Java', 'Spring Boot', 'Quarkus', 'Kafka', 'RAML', 'CI/CD']
+      },
+      {
+        portal: 2, title: 'Projeto ENEL', company: 'Capgemini', role: 'Desenvolvedor MuleSoft Pleno',
+        period: 'mai. 2023 – ago. 2024 · 1 ano 4 meses', place: 'São Paulo · Remoto',
+        emoji: '🔋', color: '#2a9d8f', label: 'Capgemini',
+        intro: 'Energia em escala: migração de centenas de APIs de uma gigante do setor elétrico.',
+        bullets: [
+          'Projeto ENEL (Energia & Utilities): atuação chave na migração de 500+ APIs corporativas (1.600+ endpoints) de Node.js para MuleSoft Mule 4, com 45% de ganho de performance via DataWeave e contratos RAML (Contract-First).',
+          'Ecossistema Salesforce: conectores customizados integrando MuleSoft ao Salesforce CRM (OmniStudio, Data Cloud, Commerce) e legados via Apex e Flow.',
+          'KINTO MOTORS & VW (Automotivo): Flex Gateway na modernização de legados, dashboards no Anypoint Monitoring e rotas críticas via VPC/VPN (GDPR/LGPD).'
+        ],
+        tags: ['Mule 4', 'DataWeave', 'RAML', 'Salesforce', 'Flex Gateway', 'Anypoint Monitoring']
+      },
+      {
+        portal: 3, title: 'Alta Concorrência', company: 'Prosegur', role: 'Desenvolvedor MuleSoft Senior',
+        period: 'set. 2024 – jun. 2025 · 10 meses', place: 'Brasil · Remoto',
+        emoji: '🚚', color: '#ffbe0b', label: 'Prosegur',
+        intro: 'Segurança em primeiro lugar: integrações para operações de transporte de valores.',
+        bullets: [
+          'Deploy & Runtime Management: gerenciou clusters no CloudHub, configurando políticas de mTLS, SLAs dinâmicos e balanceamento de carga para operações de alta concorrência.'
+        ],
+        tags: ['CloudHub', 'mTLS', 'SLA dinâmico', 'Load Balancing', 'Anypoint Platform']
+      },
+      {
+        portal: 4, title: 'MuleSoft Mentor', company: 'Academule', role: 'Co-founder · Consultoria MuleSoft · MuleSoft Mentor',
+        period: 'out. 2022 – out. 2026 · 4 anos 1 mês', place: 'São Paulo, SP',
+        emoji: '☕', color: '#00a0df', label: 'Academule',
+        intro: 'Ensinar e compartilhar: cofundador de uma consultoria e mentor da comunidade MuleSoft.',
+        bullets: [
+          'Arquitetura reutilizável: bibliotecas DataWeave, políticas de segurança customizadas (mTLS, OAuth2) e archetypes de projetos, reduzindo em 30% a duplicidade de código nos clientes.',
+          'Reconhecimento MuleSoft Mentor 2024 (Salesforce/MuleSoft).'
+        ],
+        tags: ['MuleSoft Mentor', 'DataWeave', 'OAuth2', 'mTLS', 'Archetypes']
+      },
+      {
+        portal: 5, title: 'Projeto AEGEA', company: 'Accenture', role: 'TechLead | Desenvolvedor Senior MuleSoft',
+        period: 'jun. 2025 – nov. 2026 · 1 ano 6 meses', place: 'São Paulo, SP · Remoto',
+        emoji: '🚰', color: '#3a86ff', label: 'Accenture',
+        intro: 'Liderança técnica num projeto de saneamento: água chegando com integrações bem governadas.',
+        bullets: [
+          'Projeto AEGEA (Saneamento): liderança técnica da equipe de integração.',
+          'Liderança técnica & arquitetura: liderou o desenho e a implantação de arquiteturas Mule 4.',
+          'Governança de APIs: padrões corporativos API-Led e boas práticas de integração, com 100% de conformidade regulatória e segurança nas entregas.'
+        ],
+        tags: ['TechLead', 'Mule 4', 'API-Led', 'Governança', 'Arquitetura']
+      },
+      {
+        portal: 6, title: 'Próxima porta', company: 'OrangeDoor', role: 'Desenvolvedor Senior MuleSoft',
+        period: 'Em breve', place: 'Novidades em breve',
+        emoji: '🚪', color: '#fb8500', label: 'OrangeDoor',
+        intro: 'Uma nova porta laranja está se abrindo...',
+        bullets: ['Novidades em breve! Volte aqui para descobrir o próximo capítulo.'],
+        tags: ['Em breve']
+      }
+    ];
+    // Posições livres ao lado da pista (calculadas pelos portais): objeto e ponto de evento
+    const CAREER_SPOTS = [
+      { obj: [55, 0], pin: [59.6, 0], level: 'desk', rotY: Math.PI / 2 },
+      { obj: [-39.8, -31], pin: [-39.9, -35.6], level: 'desk', rotY: Math.PI },
+      { obj: [-144, -7.4], pin: [-148.6, -7.7], level: 'floor', rotY: -Math.PI / 2 },
+      { obj: [-40.4, -24.3], pin: [-40.1, -28.9], level: 'floor', rotY: Math.PI },
+      { obj: [0, 22], pin: [0, 26.6], level: 'floor', rotY: 0 },
+      { obj: [-138.4, 49.1], pin: [-139, 53.7], level: 'floor', rotY: 0 }
+    ];
+    const careerInteractives = [];
+    // Pequenas animações dos objetos dos marcos (moeda do cofrinho, giroflex do carro-forte, porta balançando)
+    function updateCareerObjects(time) {
+      careerInteractives.forEach((it) => {
+        const u = it.object.userData;
+        if (u.spin) { u.spin.rotation.z = time * 2; u.spin.position.y = 7.9 + Math.sin(time * 2.4) * 0.25; }
+        if (u.beacon) u.beacon.material.emissiveIntensity = (Math.floor(time * 3) % 2) ? 1.6 : 0.2;
+        if (u.doorPivot) u.doorPivot.rotation.y = -0.5 + Math.sin(time * 0.9) * 0.08;
+        if (u.water) u.water.position.y = 2.6 + Math.sin(time * 1.7) * 0.06;
+      });
+    }
+    (function buildCareerObjects() {
+      const mat = (color, opts = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.45, flatShading: false }, opts));
+      const surfaceY = (lvl) => (lvl === 'desk' ? 0.14 : FLOOR_SURFACE_Y);
+
+      // 1) Cofrinho roxo (banco digital)
+      function piggyBank() {
+        const g = new THREE.Group();
+        const purple = mat(0x8338ec, { roughness: 0.3 });
+        const body = new THREE.Mesh(new THREE.SphereGeometry(3.2, 32, 24), purple);
+        body.scale.set(1.25, 1, 1);
+        body.position.y = 4.1;
+        body.castShadow = true;
+        g.add(body);
+        const snout = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.2, 1.1, 24), mat(0x9d5cff, { roughness: 0.3 }));
+        snout.rotation.z = Math.PI / 2; snout.position.set(4.25, 4.2, 0);
+        g.add(snout);
+        [-0.4, 0.4].forEach((z) => {
+          const nostril = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), new THREE.MeshBasicMaterial({ color: 0x3a0a7a }));
+          nostril.rotation.y = Math.PI / 2; nostril.position.set(4.81, 4.2, z);
+          g.add(nostril);
+        });
+        [-1, 1].forEach((s) => {
+          const ear = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.4, 4), purple);
+          ear.position.set(2.2, 7.0, s * 1.3); ear.rotation.z = -0.4;
+          g.add(ear);
+          const eye = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 8), new THREE.MeshBasicMaterial({ color: 0x1a0a2a }));
+          eye.position.set(3.55, 5.3, s * 1.2);
+          g.add(eye);
+        });
+        [[-2, -1.6], [-2, 1.6], [2, -1.6], [2, 1.6]].forEach(([x, z]) => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, 1.6, 16), purple);
+          leg.position.set(x, 0.8, z);
+          g.add(leg);
+        });
+        const slot = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.2, 0.35), new THREE.MeshBasicMaterial({ color: 0x2a0a55 }));
+        slot.position.set(-0.3, 7.15, 0);
+        g.add(slot);
+        const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.22, 24), mat(0xffc93c, { metalness: 0.8, roughness: 0.25 }));
+        coin.rotation.x = Math.PI / 2; coin.position.set(-0.3, 7.9, 0);
+        g.add(coin);
+        const tail = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.14, 8, 16, Math.PI * 1.5), purple);
+        tail.position.set(-4.1, 4.6, 0); tail.rotation.y = Math.PI / 2;
+        g.add(tail);
+        g.userData.spin = coin;
+        return { g, col: { box: { hx: 4.8, hz: 3.3 } }, h: 8.2 };
+      }
+      // 2) Pilha gigante em pé (energia)
+      function bigBattery() {
+        const g = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 8.6, 32), mat(0x2a9d8f, { roughness: 0.3, metalness: 0.2 }));
+        body.position.y = 4.3; body.castShadow = true;
+        g.add(body);
+        const band = new THREE.Mesh(new THREE.CylinderGeometry(2.62, 2.62, 2.8, 32), mat(0x16181c, { roughness: 0.3 }));
+        band.position.y = 1.5;
+        g.add(band);
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.4, 0.6, 32), mat(0xd9822b, { metalness: 0.8, roughness: 0.2 }));
+        cap.position.y = 8.9;
+        const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.8, 24), mat(0xdfe6ee, { metalness: 0.9, roughness: 0.15 }));
+        tip.position.y = 9.6;
+        g.add(cap, tip);
+        // Raio na frente e sinal de +
+        const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#ffe14d';
+        ctx.beginPath(); ctx.moveTo(150, 10); ctx.lineTo(60, 140); ctx.lineTo(125, 140); ctx.lineTo(95, 246); ctx.lineTo(200, 100); ctx.lineTo(135, 100); ctx.closePath(); ctx.fill();
+        const bolt = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true }));
+        bolt.position.set(0, 5.4, 2.62);
+        g.add(bolt);
+        const plus = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 0.1), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        plus.position.set(0, 8.0, 2.62);
+        const plusV = plus.clone(); plusV.rotation.z = Math.PI / 2;
+        g.add(plus, plusV);
+        return { g, col: { r: 2.9 }, h: 10 };
+      }
+      // 3) Carro-forte amarelo (transporte de valores)
+      function armoredTruck() {
+        const g = new THREE.Group();
+        const yellow = mat(0xffcc00, { roughness: 0.35 });
+        const dark = mat(0x22252b, { roughness: 0.6 });
+        const cargo = new THREE.Mesh(new THREE.BoxGeometry(5.0, 5.0, 6.0), yellow);
+        cargo.position.set(0, 3.6, -1.4); cargo.castShadow = true;
+        const cab = new THREE.Mesh(new THREE.BoxGeometry(4.6, 3.6, 3.0), yellow);
+        cab.position.set(0, 2.9, 3.0); cab.castShadow = true;
+        const windshield = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.4, 0.1), mat(0x8ecae6, { roughness: 0.1, metalness: 0.3 }));
+        windshield.position.set(0, 3.7, 4.52);
+        const grille = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.0, 0.1), dark);
+        grille.position.set(0, 1.9, 4.52);
+        g.add(cargo, cab, windshield, grille);
+        [-1, 1].forEach((s) => {
+          const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.1), new THREE.MeshBasicMaterial({ color: 0xfff6c2 }));
+          lamp.position.set(s * 1.7, 1.9, 4.55);
+          g.add(lamp);
+          // Janelinha blindada e "$" na lateral
+          const port = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 1.6), dark);
+          port.position.set(s * 2.52, 4.6, -1.4);
+          g.add(port);
+          [[-3.3], [-0.2], [2.9]].forEach(() => {});
+          [3.2, -3.4].forEach((z) => {
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.8, 18), dark);
+            wheel.rotation.z = Math.PI / 2; wheel.position.set(s * 2.3, 1.05, z);
+            const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.84, 12), mat(0xcfd6de, { metalness: 0.8, roughness: 0.2 }));
+            hub.rotation.z = Math.PI / 2; hub.position.copy(wheel.position);
+            g.add(wheel, hub);
+          });
+        });
+        const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#1b1e23'; ctx.beginPath(); ctx.arc(128, 128, 110, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffcc00'; ctx.font = 'bold 170px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('$', 128, 138);
+        const tex = new THREE.CanvasTexture(c);
+        [-1, 1].forEach((s) => {
+          const sign = new THREE.Mesh(new THREE.CircleGeometry(1.2, 32), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+          sign.rotation.y = s * Math.PI / 2; sign.position.set(s * 2.52, 2.6, -1.4);
+          g.add(sign);
+        });
+        const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.5, 12), new THREE.MeshStandardMaterial({ color: 0xff9f1c, emissive: 0xff9f1c, emissiveIntensity: 0.8 }));
+        beacon.position.set(0, 4.95, 3.0);
+        g.add(beacon);
+        g.userData.beacon = beacon;
+        return { g, col: { box: { hx: 2.6, hz: 4.6 } }, h: 6.2 };
+      }
+      // 4) Caneca gigante MuleSoft Mentors (cópia da caneca da mesa)
+      function giantMug() {
+        const g = mugGroup.clone(true);
+        g.position.set(0, 0, 0);
+        g.rotation.set(0, 0, 0);
+        g.scale.setScalar(2.2);
+        const wrap = new THREE.Group();
+        wrap.add(g);
+        return { g: wrap, col: { r: 4.3 }, h: 9.6 };
+      }
+      // 5) Galão de água + tubulação (saneamento)
+      function waterJug() {
+        const g = new THREE.Group();
+        const jugMat = new THREE.MeshPhysicalMaterial ? new THREE.MeshPhysicalMaterial({ color: 0x8fd3ff, roughness: 0.1, metalness: 0, transparent: true, opacity: 0.72, clearcoat: 1 }) : mat(0x8fd3ff, { transparent: true, opacity: 0.72 });
+        const jug = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 6.2, 32), jugMat);
+        jug.position.y = 3.3; jug.castShadow = true;
+        const shoulder = new THREE.Mesh(new THREE.SphereGeometry(2.4, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), jugMat);
+        shoulder.position.y = 6.4; shoulder.scale.y = 0.55;
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 1.0, 20), jugMat);
+        neck.position.y = 8.0;
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.5, 20), mat(0x1d4ed8, { roughness: 0.3 }));
+        cap.position.y = 8.7;
+        const water = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.25, 4.8, 32), new THREE.MeshStandardMaterial({ color: 0x2f9bff, transparent: true, opacity: 0.55, roughness: 0.1 }));
+        water.position.y = 2.6;
+        [1.6, 4.6].forEach((y) => {
+          const rib = new THREE.Mesh(new THREE.TorusGeometry(2.42, 0.1, 8, 40), jugMat);
+          rib.rotation.x = Math.PI / 2; rib.position.y = y;
+          g.add(rib);
+        });
+        g.add(water, jug, shoulder, neck, cap);
+        // Tubulação de PVC com cotovelo ao lado
+        const pvc = mat(0xe9edf2, { roughness: 0.5 });
+        const pipeV = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 6.5, 20), pvc);
+        pipeV.position.set(4.1, 3.25, 0);
+        const elbow = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.7, 14, 20, Math.PI / 2), pvc);
+        elbow.position.set(2.9, 6.5, 0); elbow.rotation.z = 0;
+        const pipeH = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 3.0, 20), pvc);
+        pipeH.rotation.z = Math.PI / 2; pipeH.position.set(4.1 - 1.2 - 1.5 + 0.0, 7.7, 0);
+        const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.4, 20), mat(0x3a86ff, { roughness: 0.4 }));
+        flange.position.set(4.1, 0.2, 0);
+        g.add(pipeV, elbow, pipeH, flange);
+        g.userData.water = water;
+        return { g, col: { box: { hx: 4.9, hz: 2.6 } }, h: 9 };
+      }
+      // 6) Portinha laranja "novidades em breve"
+      function orangeDoor() {
+        const g = new THREE.Group();
+        const frame = mat(0xf4f1de, { roughness: 0.6 });
+        const orange = mat(0xb83a00, { roughness: 0.75 }); // laranja forte (a luz do quarto clareia bastante)
+        [[-2.9, 4.9, 0.7, 9.8], [2.9, 4.9, 0.7, 9.8], [0, 9.8, 6.5, 0.7]].forEach(([x, y, w, h]) => {
+          const part = new THREE.Mesh(new THREE.BoxGeometry(w, h, 1.0), frame);
+          part.position.set(x, y, 0); part.castShadow = true;
+          g.add(part);
+        });
+        const doorPivot = new THREE.Group();
+        doorPivot.position.set(-2.55, 0, 0.1);
+        const door = new THREE.Mesh(new THREE.BoxGeometry(5.1, 9.4, 0.4), orange);
+        door.position.set(2.55, 4.75, 0); door.castShadow = true;
+        doorPivot.add(door);
+        [[2.55, 7.0], [2.55, 2.6]].forEach(([x, y]) => {
+          const panel = new THREE.Mesh(new THREE.BoxGeometry(3.8, 3.2, 0.1), mat(0xcc4400, { roughness: 0.75 }));
+          panel.position.set(x, y, 0.25);
+          doorPivot.add(panel);
+        });
+        const knob = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 12), mat(0xffd166, { metalness: 0.8, roughness: 0.2 }));
+        knob.position.set(4.4, 4.6, 0.45);
+        doorPivot.add(knob);
+        doorPivot.rotation.y = -0.5; // entreaberta
+        g.add(doorPivot);
+        // Luz vazando pela fresta (porta entreaberta)
+        const glow = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 9.3), new THREE.MeshBasicMaterial({ color: 0xffe8a3 }));
+        glow.position.set(0, 4.75, -0.1);
+        // Fundo do batente (de costas a porta não fica vazada)
+        const back = new THREE.Mesh(new THREE.BoxGeometry(5.2, 9.5, 0.15), frame);
+        back.position.set(0, 4.75, -0.3);
+        g.add(back);
+        g.add(glow);
+        // Placa "Novidades em breve"
+        const c = document.createElement('canvas'); c.width = 512; c.height = 160;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#251f2b'; ctx.fillRect(0, 0, 512, 160);
+        ctx.strokeStyle = '#ffceca'; ctx.lineWidth = 8; ctx.strokeRect(6, 6, 500, 148);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 54px "Amatic SC", Pally-Medium, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('NOVIDADES EM BREVE', 256, 84);
+        const sign = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.95, 0.25), [frame, frame, frame, frame, new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) }), frame]);
+        sign.position.set(0, 11.4, 0.2);
+        g.add(sign);
+        g.userData.doorPivot = doorPivot;
+        return { g, col: { box: { hx: 3.3, hz: 2.4 } }, h: 12.5 };
+      }
+
+      const builders = [piggyBank, bigBattery, armoredTruck, giantMug, waterJug, orangeDoor];
+      CAREER_MILESTONES.forEach((m, i) => {
+        const spot = CAREER_SPOTS[i];
+        const built = builders[i]();
+        const [ox, oz] = spot.obj;
+        built.g.position.set(ox, surfaceY(spot.level), oz);
+        built.g.rotation.y = spot.rotY;
+        built.g.name = `Marco ${m.portal}: ${m.company}`;
+        built.g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+        scene.add(built.g);
+        registerOccluderTree(built.g);
+        const obs = Object.assign({ x: ox, z: oz, r: built.col.r || Math.max(built.col.box.hx, built.col.box.hz), name: `${m.title.toUpperCase()} · ${m.company.toUpperCase()}`, isStatic: true, level: spot.level, h: built.h }, built.col.box ? { box: built.col.box, boxRot: spot.rotY } : {});
+        obstacles.push(obs);
+        careerInteractives.push({
+          id: 'career_' + m.portal, careerIndex: i,
+          name: `Portal ${m.portal} · ${m.company}`,
+          point: spot.pin, y: surfaceY(spot.level), level: spot.level,
+          object: built.g
+        });
+      });
+    })();
+
+    // ============================================================================
     // RABISCOS DO LÁPIS DE COR (o lápis desenha livremente sobre a mesa)
     // ============================================================================
     const TRACK_W = 168, TRACK_D = 98;
@@ -3834,135 +4266,10 @@
     deskWorld.add(aquariumGroup);
     obstacles.push({ x: AQ_X, z: AQ_Z, r: 8.5, box: { hx: 9.4, hz: 5.8 }, boxRot: 0, name: 'AQUÁRIO AQUASCAPE COM 3 PEIXES TROPICAIS (A 10CM DA BORDA)' });
 
-    // 9. SEGUNDO MONITOR DESLIGADO (MONITOR 2 — AO LADO DO MONITOR 1, LIGA COM O CABO HDMI DO PS5!)
-    const monitor2Canvas = document.createElement('canvas');
-    monitor2Canvas.width = 512;
-    monitor2Canvas.height = 300;
-    const mon2Ctx = monitor2Canvas.getContext('2d');
-    const monitor2Texture = new THREE.CanvasTexture(monitor2Canvas);
     let hdmi1Connected = false;
-    let hdmi2Connected = false;
-
-    function updateMonitor2Screen() {
-      if (!hdmi2Connected) {
-        mon2Ctx.fillStyle = '#090a0d';
-        mon2Ctx.fillRect(0, 0, 512, 300);
-        mon2Ctx.fillStyle = '#323842';
-        mon2Ctx.font = 'bold 20px "Segoe UI", sans-serif';
-        mon2Ctx.textAlign = 'center';
-        mon2Ctx.fillText('MONITOR 2 — DESLIGADO', 256, 138);
-        mon2Ctx.font = '14px monospace';
-        mon2Ctx.fillStyle = '#ff9100';
-        mon2Ctx.fillText('[CONECTE O CABO HDMI DO PS5 AQUI]', 256, 172);
-      } else {
-        const g = mon2Ctx.createLinearGradient(0, 0, 512, 300);
-        g.addColorStop(0, '#001d4a');
-        g.addColorStop(0.5, '#0043a4');
-        g.addColorStop(1, '#00112b');
-        mon2Ctx.fillStyle = g;
-        mon2Ctx.fillRect(0, 0, 512, 300);
-
-        mon2Ctx.fillStyle = '#00e5ff';
-        mon2Ctx.font = 'bold 16px sans-serif';
-        mon2Ctx.textAlign = 'left';
-        mon2Ctx.fillText('⚡ HDMI 2 ATIVO — PLAYSTATION 5', 24, 36);
-
-        mon2Ctx.fillStyle = '#ffffff';
-        mon2Ctx.font = '900 30px "Segoe UI", sans-serif';
-        mon2Ctx.textAlign = 'center';
-        mon2Ctx.fillText('🚒 RAVI FIRE ENGINE PS5', 256, 135);
-
-        mon2Ctx.fillStyle = '#ffd24c';
-        mon2Ctx.font = 'bold 18px sans-serif';
-        mon2Ctx.fillText('PRESS START TO PLAY!', 256, 185);
-      }
-      monitor2Texture.needsUpdate = true;
-    }
-    updateMonitor2Screen();
-
-    const monitor2Group = new THREE.Group();
-    const monStandMat = new THREE.MeshStandardMaterial({ color: 0x121316, roughness: 0.35, metalness: 0.6 });
-    const MON2_X = 31.5, MON2_Z = -15.5;
-    monitor2Group.position.set(MON2_X, 0, MON2_Z);
-    monitor2Group.rotation.y = -0.34;
-
-    const mon2Base = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.3, 4.2), monStandMat);
-    mon2Base.position.y = 0.15; monitor2Group.add(mon2Base);
-    const mon2Neck = new THREE.Mesh(new THREE.BoxGeometry(1.4, 6.5, 0.7), monStandMat);
-    mon2Neck.position.set(0, 3.4, -1.0); monitor2Group.add(mon2Neck);
-
-    const mon2Frame = new THREE.Mesh(
-      new THREE.BoxGeometry(16.8, 9.8, 0.55),
-      new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: 0.4 })
-    );
-    mon2Frame.position.set(0, 8.2, -0.4);
-    mon2Frame.castShadow = true;
-    monitor2Group.add(mon2Frame);
-
-    const mon2Display = new THREE.Mesh(
-      new THREE.PlaneGeometry(16.0, 9.0),
-      new THREE.MeshBasicMaterial({ map: monitor2Texture })
-    );
-    mon2Display.position.set(0, 8.2, -0.11);
-    monitor2Group.add(mon2Display);
-
-    const mon2PowerLed = new THREE.Mesh(
-      new THREE.BoxGeometry(0.45, 0.15, 0.1),
-      new THREE.MeshBasicMaterial({ color: 0xff6d00 })
-    );
-    mon2PowerLed.position.set(7.2, 3.45, -0.1);
-    monitor2Group.add(mon2PowerLed);
-
-    deskWorld.add(monitor2Group);
-    obstacles.push({ x: MON2_X, z: MON2_Z, r: 3.4, name: 'MONITOR 2 (CONECTE O CABO HDMI DO PS5)' });
-
-    // 10. CONSOLE PLAYSTATION 5 (Design Aprimorado com Gola V-Collar, Portas USB Frontais e Fitas LED Duplas!)
-    const ps5ConsoleGroup = new THREE.Group();
-    const PS5_X = 47.0, PS5_Z = -21.0;
-    ps5ConsoleGroup.position.set(PS5_X, 0, PS5_Z);
-    ps5ConsoleGroup.rotation.y = -0.42;
-
-    const ps5Stand = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.9, 0.45, 28), new THREE.MeshStandardMaterial({ color: 0x14161a, roughness: 0.35 }));
-    ps5Stand.position.y = 0.22; ps5ConsoleGroup.add(ps5Stand);
-
-    // Núcleo Central Black Piano Curvado do PS5
-    const ps5Core = new THREE.Mesh(new THREE.BoxGeometry(1.95, 11.6, 6.8), new THREE.MeshStandardMaterial({ color: 0x0b0c0e, roughness: 0.12, metalness: 0.25 }));
-    ps5Core.position.y = 6.2; ps5Core.castShadow = true; ps5ConsoleGroup.add(ps5Core);
-
-    // Tampas Brancas Laterais com Aletas Superiores Abertas em V (Collar Flare do PS5)
-    const plateMat = new THREE.MeshStandardMaterial({ color: 0xf4f6fa, roughness: 0.25 });
-    [-1, 1].forEach((side) => {
-      const mainPlate = new THREE.Mesh(new THREE.BoxGeometry(0.32, 12.1, 7.2), plateMat);
-      mainPlate.position.set(side * 1.18, 6.25, 0);
-      mainPlate.rotation.z = -side * 0.035;
-      mainPlate.castShadow = true;
-      // Aba superior aberta da gola do PS5
-      const topFlare = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.8, 7.35), plateMat);
-      topFlare.position.set(side * 1.38, 11.7, 0.05);
-      topFlare.rotation.z = -side * 0.14;
-      ps5ConsoleGroup.add(mainPlate, topFlare);
-
-      // Fitas de LED Azuis Internas nas duas bordas do núcleo
-      const ledBlade = new THREE.Mesh(
-        new THREE.BoxGeometry(0.12, 10.6, 0.18),
-        new THREE.MeshBasicMaterial({ color: 0x00b4ff })
-      );
-      ledBlade.position.set(side * 0.98, 6.4, 3.38);
-      ps5ConsoleGroup.add(ledBlade);
-    });
-
-    // Portas USB Frontais e Botão Power no núcleo preto do PS5
-    const usbPortA = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.16, 0.1), new THREE.MeshBasicMaterial({ color: 0x0055ff }));
-    usbPortA.position.set(0, 4.2, 3.42);
-    const powerBtnPs5 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.55, 0.1), new THREE.MeshBasicMaterial({ color: 0x88929e }));
-    powerBtnPs5.position.set(0, 2.2, 3.42);
-    ps5ConsoleGroup.add(usbPortA, powerBtnPs5);
-
-    deskWorld.add(ps5ConsoleGroup);
-    obstacles.push({ x: PS5_X, z: PS5_Z, r: 4.5, box: { hx: 3, hz: 3.8 }, boxRot: 0, name: 'CONSOLE PLAYSTATION 5 (PS5)' });
 
     // ============================================================================
-    // CABOS HDMI INTERATIVOS (NOTEBOOK -> MONITOR 1 & PS5 -> MONITOR 2)
+    // CABO HDMI INTERATIVO (NOTEBOOK -> MONITOR 1)
     // ============================================================================
     const hdmiCables = [];
 
@@ -4077,23 +4384,6 @@
       }
     });
 
-    createInteractiveHdmiCable({
-      id: 'hdmi_ps5',
-      name: 'Cabo HDMI do PS5 (Conectar no Monitor 2)',
-      startPos: new THREE.Vector3(46.5, 1.2, -19.5),
-      initPlugX: 38.5,
-      initPlugZ: -4.5,
-      targetPos: new THREE.Vector3(MON2_X, 0.35, MON2_Z),
-      cableColor: 0x1a1d22,
-      badgeColor: 0x1e88e5,
-      onConnect: () => {
-        hdmi2Connected = true;
-        mon2PowerLed.material.color.setHex(0x00e676);
-        updateMonitor2Screen();
-        logInteractionEvent('🎮 Cabo HDMI do PS5 conectado! O Monitor 2 ligou com o PS5!');
-      }
-    });
-
     // 10. RÁDIO RETRÔ / BOOMBOX (Com Alça Superior, Deck de Fita Cassete, Botões Giratórios e Aros Cromados!)
     const radioGroup = new THREE.Group();
     radioGroup.position.set(-54, 0, -18);
@@ -4178,39 +4468,91 @@
       [-88, -66, -1.2, -35.84, 'floor'], [-138, 90, 0.9, -35.84, 'floor']
     ]);
 
-    const batBlackMat = new THREE.MeshStandardMaterial({ color: 0x16181c, roughness: 0.25, metalness: 0.3 });
-    const batCopperMat = new THREE.MeshStandardMaterial({ color: 0xd9822b, metalness: 0.75, roughness: 0.2 });
-    const turboRingMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.72, side: THREE.DoubleSide });
+    // Tipos de pilha: fraca/usada (cinza), semi-nova (laranja), nova (preta e cobre, rara e escondida)
+    // e turbo dourada (super rara e escondida: leva a bateria a 120% sem nunca explodir)
+    const BATTERY_TYPES = {
+      weak: { label: 'Pilha fraca', min: 5, max: 15, body: 0x80848b, cap: 0xa9adb4, ring: 0xa0a6ad, rough: 0.75, metal: 0.05 },
+      semi: { label: 'Pilha semi-nova', min: 20, max: 60, body: 0xff7a1a, cap: 0x2a2c31, ring: 0xffa94d, rough: 0.35, metal: 0.2 },
+      fresh: { label: 'Pilha nova', min: 80, max: 100, body: 0x16181c, cap: 0xd9822b, ring: 0x00e5ff, rough: 0.25, metal: 0.3 },
+      gold: { label: 'Pilha turbo dourada', gold: true, body: 0xffc93c, cap: 0xfff4c9, ring: 0xffd700, rough: 0.18, metal: 0.85 }
+    };
+    // Mesma ordem de trackBatteryCoords: 8 na pista (alternando semi-nova/fraca) + 7 escondidas
+    const BATTERY_LAYOUT = ['semi', 'weak', 'semi', 'weak', 'semi', 'weak', 'semi', 'weak',
+      'fresh', 'gold', 'fresh', 'fresh', 'gold', 'fresh', 'fresh'];
+    const BATTERY_RESPAWN_S = 180; // pilha usada volta depois de 3 minutos
 
     trackBatteryCoords.forEach(([bx, bz, brot, by, blevel], idx) => {
+      const type = BATTERY_TYPES[BATTERY_LAYOUT[idx] || 'semi'];
       const bat = new THREE.Group();
       bat.position.set(bx, by + 0.27, bz);
       bat.rotation.y = brot;
 
-      // Corpo preto + Topo Cobre Metálico (Duracell Turbo) + Polo Positivo Cromado
-      const bBlack = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.65, 20), batBlackMat);
-      bBlack.rotation.z = Math.PI / 2;
-      bBlack.castShadow = true;
-      const bGold = new THREE.Mesh(new THREE.CylinderGeometry(0.425, 0.425, 0.82, 20), batCopperMat);
-      bGold.rotation.z = Math.PI / 2; bGold.position.x = 0.95;
+      // Corpo + topo colorido conforme o tipo + polo positivo cromado
+      const bodyMat = new THREE.MeshStandardMaterial({ color: type.body, roughness: type.rough, metalness: type.metal });
+      const capMat = new THREE.MeshStandardMaterial({ color: type.cap, metalness: type.gold ? 0.6 : 0.75, roughness: 0.2 });
+      if (type.gold) { bodyMat.emissive = new THREE.Color(0xff9d00); bodyMat.emissiveIntensity = 0.35; }
+      const bBody = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.65, 20), bodyMat);
+      bBody.rotation.z = Math.PI / 2;
+      bBody.castShadow = true;
+      const bCap = new THREE.Mesh(new THREE.CylinderGeometry(0.425, 0.425, 0.82, 20), capMat);
+      bCap.rotation.z = Math.PI / 2; bCap.position.x = 0.95;
       const bTip = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.24, 14), inoxMat);
       bTip.rotation.z = Math.PI / 2; bTip.position.x = 1.42;
+      bat.add(bBody, bCap, bTip);
+      // Pilha fraca fica levemente torta (cara de usada); dourada ganha uma estrelinha girando em cima
+      if (BATTERY_LAYOUT[idx] === 'weak') bBody.rotation.x = 0.05;
+      let sparkle = null;
+      if (type.gold) {
+        sparkle = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), new THREE.MeshBasicMaterial({ color: 0xfff3a0 }));
+        sparkle.position.set(0.2, 1.1, 0);
+        bat.add(sparkle);
+      }
 
-      // Anel Luminoso de Energia Turbo no chão sob a pilha!
-      const turboRing = new THREE.Mesh(new THREE.RingGeometry(1.45, 1.85, 24), turboRingMat);
+      // Anel luminoso no chão sob a pilha (cor do tipo)
+      const ringMat = new THREE.MeshBasicMaterial({ color: type.ring, transparent: true, opacity: type.gold ? 0.9 : 0.72, side: THREE.DoubleSide });
+      const turboRing = new THREE.Mesh(new THREE.RingGeometry(1.45, 1.85, 24), ringMat);
       turboRing.rotation.x = -Math.PI / 2;
       turboRing.position.set(0.2, -0.24, 0);
+      bat.add(turboRing);
 
-      bat.add(bBlack, bGold, bTip, turboRing);
       deskWorld.add(bat);
       turboBatteries.push({
         id: 'bat_' + idx,
+        kind: BATTERY_LAYOUT[idx] || 'semi',
+        type,
         x: bx, z: bz, y: by, level: blevel,
         group: bat,
         ring: turboRing,
+        sparkle,
+        bolt: null,
+        usedAt: -1,
+        respawnAt: 0,
         lastBoostTime: -10
       });
     });
+
+    // Pilhas usadas reaparecem após 3 minutos (com um "pop" de escala)
+    function updateBatteryRespawns(time) {
+      turboBatteries.forEach((tb) => {
+        if (tb.sparkle) { tb.sparkle.rotation.y = time * 3; tb.sparkle.position.y = 1.1 + Math.sin(time * 4) * 0.15; }
+        if (tb.respawnAt && time >= tb.respawnAt) {
+          tb.respawnAt = 0;
+          tb.group.visible = true;
+          tb.popT = 0;
+          if (tb.bolt) tb.bolt.visible = true;
+          const d = Math.hypot(vehicle.position.x - tb.x, vehicle.position.z - tb.z);
+          if (d < 40) playTone(784, 0, 0.08, 'triangle', 0.03);
+        }
+        if (tb.popT !== undefined && tb.popT < 1) {
+          tb.popT = Math.min(1, tb.popT + 0.04);
+          const s = tb.popT < 0.7 ? tb.popT / 0.7 * 1.2 : 1.2 - (tb.popT - 0.7) / 0.3 * 0.2;
+          tb.group.scale.setScalar(Math.max(0.01, s));
+        }
+      });
+    }
+    function respawnAllBatteries() {
+      turboBatteries.forEach((tb) => { tb.respawnAt = 0; tb.group.visible = true; tb.group.scale.setScalar(1); if (tb.bolt) tb.bolt.visible = true; });
+    }
 
     // 12. CABOS USB ENROLADOS NA MESA
     function createCoiledUsbCable(x, z, colorHex) {
@@ -4761,7 +5103,7 @@
     trackBatteryCoords.slice(0, 8).forEach(([bx, bz, , by]) => { // as escondidas não têm raio sinalizando
       placeModel('lightning_bolt', {
         x: bx, z: bz, y: by + 2.4, physics: false,
-        onLoad: (bolt) => floatingProps.push({ obj: bolt, baseY: by + 2.4, spin: 1.6, bob: 0.25, phase: bx * 0.1 + bz * 0.07 })
+        onLoad: (bolt) => { const tb = turboBatteries.find(b => Math.hypot(b.x - bx, b.z - bz) < 0.01); if (tb) { tb.bolt = bolt; bolt.visible = tb.group.visible; } floatingProps.push({ obj: bolt, baseY: by + 2.4, spin: 1.6, bob: 0.25, phase: bx * 0.1 + bz * 0.07 }); }
       });
     });
 
@@ -5631,10 +5973,111 @@
     // Porta na parede da frente, estante e cômoda com TV na parede do fundo
     placeModel('door_01', { x: -90, z: 92.9, y: FLOOR_SURFACE_Y, rotY: Math.PI, physics: false, name: 'Porta do Quarto' });
     placeModel('medieval_bookcase', { x: 70, z: -69, floor: true, isStatic: true, r: 4.5, name: 'Estante' });
-    placeModel('globe', { x: 64, z: -69, y: FLOOR_SURFACE_Y + 37, physics: false, name: 'Globo da Estante' });
+    // Estante: tábuas em y -5.9 (topo), -13.02, -20.13 e -27.25; vão útil de ~7; largura x 57–83, fundo z -73..-65
+    const SHELF_Y = [-5.9, -13.02, -20.13, -27.25];
+    placeModel('globe', { x: 61.5, z: -69, y: SHELF_Y[0], scale: 0.86, physics: false, name: 'Globo da Estante' });
+    (function shelfBooks() {
+      // Fileiras de livros coloridos (paleta do DS), com um livro inclinado no fim de cada fileira
+      const colors = [0xe63946, 0xffb703, 0x2a9d8f, 0x3a86ff, 0xff8fab, 0x8338ec, 0xfb8500, 0x06d6a0, 0xf4f1de];
+      let seed = 7;
+      const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+      function bookRow(x0, x1, y, count) {
+        let x = x0;
+        for (let i = 0; i < count && x < x1; i++) {
+          const w = 0.55 + rnd() * 0.45, h = 4.2 + rnd() * 1.9, d = 3.4 + rnd() * 0.8;
+          const book = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: colors[Math.floor(rnd() * colors.length)], roughness: 0.7 }));
+          const last = i === count - 1;
+          book.position.set(x + w / 2 + (last ? h * 0.18 : 0), y + h / 2 - (last ? h * 0.03 : 0), -69 + (rnd() - 0.5) * 0.4);
+          if (last) book.rotation.z = -0.32;
+          // Faixa clara na lombada
+          const band = new THREE.Mesh(new THREE.BoxGeometry(w + 0.02, 0.28, 0.05), new THREE.MeshStandardMaterial({ color: 0xfff3d6, roughness: 0.6 }));
+          band.position.set(0, h * 0.25, d / 2 + 0.01);
+          book.add(band);
+          book.castShadow = true;
+          scene.add(book);
+          x += w + 0.05;
+        }
+      }
+      bookRow(66, 74, SHELF_Y[0], 9);
+      bookRow(58, 66.5, SHELF_Y[1], 10);
+      bookRow(73, 82, SHELF_Y[2], 9);
+      bookRow(58, 63, SHELF_Y[3], 6);
+    })();
+    placeModel('flower_pot_01', { x: 79, z: -69, y: SHELF_Y[0], scale: 0.6, physics: false, name: 'Vasinho da Estante' });
+    placeModel('rocket_toy_01', { x: 71, z: -69, y: SHELF_Y[1], rotY: 0.5, physics: false, name: 'Foguetinho da Estante' });
+    placeModel('crystal', { x: 76.5, z: -68.5, y: SHELF_Y[1], scale: 1.3, physics: false, name: 'Cristal da Estante' });
+    placeModel('d6_dice', { x: 80, z: -68, y: SHELF_Y[1], scale: 0.7, rotY: 0.6, physics: false, name: 'Dado da Estante' });
+    placeModel('star_01', { x: 61, z: -69, y: SHELF_Y[2], scale: 0.7, physics: false, name: 'Estrela da Estante' });
+    placeModel('storage_box_01', { x: 67.5, z: -69, y: SHELF_Y[2], scale: 0.9, physics: false, name: 'Caixinha da Estante' });
+    placeModel('cardboard_box_01', { x: 70.5, z: -69, y: SHELF_Y[3], scale: 0.55, physics: false, name: 'Caixa de Brinquedos' });
+    placeModel('volleyball', { x: 78, z: -69, y: SHELF_Y[3], scale: 0.5, physics: false, name: 'Bolinha da Estante' });
     placeModel('chest_of_drawers_01', { x: -100, z: -68, floor: true, isStatic: true, r: 5.5, name: 'Cômoda' });
     placeModel('retro_tv', { x: -100, z: -68, y: FLOOR_SURFACE_Y + 26, physics: false, name: 'TV Retrô' });
-    placeModel('wall_clock', { x: 0, z: -72.9, y: 6, physics: false, name: 'Relógio de Parede' });
+    // Relógio de parede grande (estilo DS: aro vermelho), números legíveis e ponteiros na hora exata do navegador
+    const wallClock = (function createWallClock() {
+      const R = 7.6, X = 0, Y = 11.5, Z = -72.6;
+      const g = new THREE.Group();
+      g.position.set(X, Y, Z);
+      g.name = 'Relógio de Parede';
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.7, R + 0.7, 1.1, 48), new THREE.MeshStandardMaterial({ color: 0xe63946, roughness: 0.4 }));
+      rim.rotation.x = Math.PI / 2;
+      rim.position.z = 0.55;
+      rim.castShadow = true;
+      g.add(rim);
+      // Mostrador desenhado em canvas: marcas de minuto, números grandes 1–12
+      const c = document.createElement('canvas');
+      c.width = c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fffaf0'; ctx.beginPath(); ctx.arc(256, 256, 256, 0, Math.PI * 2); ctx.fill();
+      for (let i = 0; i < 60; i++) {
+        const a = i / 60 * Math.PI * 2, big = i % 5 === 0;
+        ctx.strokeStyle = big ? '#2b1d2e' : '#9a8f9c'; ctx.lineWidth = big ? 8 : 3;
+        ctx.beginPath();
+        ctx.moveTo(256 + Math.sin(a) * (big ? 214 : 226), 256 - Math.cos(a) * (big ? 214 : 226));
+        ctx.lineTo(256 + Math.sin(a) * 244, 256 - Math.cos(a) * 244);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#120b14'; ctx.font = 'bold 66px Pally, "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (let n = 1; n <= 12; n++) {
+        const a = n / 12 * Math.PI * 2;
+        ctx.fillText(String(n), 256 + Math.sin(a) * 172, 256 - Math.cos(a) * 172 + 3);
+      }
+      const face = new THREE.Mesh(new THREE.CircleGeometry(R, 64), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), roughness: 0.6 }));
+      face.position.z = 1.12;
+      g.add(face);
+      // Ponteiros (pivô no centro; geometria deslocada para girar pela ponta de trás)
+      function hand(len, width, depth, color, z, back = 0.8) {
+        const geo = new THREE.BoxGeometry(width, len + back, depth);
+        geo.translate(0, (len - back) / 2, 0);
+        // Material sem iluminação: ponteiros sempre bem escuros e nítidos, mesmo com a parede iluminada
+        const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color }));
+        m.position.z = z;
+        m.castShadow = true;
+        g.add(m);
+        return m;
+      }
+      const hourHand = hand(R * 0.52, 0.66, 0.16, 0x120b14, 1.25);
+      const minuteHand = hand(R * 0.8, 0.44, 0.16, 0x120b14, 1.42);
+      const secondHand = hand(R * 0.86, 0.16, 0.1, 0xd90429, 1.58, 1.6);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.5, 20), new THREE.MeshStandardMaterial({ color: 0xe63946, roughness: 0.3 }));
+      hub.rotation.x = Math.PI / 2;
+      hub.position.z = 1.6;
+      g.add(hub);
+      scene.add(g);
+      return {
+        update() {
+          // Hora local do navegador, com milissegundos: ponteiro dos segundos anda suave e exato
+          const d = new Date();
+          const s = d.getSeconds() + d.getMilliseconds() / 1000;
+          const m = d.getMinutes() + s / 60;
+          const h = (d.getHours() % 12) + m / 60;
+          secondHand.rotation.z = -s / 60 * Math.PI * 2;
+          minuteHand.rotation.z = -m / 60 * Math.PI * 2;
+          hourHand.rotation.z = -h / 12 * Math.PI * 2;
+        }
+      };
+    })();
+    wallClock.update();
     placeModel('painting_frame_01', { x: -66, z: -72.9, y: 4, physics: false, name: 'Quadro' });
 
     // Quadro da família na parede do fundo: moldura de madeira clara com a foto em assets/quadro-familia.jpg
@@ -5875,7 +6318,7 @@
       if (isl.id === 'fire') {
         waterLevel = 100;
         updateWaterHUD();
-        chargeBattery(100);
+        fillBatteryTo100();
         splashAt(-118, ISLAND_Y + 4, 76, 30, 1.6);
         showCarSpeech('Tanque cheio! Pronto pra missão!', 2600);
         notify({ type: 'success', title: 'Tanque cheio!', description: 'O caminhãozinho está pronto para apagar incêndios.' });
@@ -5903,6 +6346,10 @@
       worldUniforms.uTime.value = time;
       worldUniforms.uPlayer.value.copy(vehicle.position);
       updateFallingLeaves(time, dt);
+      wallClock.update();
+      updateCareerObjects(time);
+      updateExplosionFx(dt);
+      updateBatteryRespawns(time);
       updateFx(dt);
       updateRevealRings(dt);
 
@@ -5996,7 +6443,7 @@
 
 
     // Objetos fixos grandes da mesa e do quarto que podem tapar a visão do carrinho
-    [monitorGroup, monitor2Group, ps5ConsoleGroup, radioGroup, laptopGroup, dualArmGroup, fireStation, aquariumGroup]
+    [monitorGroup, radioGroup, laptopGroup, dualArmGroup, fireStation, aquariumGroup]
       .forEach(registerOccluderTree);
 
     // Modelos arredondados usam colisor circular; todos os demais usam caixa orientada (OBB)
@@ -6998,8 +7445,11 @@
       { id: 'islandActions', title: 'Aventureiro', description: 'Faça 5 atividades nas ilhas', total: 5 },
       { id: 'bowling', title: 'Strike!', description: 'Derrube os 10 pinos do boliche', total: 1 },
       { id: 'shortcut', title: 'Atalho secreto', description: 'Salte da rampa escondida embaixo da mesa', total: 1 },
+      { id: 'career', title: 'Linha do tempo', description: 'Visite os 6 marcos de carreira nos portais da pista', total: 6 },
+      { id: 'nitro', title: 'Nitro!', description: 'Sobrecarregue a bateria acima de 120%', total: 1 },
+      { id: 'kaboom', title: 'Sobrecarga', description: 'Passe de 140% de bateria e exploda (sem quebrar o carrinho)', total: 1 },
       { id: 'crates', title: 'Surpresa!', description: 'Exploda 5 caixas-surpresa', total: 5 },
-      { id: 'hdmi', title: 'Conectado', description: 'Conecte os 2 cabos HDMI', total: 2 },
+      { id: 'hdmi', title: 'Conectado', description: 'Conecte o cabo HDMI do notebook no monitor', total: 1 },
       { id: 'skydiver', title: 'Paraquedista', description: 'Caia da mesa até o chão do quarto', total: 1 },
       { id: 'slide', title: 'Tobogã', description: 'Desça pela rampa de papelão', total: 1 },
       { id: 'acrobat', title: 'Acrobata', description: 'Capote o carrinho', total: 1 },
@@ -7496,22 +7946,220 @@
     const batteryPctEl = document.getElementById('battery-pct');
     const batteryBarEl = document.getElementById('battery-bar');
     const batteryFillEl = document.getElementById('battery-bar-fill');
+    // Acima de 100% = sobrecarga; acima de 120% = NITRO; passar de 140% = explosão (bateria volta a 5%)
+    const BATTERY_MAX = 140, BATTERY_NITRO_AT = 120;
+    let nitroActive = false;
+    let overchargeWarned = false;
     function updateBatteryHUD() {
-      const pct = clamp(Math.round(carBattery), 0, 100);
+      const pct = clamp(Math.round(carBattery), 0, BATTERY_MAX);
       batteryPctEl.textContent = pct + '%';
-      batteryFillEl.style.transform = `scaleX(${pct / 100})`;
+      batteryFillEl.style.transform = `scaleX(${pct / BATTERY_MAX})`;
       batteryBarEl.classList.toggle('is-low', carBattery < 10);
-      batteryBarEl.classList.toggle('is-turbo', carBattery > 60);
+      batteryBarEl.classList.toggle('is-turbo', carBattery > 60 && carBattery <= 100);
+      batteryBarEl.classList.toggle('is-over', carBattery > 100 && carBattery < BATTERY_NITRO_AT);
+      batteryBarEl.classList.toggle('is-nitro', carBattery >= BATTERY_NITRO_AT);
+      batteryBarEl.classList.toggle('is-danger', carBattery > 132);
     }
     function chargeBattery(amount, source) {
       const before = carBattery;
-      carBattery = Math.min(100, carBattery + amount);
+      carBattery = carBattery + amount;
       if (before < 10 && carBattery >= 10) {
         batteryLowWarned = false;
         showCarSpeech('Energia de volta!', 1600);
       }
+      if (carBattery > BATTERY_MAX) {
+        overloadExplosion();
+        return before;
+      }
+      if (carBattery > 100 && before <= 100) {
+        showCarSpeech('Sobrecarga! ⚡', 1800);
+        notify({ type: 'danger', title: 'Sobrecarga!', description: 'Acima de 120% vira NITRO. Passou de 140%... BUM!', duration: 3500 });
+      }
+      if (carBattery > 130 && !overchargeWarned) {
+        overchargeWarned = true;
+        showCarSpeech('Cuidado! Vou explodir!', 2000);
+        setStatusBanner(`⚠️ Bateria em ${Math.round(carBattery)}% — mais uma carga e o carrinho explode!`, '#ff5252');
+      }
+      if (carBattery <= 125) overchargeWarned = false;
       updateBatteryHUD();
       return before;
+    }
+    // Coleta de pilha: carga conforme o tipo; a pilha some e reaparece em 3 minutos
+    function collectBattery(tb, time) {
+      const type = tb.type;
+      tb.respawnAt = time + BATTERY_RESPAWN_S;
+      tb.group.visible = false;
+      if (tb.bolt) tb.bolt.visible = false;
+      trackAchievementSet('turbo', tb.id);
+      const p = tb.group.position;
+      for (let i = 0; i < (type.gold ? 18 : 8); i++) {
+        const a = Math.random() * Math.PI * 2;
+        spawnFx(p.x, p.y + 0.6, p.z, Math.cos(a) * 3, 4 + Math.random() * 3, Math.sin(a) * 3, type.ring, 0.35, 18, 0.7);
+      }
+      if (type.gold) {
+        // Dourada: vai direto a 120% (NITRO) sem nunca explodir, qualquer que seja a carga atual
+        const before = carBattery;
+        carBattery = Math.min(BATTERY_MAX, Math.max(carBattery, BATTERY_NITRO_AT));
+        batteryLowWarned = false;
+        updateBatteryHUD();
+        turboBoostTimer = 1.65;
+        carSpeed = Math.max(carSpeed, baseMaxSpeed * 1.85);
+        showCarSpeech('✨ PILHA DOURADA! NITRO!', 2400);
+        setStatusBanner(`✨ Pilha turbo dourada: bateria em ${Math.round(carBattery)}% (sem risco de explodir)`, '#ffd700');
+        notify({ type: 'success', title: 'Pilha turbo dourada!', description: 'Bateria em 120%: modo NITRO garantido, sem explosão.', duration: 4000 });
+        logInteractionEvent(`✨ Pilha dourada: ${Math.round(before)}% → ${Math.round(carBattery)}%`);
+        rumble(0.5, 0.8, 260);
+        playTone(784, 0, 0.1, 'triangle', 0.07); playTone(1046, 0.1, 0.12, 'triangle', 0.07); playTone(1318, 0.2, 0.2, 'triangle', 0.07);
+        return;
+      }
+      const amount = Math.round(type.min + Math.random() * (type.max - type.min));
+      const before = chargeBattery(amount);
+      if (before + amount > BATTERY_MAX) return; // explodiu: a explosão já cuidou dos avisos
+      if (before > 60 && tb.kind !== 'weak') {
+        // Turbo das pilhas só com bateria acima de 60% (pilha fraca não dá turbo)
+        turboBoostTimer = 1.65;
+        carSpeed = baseMaxSpeed * 1.85;
+        showCarSpeech(`⚡ MINI TURBO! +${amount}%`, 1800);
+        setStatusBanner(`⚡ ${type.label}: MINI TURBO! +${amount}% (bateria ${Math.round(carBattery)}%)`, '#35e0ff');
+        rumble(0.25, 0.5, 160);
+      } else {
+        showCarSpeech(`🔋 +${amount}%`, 1600);
+        setStatusBanner(`🔋 ${type.label}: +${amount}% (bateria ${Math.round(carBattery)}%)`, tb.kind === 'weak' ? '#b0b4ba' : '#7ee787');
+        rumble(0.15, 0.25, 90);
+      }
+      logInteractionEvent(`🔋 ${type.label}: +${amount}% de bateria`);
+      playTone(660, 0, 0.1, 'triangle', 0.06); playTone(990, 0.08, 0.12, 'triangle', 0.05);
+    }
+
+    // Enche só até 100% (posto do bombeiro, reset): nunca causa sobrecarga
+    function fillBatteryTo100() {
+      if (carBattery < 100) chargeBattery(100 - carBattery);
+    }
+
+    // Nitro: chamas azuis duplas no escapamento traseiro
+    const nitroFlames = [];
+    const nitroFlameMat = new THREE.MeshBasicMaterial({ color: 0x6fd6ff, transparent: true, opacity: 0.9, depthWrite: false });
+    const nitroCoreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false });
+    [-0.62, 0.62].forEach((x) => {
+      const flame = new THREE.Group();
+      const outer = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.6, 12), nitroFlameMat);
+      const inner = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.0, 10), nitroCoreMat);
+      outer.rotation.x = inner.rotation.x = -Math.PI / 2; // ponta para trás (-z)
+      outer.position.z = -0.8; inner.position.z = -0.5;
+      flame.add(outer, inner);
+      flame.position.set(x, 0.62, -2.2);
+      flame.visible = false;
+      carBodyGroup.add(flame);
+      nitroFlames.push(flame);
+    });
+    function setNitro(on) {
+      nitroActive = on;
+      nitroFlames.forEach(f => { f.visible = on; });
+      if (on) {
+        showCarSpeech('NITROOO! 🔥', 1800);
+        setStatusBanner('🔥 Modo NITRO: bateria acima de 120%!', '#6fd6ff');
+        playTone(220, 0, 0.25, 'sawtooth', 0.06); playTone(440, 0.12, 0.3, 'sawtooth', 0.05);
+        rumble(0.4, 0.6, 200);
+        unlockAchievement('nitro');
+      }
+    }
+    function updateNitroFlames(power) {
+      const t = performance.now() / 1000;
+      nitroFlames.forEach((f, i) => {
+        const s = 0.6 + power * 0.7 + Math.sin(t * 40 + i * 2) * 0.15;
+        f.scale.set(1, 1, s);
+      });
+      if (Math.random() < 0.5) {
+        const back = new THREE.Vector3(0, 0.7, -2.8).applyQuaternion(vehicle.quaternion).add(vehicle.position);
+        spawnFx(back.x, back.y, back.z, (Math.random() - 0.5) * 2, Math.random() * 1.5, (Math.random() - 0.5) * 2, Math.random() > 0.4 ? 0x6fd6ff : 0xffffff, 0.35, 0, 0.35);
+      }
+    }
+
+    // Explosão de sobrecarga (estilo explosão das caixas do mundo do DS): clarão, bola de fogo,
+    // fumaça, faíscas e onda de choque. O carrinho NÃO é destruído: só quica e a bateria cai para 5%.
+    const explosionFx = [];
+    function overloadExplosion() {
+      const p = vehicle.position.clone().add(new THREE.Vector3(0, 1.2, 0));
+      carBattery = 5;
+      batteryLowWarned = false;
+      overchargeWarned = false;
+      setNitro(false);
+      updateBatteryHUD();
+      // Clarão + bola de fogo
+      const flash = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 1, depthWrite: false }));
+      flash.position.copy(p);
+      scene.add(flash);
+      explosionFx.push({ mesh: flash, t: 0, life: 0.55, grow: 9, kind: 'flash' });
+      const fire = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshStandardMaterial({ color: 0xff6a1a, emissive: 0xff4500, emissiveIntensity: 1.2, flatShading: true, transparent: true, depthWrite: false }));
+      fire.position.copy(p);
+      scene.add(fire);
+      explosionFx.push({ mesh: fire, t: 0, life: 0.9, grow: 6, kind: 'fire' });
+      // Fumaça low-poly subindo
+      for (let i = 0; i < 9; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const puff = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9 + Math.random() * 0.6, 0), new THREE.MeshStandardMaterial({ color: 0x5b5560, flatShading: true, transparent: true, depthWrite: false, roughness: 1 }));
+        puff.position.copy(p).add(new THREE.Vector3(Math.cos(a) * 1.2, Math.random(), Math.sin(a) * 1.2));
+        scene.add(puff);
+        explosionFx.push({ mesh: puff, t: 0, life: 1.6 + Math.random() * 0.8, grow: 2.6, kind: 'smoke', vx: Math.cos(a) * 3, vy: 4 + Math.random() * 3, vz: Math.sin(a) * 3 });
+      }
+      // Onda de choque no chão
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.2, 40), new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(p.x, vehicle.position.y + 0.25, p.z);
+      scene.add(ring);
+      explosionFx.push({ mesh: ring, t: 0, life: 0.7, grow: 14, kind: 'ring' });
+      // Faíscas e confete
+      for (let i = 0; i < 24; i++) {
+        const a = Math.random() * Math.PI * 2, s = 6 + Math.random() * 8;
+        spawnFx(p.x, p.y, p.z, Math.cos(a) * s, 6 + Math.random() * 10, Math.sin(a) * s, [0xffc300, 0xff6a3d, 0xffffff, 0xe63946][i % 4], 0.5 + Math.random() * 0.5, 22, 1.2);
+      }
+      // Empurra os objetos em volta e faz o carrinho dar um pulo (sem ser destruído)
+      const carLvl = levelOfY(vehicle.position.y);
+      dynamicObstacles.forEach((o) => {
+        if (o.level !== carLvl) return;
+        const dx = o.x - vehicle.position.x, dz = o.z - vehicle.position.z, d = Math.hypot(dx, dz);
+        if (d > 14 || d < 1e-3) return;
+        const f = (1 - d / 14) * 1.6 / (o.mass || 1);
+        o.vx += (dx / d) * f; o.vz += (dz / d) * f;
+        if (o.ball) o.hopV = Math.max(o.hopV || 0, 0.45 * (1 - d / 14));
+        if (o.pin) knockPin(o, dx / d, dz / d);
+        if (o.crate) explodeCrate(o);
+      });
+      carSpeed *= 0.2;
+      if (!carAirborne) launchVehicle(0.55);
+      // Som: estrondo grave + chiado
+      playTone(70, 0, 0.7, 'sawtooth', 0.14);
+      playTone(110, 0.02, 0.5, 'square', 0.1);
+      playTone(55, 0.1, 0.9, 'sawtooth', 0.1);
+      rumble(1, 1, 500);
+      explosionShake = 0.9;
+      showCarSpeech('BUUUM! Bateria em 5%...', 2800);
+      setStatusBanner('💥 Sobrecarga! A bateria explodiu e caiu para 5% — recarregue nas pilhas ou no Posto.', '#ff5252');
+      notify({ type: 'danger', title: 'Sobrecarga: BUM!', description: 'A bateria passou de 140% e explodiu. O carrinho está inteiro, mas com 5% de energia.', duration: 5000 });
+      logInteractionEvent('💥 Sobrecarga! A bateria passou de 140% e explodiu (bateria em 5%).');
+      unlockAchievement('kaboom');
+    }
+    let explosionShake = 0;
+    function updateExplosionFx(dt) {
+      for (let i = explosionFx.length - 1; i >= 0; i--) {
+        const e = explosionFx[i];
+        e.t += dt;
+        const k = e.t / e.life;
+        if (k >= 1) { scene.remove(e.mesh); e.mesh.geometry.dispose(); e.mesh.material.dispose(); explosionFx.splice(i, 1); continue; }
+        const ease = 1 - Math.pow(1 - k, 3);
+        if (e.kind === 'smoke') {
+          e.mesh.position.x += e.vx * dt; e.mesh.position.y += e.vy * dt; e.mesh.position.z += e.vz * dt;
+          e.vx *= 0.96; e.vz *= 0.96; e.vy *= 0.97;
+          e.mesh.scale.setScalar(1 + ease * e.grow);
+          e.mesh.material.opacity = 0.85 * (1 - k);
+          e.mesh.rotation.y += dt;
+        } else {
+          e.mesh.scale.setScalar(1 + ease * e.grow);
+          e.mesh.material.opacity = (e.kind === 'flash' ? 1 : 0.95) * (1 - k);
+          if (e.kind === 'fire') e.mesh.rotation.y += dt * 2;
+        }
+      }
+      if (explosionShake > 0) explosionShake = Math.max(0, explosionShake - dt * 1.6);
     }
 
     const waterDrops = [];
@@ -7576,7 +8224,8 @@
       carAngle = -0.55;
       waterLevel = 100.0;
       updateWaterHUD();
-      carBattery = 100; batteryLowWarned = false; updateBatteryHUD();
+      carBattery = 100; batteryLowWarned = false; overchargeWarned = false; if (nitroActive) setNitro(false); updateBatteryHUD();
+      respawnAllBatteries();
       setStatusBanner('🔄 Jogo reiniciado! Todos os objetos restaurados.', '#7ee787');
       logInteractionEvent('🔄 Jogo reiniciado e objetos restaurados!');
 
@@ -7616,11 +8265,8 @@
         }
       });
 
-      // Cabos HDMI e monitor 2 desligado
+      // Cabo HDMI desconectado
       hdmi1Connected = false;
-      hdmi2Connected = false;
-      mon2PowerLed.material.color.setHex(0xff6d00);
-      updateMonitor2Screen();
       hdmiCables.forEach((c) => { c.connected = false; c.updateCableCurve(); });
 
       // Plantas no nível 1
@@ -7887,6 +8533,7 @@
       }
     ];
     deskInteractives.forEach((it) => { it.pointMeshes = createInteractivePin(it.point[0], it.y, it.point[1]); });
+    careerInteractives.forEach((it) => { it.pointMeshes = createInteractivePin(it.point[0], it.y, it.point[1]); });
 
     function interactiveActions(item) {
       if (item.actions) return item.actions;
@@ -7924,12 +8571,13 @@
       if (!inputBlocked()) {
         const onFloor = vehicle.position.y < -15;
         let best = 4.6;
-        (onFloor ? islands.concat([bowlingInteractive]) : deskInteractives).forEach((it) => {
+        const careerHere = careerInteractives.filter(it => it.level === (onFloor ? 'floor' : 'desk'));
+        (onFloor ? islands.concat([bowlingInteractive]) : deskInteractives).concat(careerHere).forEach((it) => {
           const d = Math.hypot(vehicle.position.x - it.point[0], vehicle.position.z - it.point[1]);
           if (d < best) { best = d; nearestInteractive = it; }
         });
       }
-      deskInteractives.forEach((it, i) => {
+      deskInteractives.concat(careerInteractives).forEach((it, i) => {
         it.pointMeshes.diamond.rotation.y = time * 1.4 + i;
         it.pointMeshes.diamond.position.y = it.y + 3 + Math.sin(time * 2 + i) * 0.35;
         it.pointMeshes.ring.material.opacity = 0.55 + Math.sin(time * 3 + i) * 0.3;
@@ -7960,6 +8608,7 @@
 
     function interactWithNearest() {
       if (!nearestInteractive || inputBlocked()) return;
+      if (nearestInteractive.careerIndex !== undefined) { openCareerBoard(nearestInteractive.careerIndex); return; }
       currentIsland = nearestInteractive;
       currentActions = interactiveActions(currentIsland);
       islandModalTitle.textContent = currentIsland.name;
@@ -8153,8 +8802,20 @@
     function updateRace() {
       const start = raceGates[0];
       if (raceState === 'idle') {
+        // Não começa sozinho: ao passar pela largada pergunta se quer correr (mostra os recordes)
         if (!gateIsNear(start)) raceStartArmed = true;
-        else if (raceStartArmed && !inputBlocked()) beginRace();
+        else if (raceStartArmed && !inputBlocked()) { raceStartArmed = false; openRaceInvite(); }
+        // Fora da corrida, passar por baixo de um portal abre o marco de carreira correspondente
+        // (uma vez por passagem: precisa sair do portal para armar de novo)
+        for (let i = 1; i < raceGates.length; i++) {
+          const g = raceGates[i];
+          if (!gateIsNear(g)) { g.careerArmed = true; continue; }
+          if (g.careerArmed !== false && !inputBlocked() && CAREER_MILESTONES[i - 1]) {
+            g.careerArmed = false;
+            carSpeed *= 0.35;
+            openCareerBoard(i - 1);
+          }
+        }
         return;
       }
       if (raceState !== 'racing') return;
@@ -8202,6 +8863,81 @@
       });
       countdownTimers.push(setTimeout(() => { raceCountdownEl.textContent = ''; }, 3 * 900 + 900));
     }
+    // ---------- Mural dos marcos de carreira ----------
+    let careerIndex = 0;
+    const careerThumbsEl = document.getElementById('career-thumbs');
+    CAREER_MILESTONES.forEach((m, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'career-thumb';
+      b.style.setProperty('--career-color', m.color);
+      b.innerHTML = `<span>${m.emoji}</span><span class="lbl"></span>`;
+      b.querySelector('.lbl').textContent = m.label;
+      b.setAttribute('aria-label', `Portal ${m.portal}: ${m.company}`);
+      b.addEventListener('click', () => showCareerMilestone(i));
+      careerThumbsEl.appendChild(b);
+    });
+    function showCareerMilestone(i) {
+      careerIndex = (i + CAREER_MILESTONES.length) % CAREER_MILESTONES.length;
+      const m = CAREER_MILESTONES[careerIndex];
+      document.getElementById('career-title').textContent = m.title;
+      document.getElementById('career-pill').textContent = `${m.company} · ${m.period}`;
+      document.getElementById('career-emoji').textContent = m.emoji;
+      document.getElementById('career-portal').textContent = `Portal ${m.portal}`;
+      document.getElementById('career-art').style.setProperty('--career-color', m.color);
+      document.getElementById('career-role').textContent = m.role;
+      document.getElementById('career-meta').textContent = `${m.company} · ${m.place}`;
+      document.getElementById('career-intro').textContent = m.intro;
+      const ul = document.getElementById('career-bullets');
+      ul.innerHTML = '';
+      m.bullets.forEach((t) => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+      const tags = document.getElementById('career-tags');
+      tags.innerHTML = '';
+      m.tags.forEach((t) => { const s = document.createElement('span'); s.textContent = t; tags.appendChild(s); });
+      careerThumbsEl.querySelectorAll('.career-thumb').forEach((el, k) => el.classList.toggle('is-active', k === careerIndex));
+      playTone(520 + careerIndex * 40, 0, 0.08, 'triangle', 0.04);
+    }
+    function openCareerBoard(i) {
+      showCareerMilestone(i);
+      openModalPanel('career');
+      const m = CAREER_MILESTONES[careerIndex];
+      logInteractionEvent(`🏆 Marco de carreira: Portal ${m.portal} · ${m.company}`);
+      trackAchievementSet('career', 'p' + m.portal);
+      rumble(0.15, 0.3, 80);
+    }
+    document.getElementById('career-prev').addEventListener('click', () => showCareerMilestone(careerIndex - 1));
+    document.getElementById('career-next').addEventListener('click', () => showCareerMilestone(careerIndex + 1));
+    document.getElementById('career-close').addEventListener('click', closeModals);
+    // Setas do teclado trocam o marco com o mural aberto
+    window.addEventListener('keydown', (e) => {
+      if (modalsOpen !== 'career') return;
+      if (e.key === 'ArrowLeft') { showCareerMilestone(careerIndex - 1); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { showCareerMilestone(careerIndex + 1); e.preventDefault(); }
+    });
+
+    function openRaceInvite() {
+      const list = document.getElementById('race-invite-records');
+      list.innerHTML = '';
+      if (!leaderboard.length) {
+        const li = document.createElement('li');
+        li.className = 'is-empty';
+        li.textContent = 'Nenhum recorde ainda — seja o primeiro!';
+        list.appendChild(li);
+      } else {
+        leaderboard.slice(0, 5).forEach((e, i) => {
+          const li = document.createElement('li');
+          li.innerHTML = `<span class="pos">${['🥇', '🥈', '🥉'][i] || (i + 1) + 'º'}</span><span class="name"></span><span class="time">${formatRaceTime(e.time)}</span>`;
+          li.querySelector('.name').textContent = e.name;
+          list.appendChild(li);
+        });
+      }
+      carSpeed *= 0.3;
+      openModalPanel('race-invite');
+      playTone(660, 0, 0.1, 'triangle', 0.05); playTone(880, 0.1, 0.16, 'triangle', 0.05);
+    }
+    document.getElementById('race-invite-go').addEventListener('click', () => { closeModals(); setTimeout(startRaceCountdown, 150); });
+    document.getElementById('race-invite-no').addEventListener('click', closeModals);
+    document.getElementById('race-invite-close').addEventListener('click', closeModals);
     document.getElementById('race-btn-start').addEventListener('click', startRaceCountdown);
     document.getElementById('race-btn-end').addEventListener('click', () => { endRace(); closeMenu(); });
     document.getElementById('circuit-end-again').addEventListener('click', startRaceCountdown);
@@ -8837,8 +9573,17 @@
       // Bateria: abaixo de 10% o carrinho perde a força (anda bem devagar até recarregar)
       const lowPower = carBattery < 10;
       const boostOn = boosting && !lowPower;
-      const powerK = lowPower ? 0.3 : 1;
-      if ((kF || kB) && !carAirborne) {
+      // Acima de 120%: sobrecarga = modo NITRO (mais rápido, chamas azuis no escapamento)
+      const nitroOn = carBattery >= BATTERY_NITRO_AT;
+      const powerK = lowPower ? 0.3 : nitroOn ? 1.5 : 1;
+      if (nitroOn !== nitroActive) setNitro(nitroOn);
+      if (carBattery > 100) {
+        // Sobrecarga se dissipa sozinha devagar (e mais rápido acelerando no nitro)
+        const prevPct = Math.round(carBattery);
+        // Dourada segura 120% um tempinho: o nitro só começa a cair quando o carrinho acelera
+        carBattery = Math.max(100, carBattery - dt * (0.3 + (kF ? 1.6 * throttle : 0)));
+        if (Math.round(carBattery) !== prevPct) updateBatteryHUD();
+      } else if ((kF || kB) && !carAirborne) {
         const prevPct = Math.round(carBattery);
         carBattery = Math.max(0, carBattery - dt * 0.75 * Math.max(throttle, reverse) * (boostOn ? 2.2 : 1));
         if (Math.round(carBattery) !== prevPct) updateBatteryHUD();
@@ -8849,8 +9594,9 @@
           notify({ type: 'danger', title: 'Bateria fraca', description: 'Recarregue nas pilhas ou no Posto do Bombeiro', duration: 3500 });
         }
       }
-      const currentMaxSpeed = (turboBoostTimer > 0 ? baseMaxSpeed * 1.9 : baseMaxSpeed) * (boostOn ? 1.35 : 1) * powerK;
+      const currentMaxSpeed = (turboBoostTimer > 0 ? baseMaxSpeed * 1.9 : baseMaxSpeed) * (boostOn ? 1.35 : 1) * (nitroOn ? 1.45 : powerK);
       if (boostOn && kF && Math.random() < 0.35) spawnTurboSpark();
+      if (nitroOn) updateNitroFlames(kF ? throttle : 0.25);
 
       if (!carAirborne) {
         if (braking) carSpeed *= 0.86;
@@ -9046,26 +9792,12 @@
       // Pilhas palito (na mesa e no circuito do chão): lombada + mini turbo
       if (!g.ramp) {
         turboBatteries.forEach((tb) => {
+          if (tb.respawnAt) return; // usada: some por 3 minutos
           if (tb.level !== g.level || Math.hypot(nextX - tb.x, nextZ - tb.z) >= 2.65) return;
           groundY = Math.max(groundY, tb.y - 0.15 + 0.52);
           if (carHeight < 1.5 && time - tb.lastBoostTime > 1.2) {
             tb.lastBoostTime = time;
-            // A pilha recarrega a bateria; o turbo só sai se a bateria já estava acima de 60%
-            const before = chargeBattery(35);
-            trackAchievementSet('turbo', tb.id);
-            if (before > 60) {
-              turboBoostTimer = 1.65;
-              carSpeed = baseMaxSpeed * 1.85;
-              showCarSpeech('⚡ MINI TURBO!', 1800);
-              setStatusBanner('⚡ MINI TURBO! (+35% de bateria)', '#35e0ff');
-              logInteractionEvent('⚡ Pilha palito: MINI TURBO + recarga!');
-              rumble(0.25, 0.5, 160);
-            } else {
-              showCarSpeech('🔋 +35% de bateria', 1600);
-              setStatusBanner(`🔋 Pilha recarregou a bateria: ${Math.round(carBattery)}% (turbo só acima de 60%)`, '#7ee787');
-              rumble(0.15, 0.25, 90);
-            }
-            playTone(660, 0, 0.1, 'triangle', 0.06); playTone(990, 0.08, 0.12, 'triangle', 0.05);
+            collectBattery(tb, time);
           }
         });
       }
@@ -9502,6 +10234,11 @@
     }
 
     function physicsStep(time) {
+      // Posição física anterior de cada objeto móvel (para interpolar o desenho entre passos)
+      for (let i = 0; i < dynamicObstacles.length; i++) {
+        const o = dynamicObstacles[i];
+        o._px = o.x; o._pz = o.z;
+      }
       if (!isModalOpen) stepVehicle(time);
       updateRace();
       stepDynamicObjects();
@@ -9662,6 +10399,20 @@
       }
       renderInterp.shownPos.copy(vehicle.position);
       renderInterp.active = true;
+      // Objetos móveis: o desenho SEMPRE acompanha a física (antes só atualizava no instante da batida,
+      // então a bola/caixa "congelava" na tela enquanto deslizava) — com interpolação suave
+      {
+        const alphaObj = clamp(physAccumulator / PHYS_STEP, 0, 1);
+        for (let i = 0; i < dynamicObstacles.length; i++) {
+          const o = dynamicObstacles[i];
+          if (!o.group || (heldItem && heldItem.obs === o)) continue;
+          const px = o._px !== undefined ? o._px : o.x, pz = o._pz !== undefined ? o._pz : o.z;
+          // Teleporte (reset/respawn): não interpola
+          if (Math.abs(o.x - px) > 6 || Math.abs(o.z - pz) > 6) { o.group.position.x = o.x; o.group.position.z = o.z; continue; }
+          o.group.position.x = px + (o.x - px) * alphaObj;
+          o.group.position.z = pz + (o.z - pz) * alphaObj;
+        }
+      }
 
       updateFloatingProps(elapsedTime);
       updateWorldEffects(elapsedTime, dt);
@@ -9779,6 +10530,13 @@
           camera.position.lerp(desired, 1 - Math.pow(1 - 0.09, dt * 60));
           camera.lookAt(camFollowTarget);
         }
+      }
+
+      // Tremor de câmera da explosão de sobrecarga
+      if (explosionShake > 0 && !isFreeCameraActive) {
+        camera.position.x += (Math.random() - 0.5) * explosionShake;
+        camera.position.y += (Math.random() - 0.5) * explosionShake;
+        camera.position.z += (Math.random() - 0.5) * explosionShake;
       }
 
       // Oclusão: objetos grandes ficam translúcidos quando escondem o carrinho
