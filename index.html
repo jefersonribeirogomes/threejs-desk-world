@@ -405,11 +405,20 @@
       zoomFactor = Math.max(0.4, Math.min(2.2, zoomFactor + e.deltaY * 0.0008));
     });
 
+    let closeAngleIndex = 0; // 0: 3/4 Frontal, 1: Perfil Lateral, 2: Traseira & Teto
+
     document.getElementById('btn-cam-iso').addEventListener('click', (e) => {
       camMode = 'iso'; zoomFactor = 1.0; setActiveBtn(e.target);
     });
     document.getElementById('btn-cam-close').addEventListener('click', (e) => {
-      camMode = 'close'; zoomFactor = 0.75; setActiveBtn(e.target);
+      if (camMode === 'close') {
+        closeAngleIndex = (closeAngleIndex + 1) % 3;
+      } else {
+        camMode = 'close';
+        closeAngleIndex = 0;
+      }
+      zoomFactor = 0.72;
+      setActiveBtn(e.target);
     });
     document.getElementById('btn-cam-gear').addEventListener('click', (e) => {
       camMode = 'gear'; zoomFactor = 0.85; setActiveBtn(e.target);
@@ -479,45 +488,81 @@
       c.width = 512; c.height = 256;
       const ctx = c.getContext('2d');
       const grad = ctx.createLinearGradient(0, 0, 0, 256);
-      grad.addColorStop(0, '#1e95b8'); grad.addColorStop(1, '#31b3d4');
+      grad.addColorStop(0, '#138eb5'); grad.addColorStop(1, '#26b0d6');
       ctx.fillStyle = grad; ctx.fillRect(0, 0, 512, 256);
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 10;
-      ctx.strokeRect(12, 12, 488, 232);
 
-      ctx.fillStyle = '#0d4a85'; ctx.strokeStyle = '#093561'; ctx.lineWidth = 8;
-      ctx.beginPath(); ctx.roundRect(75, 55, 155, 110, [18, 18, 45, 35]); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.roundRect(282, 55, 155, 110, [18, 18, 35, 45]); ctx.fill(); ctx.stroke();
+      // Brilho plástico translúcido superior
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(16, 12, 480, 22);
 
+      // Óculos escuros azuis (formato fiel à foto frontal do carrinho do Ravi)
+      ctx.fillStyle = '#073c78';
+      ctx.strokeStyle = '#052c59';
+      ctx.lineWidth = 8;
+
+      // Lente esquerda
+      ctx.beginPath();
+      ctx.roundRect(72, 68, 158, 106, [18, 18, 48, 42]);
+      ctx.fill(); ctx.stroke();
+
+      // Lente direita
+      ctx.beginPath();
+      ctx.roundRect(282, 68, 158, 106, [18, 18, 42, 48]);
+      ctx.fill(); ctx.stroke();
+
+      // Ponte central dos óculos
       ctx.lineWidth = 14;
-      ctx.beginPath(); ctx.moveTo(225, 88); ctx.quadraticCurveTo(256, 75, 287, 88); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(226, 98);
+      ctx.quadraticCurveTo(256, 86, 286, 98);
+      ctx.stroke();
 
-      ctx.strokeStyle = '#ffffff'; ctx.lineCap = 'round';
-      ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(115, 78); ctx.lineTo(150, 140); ctx.stroke();
-      ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(155, 75); ctx.lineTo(182, 125); ctx.stroke();
-      ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(322, 78); ctx.lineTo(357, 140); ctx.stroke();
-      ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(362, 75); ctx.lineTo(389, 125); ctx.stroke();
+      // Reflexos brancos duplos inclinados em cada lente
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineCap = 'round';
+      // Lente esquerda
+      ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(106, 92); ctx.lineTo(148, 146); ctx.stroke();
+      ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(148, 88); ctx.lineTo(180, 130); ctx.stroke();
+      // Lente direita
+      ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(318, 92); ctx.lineTo(360, 146); ctx.stroke();
+      ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(360, 88); ctx.lineTo(392, 130); ctx.stroke();
 
-      ctx.strokeStyle = '#08325c'; ctx.lineWidth = 9;
-      ctx.beginPath(); ctx.arc(256, 172, 18, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+      // Sorrisinho azul escuro centralizado abaixo da ponte
+      ctx.strokeStyle = '#052c59';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.arc(256, 186, 18, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
       return new THREE.CanvasTexture(c);
     }
 
-    function createCarSideTexture(flip = false) {
+    // Decal transparente apenas com o logotipo branco "// Fire Engine //" (para aplicar sobre o plástico 3D laranja real)
+    function createFireEngineLogoTexture() {
       const c = document.createElement('canvas');
-      c.width = 512; c.height = 256;
+      c.width = 512; c.height = 128;
       const ctx = c.getContext('2d');
-      if (flip) { ctx.translate(512, 0); ctx.scale(-1, 1); }
-      ctx.fillStyle = '#ff471a'; ctx.fillRect(0, 0, 512, 256);
-      ctx.fillStyle = '#ffd15c';
-      ctx.beginPath(); ctx.roundRect(75, 48, 86, 95, [42, 42, 10, 10]); ctx.fill();
-      [46, 68, 92].forEach((bh, idx) => {
-        ctx.beginPath(); ctx.roundRect(195 + idx * 38, 143 - bh, 22, bh, 10); ctx.fill();
-      });
-      ctx.strokeStyle = '#d9340d'; ctx.lineWidth = 6;
-      for (let i = 0; i < 3; i++) ctx.strokeRect(338 + i * 42, 55, 30, 88);
+      ctx.clearRect(0, 0, 512, 128);
+
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'italic 900 28px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('// Fire Engine //', 85, 205);
+      // Duas barras paralelas inclinadas à esquerda "//"
+      function drawSlashes(startX) {
+        for (let i = 0; i < 2; i++) {
+          const x = startX + i * 32;
+          ctx.beginPath();
+          ctx.moveTo(x + 18, 34);
+          ctx.lineTo(x + 38, 34);
+          ctx.lineTo(x + 20, 92);
+          ctx.lineTo(x, 92);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+      drawSlashes(22);
+      ctx.font = '900 54px "Segoe UI", Arial, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Fire Engine', 102, 63);
+      drawSlashes(412);
+
       return new THREE.CanvasTexture(c);
     }
 
@@ -1788,96 +1833,464 @@
     });
 
     // ============================================================================
-    // CARRINHO DE BRINQUEDO DO SEU FILHO: //Fire Engine//
+    // CARRINHO DO RAVI: //Fire Engine// (MODELO 3D FIEL AOS 4 ÂNGULOS REAIS!)
     // ============================================================================
     const vehicle = new THREE.Group();
 
-    const carOrangeMat = new THREE.MeshStandardMaterial({ color: 0xff4518, roughness: 0.15, metalness: 0.05 });
-    const carWhiteSkirtMat = new THREE.MeshStandardMaterial({ color: 0xeef2f1, roughness: 0.22 });
-    const cyanWheelMat = new THREE.MeshStandardMaterial({ color: 0x32d2be, roughness: 0.2 });
-    const tireDarkMat = new THREE.MeshStandardMaterial({ color: 0x1d2024, roughness: 0.7 });
-    const yellowDetailMat = new THREE.MeshStandardMaterial({ color: 0xffd24c, roughness: 0.18 });
+    const carOrangeMat = new THREE.MeshStandardMaterial({
+      color: 0xff4518,
+      roughness: 0.13, // Plástico laranja-avermelhado injetado super brilhante
+      metalness: 0.04
+    });
+    const carWhiteSkirtMat = new THREE.MeshStandardMaterial({
+      color: 0xe6eae8,
+      roughness: 0.22
+    });
+    const cyanWheelMat = new THREE.MeshStandardMaterial({
+      color: 0x38d9e8,
+      roughness: 0.18
+    });
+    const tireDarkMat = new THREE.MeshStandardMaterial({
+      color: 0x16191d,
+      roughness: 0.65
+    });
+    const yellowDetailMat = new THREE.MeshStandardMaterial({
+      color: 0xffcf48,
+      roughness: 0.18
+    });
+    const speakerHoleMat = new THREE.MeshBasicMaterial({ color: 0x260804 });
 
     const carBodyGroup = new THREE.Group();
     vehicle.add(carBodyGroup);
 
-    const skirtShape = new THREE.Shape();
-    const sw = 1.08, sl = 1.65, sr = 0.45;
-    skirtShape.moveTo(-sw + sr, -sl); skirtShape.lineTo(sw - sr, -sl);
-    skirtShape.quadraticCurveTo(sw, -sl, sw, -sl + sr); skirtShape.lineTo(sw, sl - sr);
-    skirtShape.quadraticCurveTo(sw, sl, sw - sr, sl); skirtShape.lineTo(-sw + sr, sl);
-    skirtShape.quadraticCurveTo(-sw, sl, -sw, sl - sr); skirtShape.lineTo(-sw, -sl + sr);
-    skirtShape.quadraticCurveTo(-sw, -sl, -sw + sr, -sl);
+    // 1. CORPO PRINCIPAL ESCULPIDO PELO PERFIL LATERAL (Com Degrau do Capô Frontal e Curvatura Traseira!)
+    // No plano 2D do Shape: x_2d = eixo Z (+ frente, - traseira), y_2d = eixo Y (altura)
+    const sideProfile = new THREE.Shape();
+    sideProfile.moveTo(-1.52, 0.54);
+    sideProfile.lineTo(1.66, 0.54);
+    // Frente arredondada do capô inferior (nariz do caminhãozinho)
+    sideProfile.quadraticCurveTo(1.84, 0.56, 1.84, 0.82);
+    sideProfile.lineTo(1.78, 1.15);
+    // Degrau do capô recuando até a base do para-brisa azul (exatamente como na foto lateral!)
+    sideProfile.quadraticCurveTo(1.72, 1.35, 1.46, 1.38);
+    sideProfile.lineTo(1.36, 1.40);
+    // Coluna inclinada do para-brisa subindo até o teto
+    sideProfile.lineTo(1.22, 2.12);
+    sideProfile.quadraticCurveTo(1.14, 2.35, 0.84, 2.36);
+    // Teto levemente arqueado
+    sideProfile.lineTo(-1.02, 2.35);
+    // Curvatura traseira arredondada
+    sideProfile.quadraticCurveTo(-1.42, 2.32, -1.56, 1.98);
+    sideProfile.quadraticCurveTo(-1.69, 1.45, -1.66, 0.74);
+    sideProfile.quadraticCurveTo(-1.64, 0.54, -1.52, 0.54);
 
-    const skirtGeo = new THREE.ExtrudeGeometry(skirtShape, { depth: 0.34, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.18, bevelSegments: 8 });
-    skirtGeo.rotateX(Math.PI / 2);
-    const skirtMesh = new THREE.Mesh(skirtGeo, carWhiteSkirtMat);
-    skirtMesh.position.set(0, 0.68, 0); skirtMesh.castShadow = true;
-    carBodyGroup.add(skirtMesh);
+    const mainBodyGeo = new THREE.ExtrudeGeometry(sideProfile, {
+      depth: 1.96,
+      bevelEnabled: true,
+      bevelThickness: 0.25,
+      bevelSize: 0.20,
+      bevelSegments: 14
+    });
+    // Centraliza no eixo de extrusão e gira -90° em Y:
+    // x_2d -> +Z (frente/traseira), y_2d -> +Y (altura), z_extrude -> X (-1.23 a +1.23)
+    mainBodyGeo.translate(0, 0, -0.98);
+    mainBodyGeo.rotateY(-Math.PI / 2);
 
-    const bodyShape = new THREE.Shape();
-    const bw = 0.96, bl = 1.48, br = 0.38;
-    bodyShape.moveTo(-bw + br, -bl); bodyShape.lineTo(bw - br, -bl);
-    bodyShape.quadraticCurveTo(bw, -bl, bw, -bl + br); bodyShape.lineTo(bw, bl - br);
-    bodyShape.quadraticCurveTo(bw, bl, bw - br, bl); bodyShape.lineTo(-bw + br, bl);
-    bodyShape.quadraticCurveTo(-bw, bl, -bw, bl - br); bodyShape.lineTo(-bw, -bl + br);
-    bodyShape.quadraticCurveTo(-bw, -bl, -bw + br, -bl);
-
-    const mainBodyGeo = new THREE.ExtrudeGeometry(bodyShape, { depth: 1.25, bevelEnabled: true, bevelThickness: 0.36, bevelSize: 0.28, bevelSegments: 12 });
-    mainBodyGeo.rotateX(Math.PI / 2);
     const mainBodyMesh = new THREE.Mesh(mainBodyGeo, carOrangeMat);
-    mainBodyMesh.position.set(0, 2.02, 0); mainBodyMesh.castShadow = true;
+    mainBodyMesh.castShadow = true;
+    mainBodyMesh.receiveShadow = true;
     carBodyGroup.add(mainBodyMesh);
 
-    const sideTexL = createCarSideTexture(false), sideTexR = createCarSideTexture(true);
-    const sidePanelL = new THREE.Mesh(new THREE.PlaneGeometry(2.55, 1.32), new THREE.MeshStandardMaterial({ map: sideTexL, roughness: 0.16, polygonOffset: true, polygonOffsetFactor: -1 }));
-    sidePanelL.rotation.y = Math.PI / 2; sidePanelL.position.set(1.255, 1.38, 0); carBodyGroup.add(sidePanelL);
-    const sidePanelR = new THREE.Mesh(new THREE.PlaneGeometry(2.55, 1.32), new THREE.MeshStandardMaterial({ map: sideTexR, roughness: 0.16, polygonOffset: true, polygonOffsetFactor: -1 }));
-    sidePanelR.rotation.y = -Math.PI / 2; sidePanelR.position.set(-1.255, 1.38, 0); carBodyGroup.add(sidePanelR);
+    // 2. SAIA BRANCA INFERIOR + PARALAMAS ARQUEADOS (Wheel Arches sobre as 4 rodas!)
+    // Base branca central e para-choques envolventes frontal/traseiro
+    const baseSkirtShape = new THREE.Shape();
+    const bsw = 1.02, bsl = 1.66, bsr = 0.44;
+    baseSkirtShape.moveTo(-bsw + bsr, -bsl); baseSkirtShape.lineTo(bsw - bsr, -bsl);
+    baseSkirtShape.quadraticCurveTo(bsw, -bsl, bsw, -bsl + bsr); baseSkirtShape.lineTo(bsw, bsl + 0.14 - bsr);
+    baseSkirtShape.quadraticCurveTo(bsw, bsl + 0.14, bsw - bsr, bsl + 0.14); baseSkirtShape.lineTo(-bsw + bsr, bsl + 0.14);
+    baseSkirtShape.quadraticCurveTo(-bsw, bsl + 0.14, -bsw, bsl + 0.14 - bsr); baseSkirtShape.lineTo(-bsw, -bsl + bsr);
+    baseSkirtShape.quadraticCurveTo(-bsw, -bsl, -bsw + bsr, -bsl);
 
-    const windshieldFrame = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.88, 0.1), new THREE.MeshStandardMaterial({ color: 0x26a6c9, roughness: 0.15 }));
-    windshieldFrame.position.set(0, 1.66, 1.73); windshieldFrame.rotation.x = -0.18; carBodyGroup.add(windshieldFrame);
-    const windshieldMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.68, 0.82), new THREE.MeshStandardMaterial({ map: createWindshieldTexture(), roughness: 0.1 }));
-    windshieldMesh.position.set(0, 1.66, 1.79); windshieldMesh.rotation.x = -0.18; carBodyGroup.add(windshieldMesh);
+    const skirtGeo = new THREE.ExtrudeGeometry(baseSkirtShape, {
+      depth: 0.26,
+      bevelEnabled: true,
+      bevelThickness: 0.08,
+      bevelSize: 0.21,
+      bevelSegments: 10
+    });
+    skirtGeo.rotateX(Math.PI / 2);
+    const skirtMesh = new THREE.Mesh(skirtGeo, carWhiteSkirtMat);
+    skirtMesh.position.set(0, 0.62, 0);
+    skirtMesh.castShadow = true;
+    carBodyGroup.add(skirtMesh);
 
-    const grilleBox = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.32, 0.12), new THREE.MeshStandardMaterial({ color: 0xf4f6f7 }));
-    grilleBox.position.set(0, 0.86, 1.77); carBodyGroup.add(grilleBox);
-    for (let i = -1; i <= 1; i++) {
-      const slot = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.045, 0.14), new THREE.MeshBasicMaterial({ color: 0xff4518 }));
-      slot.position.set(0, 0.86 + i * 0.085, 1.78); carBodyGroup.add(slot);
-    }
+    // Os 4 Arcos de Paralama Brancos (Wheel Arches) contornando as rodas + friso lateral branco entre as rodas
+    const fenderArchGeo = new THREE.TorusGeometry(0.51, 0.105, 14, 28, Math.PI);
+    const wheelWellMat = new THREE.MeshBasicMaterial({ color: 0x101214 });
+    const wheelWellGeo = new THREE.CylinderGeometry(0.49, 0.49, 0.16, 24, 1, false, 0, Math.PI);
 
-    [-0.72, 0.72].forEach((hx) => {
-      const hlOuter = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.1, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-      hlOuter.rotation.x = Math.PI / 2; hlOuter.scale.set(1.25, 1, 0.78); hlOuter.position.set(hx, 0.94, 1.74); hlOuter.rotation.y = hx > 0 ? 0.22 : -0.22;
-      const hlInner = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.12, 16), new THREE.MeshBasicMaterial({ color: 0xff5722 }));
-      hlInner.rotation.x = Math.PI / 2; hlInner.scale.set(1.25, 1, 0.78); hlInner.position.set(hx, 0.94, 1.75); hlInner.rotation.y = hx > 0 ? 0.22 : -0.22;
-      carBodyGroup.add(hlOuter, hlInner);
+    [-1, 1].forEach((sideX) => {
+      [0.92, -0.92].forEach((wz) => {
+        // Arco branco elevado do paralama
+        const arch = new THREE.Mesh(fenderArchGeo, carWhiteSkirtMat);
+        arch.rotation.y = Math.PI / 2;
+        arch.position.set(sideX * 1.18, 0.48, wz);
+        carBodyGroup.add(arch);
+
+        // Cavidade escura interna da caixa de roda
+        const well = new THREE.Mesh(wheelWellGeo, wheelWellMat);
+        well.rotation.z = Math.PI / 2;
+        well.rotation.x = -Math.PI / 2;
+        well.position.set(sideX * 1.14, 0.48, wz);
+        carBodyGroup.add(well);
+      });
+
+      // Soleira branca reta conectando o paralama dianteiro ao traseiro
+      const sill = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.28, 0.88), carWhiteSkirtMat);
+      sill.position.set(sideX * 1.17, 0.48, 0);
+      carBodyGroup.add(sill);
     });
 
-    const roofButtonRim = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.12, 24), carOrangeMat);
-    roofButtonRim.position.set(0, 2.42, 0.55); carBodyGroup.add(roofButtonRim);
-    const yellowRoofButton = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.16, 24), yellowDetailMat);
-    yellowRoofButton.position.set(0, 2.48, 0.55); carBodyGroup.add(yellowRoofButton);
+    // 3. PARA-BRISA 3D AZUL-TURQUESA PROTUBERANTE COM ÓCULOS ESCUROS E SORRISINHO
+    // Na foto lateral e superior, o para-brisa é uma peça 3D azul translúcida que salta para fora da cabine!
+    const visorGroup = new THREE.Group();
+    visorGroup.position.set(0, 1.76, 1.50);
+    visorGroup.rotation.x = -0.20;
 
+    const visorShape = new THREE.Shape();
+    const vw = 0.86, vh = 0.34, vr = 0.14;
+    visorShape.moveTo(-vw + vr, -vh); visorShape.lineTo(vw - vr, -vh);
+    visorShape.quadraticCurveTo(vw, -vh, vw, -vh + vr); visorShape.lineTo(vw, vh - vr);
+    visorShape.quadraticCurveTo(vw, vh, vw - vr, vh); visorShape.lineTo(-vw + vr, vh);
+    visorShape.quadraticCurveTo(-vw, vh, -vw, vh - vr); visorShape.lineTo(-vw, -vh + vr);
+    visorShape.quadraticCurveTo(-vw, -vh, -vw + vr, -vh);
+
+    const visor3DGeo = new THREE.ExtrudeGeometry(visorShape, {
+      depth: 0.14,
+      bevelEnabled: true,
+      bevelThickness: 0.05,
+      bevelSize: 0.05,
+      bevelSegments: 8
+    });
+    const visor3DMesh = new THREE.Mesh(
+      visor3DGeo,
+      new THREE.MeshStandardMaterial({ color: 0x169cc2, roughness: 0.12, metalness: 0.08 })
+    );
+    visorGroup.add(visor3DMesh);
+
+    // Face frontal do para-brisa com os óculos escuros, reflexos brancos e sorrisinho
+    const windshieldFace = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.68, 0.68),
+      new THREE.MeshStandardMaterial({ map: createWindshieldTexture(), roughness: 0.1 })
+    );
+    windshieldFace.position.set(0, 0, 0.195);
+    visorGroup.add(windshieldFace);
+    carBodyGroup.add(visorGroup);
+
+    // 4. LATERAIS EM RELEVO 3D REAL: JANELA AMARELA EM ARCO + 3 BARRAS + ESCADA 3D + "//Fire Engine//"
+    // Janela lateral amarela com topo arredondado (D-Arch)
+    const sideWinShape = new THREE.Shape();
+    sideWinShape.moveTo(-0.30, -0.28);
+    sideWinShape.lineTo(0.30, -0.28);
+    sideWinShape.lineTo(0.30, 0.04);
+    sideWinShape.absarc(0, 0.04, 0.30, 0, Math.PI, false);
+    sideWinShape.lineTo(-0.30, -0.28);
+    const sideWinGeo = new THREE.ExtrudeGeometry(sideWinShape, {
+      depth: 0.04,
+      bevelEnabled: true,
+      bevelThickness: 0.015,
+      bevelSize: 0.015,
+      bevelSegments: 5
+    });
+
+    const fireEngineLogoTex = createFireEngineLogoTexture();
+
+    [-1, 1].forEach((sideX) => {
+      const sideGroup = new THREE.Group();
+      sideGroup.position.set(sideX * 1.225, 0, 0);
+      sideGroup.rotation.y = sideX > 0 ? Math.PI / 2 : -Math.PI / 2;
+      // Quando sideX = +1 (lateral esquerda olhando de frente): +X local do sideGroup aponta para -Z do carro.
+      // Para que ambos os lados tenham a janela na frente (+Z) e a escada atrás (-Z), usamos inversão horizontal de coordenadas locais `dir`:
+      const dir = sideX > 0 ? -1 : 1;
+
+      // 4a. Janela Amarela em Arco (na frente, z = +0.58)
+      const winMesh = new THREE.Mesh(sideWinGeo, yellowDetailMat);
+      winMesh.position.set(dir * 0.58, 1.66, 0);
+      sideGroup.add(winMesh);
+
+      // 4b. As 3 Barras Verticais Amarelas Crescentes ao lado da janela (z = +0.05, -0.19, -0.43)
+      const barHeights = [0.38, 0.52, 0.68];
+      barHeights.forEach((bh, idx) => {
+        const bz = 0.05 - idx * 0.24;
+        const barMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.13, bh, 0.05),
+          yellowDetailMat
+        );
+        // Topo arredondado da barrinha amarela
+        const barCap = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.065, 0.065, 0.05, 12),
+          yellowDetailMat
+        );
+        barCap.rotation.x = Math.PI / 2;
+        const baseY = 1.38;
+        barMesh.position.set(dir * bz, baseY + bh / 2, 0);
+        barCap.position.set(dir * bz, baseY + bh, 0);
+        sideGroup.add(barMesh, barCap);
+      });
+
+      // 4c. ESCADINHA VERTICAL 3D EM RELEVO LARANJA NA TRASEIRA LATERAL (foto lateral!)
+      // Dois trilhos verticais + 3 degraus horizontais em alto-relevo!
+      const ladderCenterZ = -0.94;
+      [-0.19, 0.19].forEach((railOffset) => {
+        const rail = new THREE.Mesh(
+          new THREE.BoxGeometry(0.055, 1.22, 0.08),
+          carOrangeMat
+        );
+        rail.position.set(dir * (ladderCenterZ + railOffset), 1.48, 0.02);
+        rail.castShadow = true;
+        sideGroup.add(rail);
+      });
+      // 3 degraus horizontais da escadinha
+      [1.22, 1.54, 1.86].forEach((rungY) => {
+        const rung = new THREE.Mesh(
+          new THREE.BoxGeometry(0.38, 0.055, 0.075),
+          carOrangeMat
+        );
+        rung.position.set(dir * ladderCenterZ, rungY, 0.02);
+        sideGroup.add(rung);
+      });
+
+      // 4d. Friso Horizontal Moldado na Carroceria (logo acima dos paralamas brancos)
+      const grooveLine = new THREE.Mesh(
+        new THREE.BoxGeometry(2.75, 0.035, 0.04),
+        carOrangeMat
+      );
+      grooveLine.position.set(dir * 0.05, 0.96, 0.01);
+      sideGroup.add(grooveLine);
+
+      // 4e. Logotipo Branco "// Fire Engine //" abaixo da janela e das 3 barras
+      const logoPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.52, 0.36),
+        new THREE.MeshBasicMaterial({ map: fireEngineLogoTex, transparent: true })
+      );
+      logoPlane.position.set(dir * 0.18, 1.15, 0.03);
+      sideGroup.add(logoPlane);
+
+      carBodyGroup.add(sideGroup);
+    });
+
+    // 5. FRENTE DO CAPÔ: GRADE BRANCA COM 3 FRISOS VERMELHOS + FARÓIS OVAIS COM DETALHE INTERNO
+    const grilleBox = new THREE.Mesh(
+      new THREE.BoxGeometry(0.72, 0.28, 0.10),
+      carWhiteSkirtMat
+    );
+    grilleBox.position.set(0, 0.80, 2.02);
+    carBodyGroup.add(grilleBox);
+    for (let i = -1; i <= 1; i++) {
+      const slot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.56, 0.04, 0.12),
+        new THREE.MeshBasicMaterial({ color: 0xff4518 })
+      );
+      slot.position.set(0, 0.80 + i * 0.075, 2.03);
+      carBodyGroup.add(slot);
+    }
+
+    // Faróis Ovais Frontais com Aro Branco, Miolo Laranja e Pontinho Branco Lateral (foto frontal!)
+    [-0.65, 0.65].forEach((hx) => {
+      const hlGroup = new THREE.Group();
+      hlGroup.position.set(hx, 0.92, 2.00);
+      hlGroup.rotation.y = hx > 0 ? 0.24 : -0.24;
+      hlGroup.rotation.x = -0.10;
+
+      const hlOuter = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.20, 0.20, 0.08, 20),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      hlOuter.rotation.x = Math.PI / 2;
+      hlOuter.scale.set(1.28, 1, 0.76);
+
+      const hlInner = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.13, 0.13, 0.10, 16),
+        new THREE.MeshBasicMaterial({ color: 0xff4d1a })
+      );
+      hlInner.rotation.x = Math.PI / 2;
+      hlInner.scale.set(1.18, 1, 0.72);
+      hlInner.position.x = hx > 0 ? -0.02 : 0.02;
+
+      const hlDot = new THREE.Mesh(
+        new THREE.SphereGeometry(0.035, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      hlDot.position.set(hx > 0 ? 0.13 : -0.13, 0, 0.05);
+
+      hlGroup.add(hlOuter, hlInner, hlDot);
+      carBodyGroup.add(hlGroup);
+    });
+
+    // 6. TETO DETALHADO: BOTÃO AMARELO COM DETALHE CENTRAL + DOMO DIVIDIDO DO CANHÃO + 9 FUROS DE SOM!
+    // 6a. Botão Redondo Amarelo com Anel Laranja e Marca Central Laranja (foto superior!)
+    const roofButtonCollar = new THREE.Mesh(
+      new THREE.TorusGeometry(0.28, 0.05, 12, 24),
+      carOrangeMat
+    );
+    roofButtonCollar.rotation.x = Math.PI / 2;
+    roofButtonCollar.position.set(0, 2.55, 0.56);
+    carBodyGroup.add(roofButtonCollar);
+
+    const yellowRoofButton = new THREE.Group();
+    yellowRoofButton.position.set(0, 2.56, 0.56);
+    const yellowBtnDome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.24, 20, 14),
+      yellowDetailMat
+    );
+    yellowBtnDome.scale.set(1, 0.42, 1);
+    // Pequeno ícone laranja no centro do botão amarelo (visível na foto superior!)
+    const yellowBtnCenterIcon = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.06, 0.03, 12),
+      carOrangeMat
+    );
+    yellowBtnCenterIcon.position.y = 0.10;
+    yellowRoofButton.add(yellowBtnDome, yellowBtnCenterIcon);
+    carBodyGroup.add(yellowRoofButton);
+
+    // 6b. Torreta com Domo Bipartido (Fenda Central de Articulação) + Canhão Horizontal com Ponta Alargada!
     const turretGroup = new THREE.Group();
-    turretGroup.position.set(0, 2.38, -0.45);
-    const turretDome = new THREE.Mesh(new THREE.SphereGeometry(0.56, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.62), carOrangeMat);
-    turretGroup.add(turretDome);
-    const nozzleBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.75, 16), carOrangeMat);
-    nozzleBarrel.rotation.x = Math.PI / 2.8; nozzleBarrel.position.set(0, 0.45, 0.32);
-    turretGroup.add(nozzleBarrel);
+    turretGroup.position.set(0, 2.54, -0.22);
+
+    // Duas metades laterais do domo deixando a fenda central para o canhão (exatamente como nas fotos de topo e traseira!)
+    [-0.16, 0.16].forEach((dx) => {
+      const halfDome = new THREE.Mesh(
+        new THREE.SphereGeometry(0.44, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.58),
+        carOrangeMat
+      );
+      halfDome.scale.set(0.72, 0.92, 1.0);
+      halfDome.position.set(dx, 0, 0);
+      halfDome.castShadow = true;
+      turretGroup.add(halfDome);
+    });
+
+    // Base de encaixe central na fenda do domo
+    const hingeBlock = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.36, 0.36),
+      carOrangeMat
+    );
+    hingeBlock.position.set(0, 0.18, 0);
+    turretGroup.add(hingeBlock);
+
+    // Tubo horizontal do canhão apontando para frente + bocal cônico na ponta (foto lateral!)
+    const nozzleTube = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.095, 0.115, 0.54, 16),
+      carOrangeMat
+    );
+    nozzleTube.rotation.x = Math.PI / 2;
+    nozzleTube.position.set(0, 0.28, 0.27);
+    const nozzleTip = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.145, 0.20, 16),
+      carOrangeMat
+    );
+    nozzleTip.rotation.x = Math.PI / 2;
+    nozzleTip.position.set(0, 0.28, 0.60);
+    turretGroup.add(nozzleTube, nozzleTip);
     carBodyGroup.add(turretGroup);
 
-    const wheelPositions = [[-1.18, 0.44, 0.98], [1.18, 0.44, 0.98], [-1.18, 0.44, -0.98], [1.18, 0.44, -0.98]];
+    // 6c. Os 9 Furos Circulares do Alto-Falante no Teto Traseiro (nivelados na superfície atrás do canhão!)
+    const speakerCenterZ = -0.96;
+    const holeGeo = new THREE.CircleGeometry(0.052, 16);
+    function addSpeakerHole(hx, hz) {
+      const hole = new THREE.Mesh(holeGeo, speakerHoleMat);
+      // Segue exatamente a curvatura transversal (hx) e longitudinal (hz) do teto!
+      const dropZ = hz < -1.00 ? Math.pow(-1.00 - hz, 2) * 0.35 : 0;
+      const dropX = Math.pow(hx, 2) * 0.05;
+      hole.position.set(hx, 2.564 - dropZ - dropX, hz);
+      hole.rotation.x = -Math.PI / 2 - (hz < -1.00 ? (-1.00 - hz) * 0.38 : 0);
+      carBodyGroup.add(hole);
+    }
+    // Furo central + 8 furos ao redor (entre z = -0.78 e z = -1.14, 100% livres atrás do domo!)
+    addSpeakerHole(0, speakerCenterZ);
+    for (let i = 0; i < 8; i++) {
+      const ang = (i / 8) * Math.PI * 2;
+      addSpeakerHole(Math.cos(ang) * 0.40, speakerCenterZ + Math.sin(ang) * 0.18);
+    }
+
+    // 7. TRASEIRA COMPLETA: JANELA TRASEIRA AMARELA GRANDE + GRADE TRASEIRA + LANTERNAS (foto traseira!)
+    // Janela amarela traseira com cantos arredondados
+    const rearWinShape = new THREE.Shape();
+    const rww = 0.72, rwh = 0.32, rwr = 0.12;
+    rearWinShape.moveTo(-rww + rwr, -rwh); rearWinShape.lineTo(rww - rwr, -rwh);
+    rearWinShape.quadraticCurveTo(rww, -rwh, rww, -rwh + rwr); rearWinShape.lineTo(rww - 0.05, rwh - rwr);
+    rearWinShape.quadraticCurveTo(rww - 0.05, rwh, rww - 0.05 - rwr, rwh); rearWinShape.lineTo(-rww + 0.05 + rwr, rwh);
+    rearWinShape.quadraticCurveTo(-rww + 0.05, rwh, -rww + 0.05, rwh - rwr); rearWinShape.lineTo(-rww, -rwh + rwr);
+    rearWinShape.quadraticCurveTo(-rww, -rwh, -rww + rwr, -rwh);
+
+    const rearWinGeo = new THREE.ExtrudeGeometry(rearWinShape, {
+      depth: 0.04,
+      bevelEnabled: true,
+      bevelThickness: 0.015,
+      bevelSize: 0.015,
+      bevelSegments: 5
+    });
+    const rearWindowMesh = new THREE.Mesh(rearWinGeo, yellowDetailMat);
+    rearWindowMesh.rotation.y = Math.PI;
+    rearWindowMesh.rotation.x = 0.12;
+    rearWindowMesh.position.set(0, 1.54, -1.85);
+    carBodyGroup.add(rearWindowMesh);
+
+    // Grade Traseira Branca Central com 3 Frisos Vermelhos
+    const rearGrille = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.24, 0.08), carWhiteSkirtMat);
+    rearGrille.position.set(0, 0.80, -1.88);
+    carBodyGroup.add(rearGrille);
+    for (let i = -1; i <= 1; i++) {
+      const rSlot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.52, 0.035, 0.10),
+        new THREE.MeshBasicMaterial({ color: 0xff4518 })
+      );
+      rSlot.position.set(0, 0.80 + i * 0.065, -1.89);
+      carBodyGroup.add(rSlot);
+    }
+
+    // Lanternas Traseiras Brancas com Friso Vermelho/Laranja Interno
+    [-0.63, 0.63].forEach((rx) => {
+      const tailOuter = new THREE.Mesh(
+        new THREE.BoxGeometry(0.32, 0.19, 0.08),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      tailOuter.position.set(rx, 0.84, -1.86);
+      tailOuter.rotation.y = rx > 0 ? -0.20 : 0.20;
+
+      const tailInner = new THREE.Mesh(
+        new THREE.BoxGeometry(0.22, 0.08, 0.10),
+        new THREE.MeshBasicMaterial({ color: 0xff4518 })
+      );
+      tailInner.position.set(rx, 0.84, -1.87);
+      tailInner.rotation.y = rx > 0 ? -0.20 : 0.20;
+      carBodyGroup.add(tailOuter, tailInner);
+    });
+
+    // 8. AS 4 RODAS PRETAS LARGAS COM CALOTAS ABAULADAS AZUL-TURQUESA (CIANO)
+    const wheelPositions = [
+      [-1.12, 0.46, 0.92],
+      [1.12, 0.46, 0.92],
+      [-1.12, 0.46, -0.92],
+      [1.12, 0.46, -0.92]
+    ];
     const wheels = [];
     wheelPositions.forEach((pos) => {
-      const wGroup = new THREE.Group(); wGroup.position.set(...pos);
-      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.30, 24), tireDarkMat);
-      tire.rotation.z = Math.PI / 2; tire.castShadow = true; wGroup.add(tire);
-      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.33, 24), cyanWheelMat);
-      rim.rotation.z = Math.PI / 2; wGroup.add(rim);
-      vehicle.add(wGroup); wheels.push(wGroup);
+      const wGroup = new THREE.Group();
+      wGroup.position.set(...pos);
+
+      const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.34, 28), tireDarkMat);
+      tire.rotation.z = Math.PI / 2;
+      tire.castShadow = true;
+      wGroup.add(tire);
+
+      // Calota ciano levemente abaulada para fora
+      const rim = new THREE.Mesh(new THREE.SphereGeometry(0.33, 24, 16), cyanWheelMat);
+      rim.scale.set(0.58, 1, 1);
+      rim.position.x = pos[0] > 0 ? 0.04 : -0.04;
+      wGroup.add(rim);
+
+      vehicle.add(wGroup);
+      wheels.push(wGroup);
     });
 
     vehicle.position.set(11.5, 0.14, 11.5);
@@ -2387,13 +2800,27 @@
       // 7. Câmera Dinâmica
       let camOffset, lookTarget;
       if (camMode === 'close') {
-        const viewAngle = carAngle - 0.52;
+        let angleDelta = 0.58; // 0: 3/4 Frontal-Lateral (frente + lateral esquerda)
+        let heightCam = 4.6;
+        let distCam = 8.2;
+        if (closeAngleIndex === 1) {
+          // 1: Perfil Lateral puro (idêntico à foto lateral do carrinho do Ravi!)
+          angleDelta = Math.PI / 2;
+          heightCam = 2.6;
+          distCam = 7.6;
+        } else if (closeAngleIndex === 2) {
+          // 2: Traseira & Teto (idêntico à foto traseira mostrando furos de som e janela amarela!)
+          angleDelta = Math.PI - 0.15;
+          heightCam = 4.8;
+          distCam = 7.8;
+        }
+        const viewAngle = carAngle + angleDelta;
         camOffset = new THREE.Vector3(
-          Math.sin(viewAngle) * 8.5 * zoomFactor,
-          5.0 * zoomFactor,
-          Math.cos(viewAngle) * 8.5 * zoomFactor
+          Math.sin(viewAngle) * distCam * zoomFactor,
+          heightCam * zoomFactor,
+          Math.cos(viewAngle) * distCam * zoomFactor
         );
-        lookTarget = new THREE.Vector3(vehicle.position.x, vehicle.position.y + 1.25, vehicle.position.z);
+        lookTarget = new THREE.Vector3(vehicle.position.x, vehicle.position.y + 1.35, vehicle.position.z);
       } else if (camMode === 'gear') {
         camOffset = new THREE.Vector3(1.5 * zoomFactor, 15.5 * zoomFactor, 16.5 * zoomFactor);
         lookTarget = new THREE.Vector3(8.5, 1.5, 2.0);
