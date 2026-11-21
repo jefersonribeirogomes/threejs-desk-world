@@ -1808,6 +1808,10 @@
         // Offset de repouso relativo à superfície (mesa ou chão) — usado ao cair da mesa
         const gy = obs.group.position.y;
         obs.restOffset = gy - surfaceBaseY(gy);
+        // No chão do quarto, a altura do gramado da ilha não faz parte do repouso (é somada pelo terreno a cada passo)
+        if (levelOfY(gy) === 'floor' && typeof floorExtraHeight === 'function') {
+          try { obs.restOffset -= Math.max(0, floorExtraHeight(obs.x, obs.z)); } catch (e) { /* ilhas ainda não criadas */ }
+        }
         obs.initY = gy;
         obs.initRotY = obs.group.rotation.y;
         if (!obs.level) obs.level = levelOfY(gy);
@@ -2649,6 +2653,7 @@
     const controllerDebrisList = [];
     const breakableControllers = [];
 
+    const CONTROLLER_SCALE = 1.75;
     function createBreakableGamepad(name, x, z, rotY, colorHex, accentHex, isPS5 = false) {
       const gp = new THREE.Group();
       gp.position.set(x, 0.14, z);
@@ -2761,6 +2766,8 @@
       const stickR = createThumbstick(0.52, 0.34);
       gp.add(stickL, stickR);
 
+      // Tamanho real em relação à caneca (DualSense ~16 cm x caneca ~10 cm)
+      gp.scale.setScalar(CONTROLLER_SCALE);
       deskWorld.add(gp);
 
       const ctrlObj = {
@@ -2774,7 +2781,7 @@
         stage: 0,
         lastHitTime: 0,
         obs: {
-          x, z, r: 2.0,
+          x, z, r: 2.0 * CONTROLLER_SCALE,
           name: `${name} (INTACTO - BATA ATÉ 20X PARA QUEBRAR!)`,
           type: 'controller',
           ctrlRef: null
@@ -2928,14 +2935,10 @@
       kbGroup.add(pbtn);
     });
 
-    // Cabo USB Preto Saindo do Topo Central do Teclado até a Borda Traseira
-    const kbCord = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.12, 0.12, 14.5, 8),
-      new THREE.MeshStandardMaterial({ color: 0x111215, roughness: 0.7 })
-    );
-    kbCord.rotation.x = Math.PI / 2;
-    kbCord.position.set(0, 0.25, -10.5);
-    kbGroup.add(kbCord);
+    // Teclado sem fio: sem cabo, só um LED de conexão 2.4 GHz
+    const kbLinkLed = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 0.14), new THREE.MeshBasicMaterial({ color: 0x7ee787 }));
+    kbLinkLed.position.set(6.9, 0.5, -3.4);
+    kbGroup.add(kbLinkLed);
 
     // Teclas com Perfil Completo ABNT2 e Iluminação Ciano Suave (#00b4d8)
     const keyCapMat = new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.35 });
@@ -2963,27 +2966,14 @@
     kbGroup.position.set(4.5, 0.14, 4.5);
     deskWorld.add(kbGroup);
 
-    // 6. MOUSE GAMER LOGITECH G502 HERO (Com Fio, Cabo Frontal, Scroll Metálico e LEDs DPI!)
+    // 6. MOUSE GAMER LOGITECH G502 (Sem Fio, Scroll Metálico e LEDs DPI!)
     const mouseGroup = new THREE.Group();
     const g502BodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1d22, roughness: 0.35, metalness: 0.15 });
     const g502GripMat = new THREE.MeshStandardMaterial({ color: 0x121417, roughness: 0.8 });
     const g502GlossMat = new THREE.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 0.06, metalness: 0.4 });
     const g502CyanMat = new THREE.MeshBasicMaterial({ color: 0x00d8ff });
 
-    // Cabo USB com Protetor de Alívio de Tensão Frontal saindo do bico do mouse!
-    const mouseRelief = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.14, 0.18, 0.65, 8),
-      new THREE.MeshStandardMaterial({ color: 0x16181b, roughness: 0.9 })
-    );
-    mouseRelief.rotation.x = Math.PI / 2;
-    mouseRelief.position.set(0.02, 0.42, -2.25);
-    const mouseCord = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.10, 0.10, 18.0, 8),
-      new THREE.MeshStandardMaterial({ color: 0x111215, roughness: 0.85 })
-    );
-    mouseCord.rotation.x = Math.PI / 2;
-    mouseCord.position.set(0.02, 0.20, -11.5);
-    mouseGroup.add(mouseRelief, mouseCord);
+    // Mouse sem fio: sem cabo
 
     // Aba Lateral Esquerda Ergonômica para o Polegar (Thumb Wing)
     const wingShape = new THREE.Shape();
@@ -4436,15 +4426,15 @@
         paint: (p) => (band(p.y, 0.3, 0.42) || band(p.y, 0.56, 0.68)) ? 0xf4f4ef : p.y < 0.06 ? 0xd94a14 : 0xff6a1a
       },
       apple: {
-        name: 'Maçã Vermelha', fit: { height: 1.7 }, mass: 0.3, roughness: 0.32,
+        name: 'Maçã Vermelha', fit: { height: 3.2 }, mass: 0.45, roughness: 0.32,
         paint: (p) => p.y > 0.88 ? (p.rxz < 0.16 ? 0x6b4423 : 0x5aa832) : p.y < 0.08 ? 0x9e1b1f : 0xd8282a
       },
       banana: {
-        name: 'Banana', fit: { length: 3.4 }, mass: 0.25, roughness: 0.5,
+        name: 'Banana', fit: { length: 7.6 }, mass: 0.4, roughness: 0.5,
         paint: (p) => (p.z < 0.05 || p.z > 0.95) ? 0x4a3418 : 0xf3d13a
       },
       cheeseburger: {
-        name: 'Cheeseburger', fit: { length: 2.4 }, mass: 0.4, roughness: 0.65,
+        name: 'Cheeseburger', fit: { length: 4.8 }, mass: 0.6, roughness: 0.65,
         paint: (p) => p.y < 0.2 ? 0xd18f45 : p.y < 0.4 ? 0x5a321f : p.y < 0.5 ? 0xffc23d : p.y < 0.58 ? 0x6cc04a : p.y < 0.64 ? 0xe2412f : 0xe0a050
       },
       rocket_toy_01: {
@@ -4747,9 +4737,9 @@
     placeModel('traffic_cone_01', { x: -32, z: 15, name: 'Cone de Trânsito 1' });
     placeModel('traffic_cone_02', { x: -48, z: 18, name: 'Cone Listrado 2' });
     placeModel('water_pistol', { x: -38, z: -4, rotY: 0.45, name: "Pistola d'Água" });
-    placeModel('cheeseburger', { x: 35, z: -2.0, name: 'Cheeseburger', breakable: 'food' });
-    placeModel('apple', { x: 39, z: -4.5, name: 'Maçã Vermelha', breakable: 'food' });
-    placeModel('banana', { x: 37.5, z: 2.5, rotY: 0.9, name: 'Banana', breakable: 'food' });
+    placeModel('cheeseburger', { x: 34, z: -3.5, name: 'Cheeseburger', breakable: 'food' });
+    placeModel('apple', { x: 41, z: -6.5, name: 'Maçã Vermelha', breakable: 'food' });
+    placeModel('banana', { x: 32, z: 7, rotY: 1.5, name: 'Banana', breakable: 'food' });
     placeModel('stapler', { x: -42, z: 28, rotY: -0.35, name: 'Grampeador Metálico' });
     placeModel('storage_box_01', { x: 34, z: 28, rotY: 0.2, name: 'Caixa Organizadora' });
     placeModel('computer_headphones_01', { x: 80, z: -47, rotY: -0.4, name: 'Headphone' });
@@ -5653,7 +5643,7 @@
       const g = new THREE.Group();
       g.position.set(X, Y, Z);
       g.name = 'Quadro da Família';
-      const woodMat = new THREE.MeshStandardMaterial({ color: 0xb98a52, roughness: 0.7 });
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x7a4f26, roughness: 0.75 });
       const outer = SIZE + BAR * 2;
       [[0, (SIZE + BAR) / 2, outer, BAR], [0, -(SIZE + BAR) / 2, outer, BAR],
        [(SIZE + BAR) / 2, 0, BAR, SIZE], [-(SIZE + BAR) / 2, 0, BAR, SIZE]].forEach(([x, y, w, h]) => {
@@ -5681,7 +5671,7 @@
         tex.anisotropy = 8;
         // Recorte só das 4 fotos (a imagem original mostra também a parede e a moldura real)
         const iw = tex.image.width, ih = tex.image.height;
-        const crop = { x: 498 / 1599, y: 35 / 899, w: 820 / 1599, h: 835 / 899 }; // frações da imagem
+        const crop = { x: 508 / 1599, y: 44 / 899, w: 800 / 1599, h: 816 / 899 }; // frações da imagem
         tex.repeat.set(crop.w, crop.h);
         tex.offset.set(crop.x, 1 - crop.y - crop.h);
         if (Math.abs(iw / ih - 1599 / 899) > 0.05) { // outra foto: recorte quadrado central
@@ -5692,6 +5682,20 @@
         photoMat.map = tex;
         photoMat.needsUpdate = true;
       }, undefined, () => { /* sem foto ainda: fica o aviso */ });
+      // Plaquinha embaixo da moldura
+      const pc = document.createElement('canvas');
+      pc.width = 512; pc.height = 96;
+      const pctx = pc.getContext('2d');
+      pctx.fillStyle = '#c9a25b'; pctx.fillRect(0, 0, 512, 96);
+      pctx.strokeStyle = '#8a6a2f'; pctx.lineWidth = 6; pctx.strokeRect(3, 3, 506, 90);
+      pctx.fillStyle = '#3b2a12'; pctx.font = 'bold 44px Pally, sans-serif'; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
+      pctx.fillText('Papai · Mamãe · Ravi', 256, 50);
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(7, 1.3, 0.2), [
+        woodMat, woodMat, woodMat, woodMat,
+        new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(pc), roughness: 0.4, metalness: 0.3 }), woodMat
+      ]);
+      plate.position.set(0, -(SIZE / 2 + BAR + 1.3), 0.2);
+      g.add(plate);
       scene.add(g);
     })();
     (function kidDrawing() {
@@ -5794,6 +5798,17 @@
     let rocketLaunch = null;
     const CAMERA_FOV_DEFAULT = 34;
     let rocketCamFovRestore = null; // volta suave ao FOV normal depois da câmera do foguete
+
+    // Evento "Papai, Mamãe e Ravi": câmera vai até o quadro da família na parede do fundo
+    const FAMILY_FRAME_POS = new THREE.Vector3(-36, 9.4, -72.6); // centro entre o quadro e a plaquinha
+    let familyView = null;
+    function startFamilyFrameView() {
+      familyView = { t: 0, look: camera.position.clone().lerp(FAMILY_FRAME_POS, 0.5) };
+      notify({ type: 'success', title: 'Papai, Mamãe e Ravi ❤', description: 'Acelere para voltar a dirigir', duration: 6000 });
+      showCarSpeech('Minha família! ❤', 3000);
+      playTone(523.3, 0, 0.25, 'triangle', 0.08); playTone(659.3, 0.22, 0.25, 'triangle', 0.08); playTone(784, 0.44, 0.5, 'triangle', 0.08);
+      progressAchievement('islandActions', 1);
+    }
     const jumpingFish = [];
     function spawnJumpingFish() {
       for (let i = 0; i < 4; i++) {
@@ -7862,6 +7877,13 @@
           { label: 'Abrir LinkedIn ↗', run: () => openExternal(LINKEDIN_URL) },
           { label: 'Abrir Trailhead ↗', run: () => openExternal(TRAILHEAD_URL) }
         ]
+      },
+      {
+        id: 'family', name: 'Papai, Mamãe e Ravi', point: [-36, -50.5], y: 0.14,
+        text: 'O quadro mais importante do quarto: o dia em que o Ravi chegou. Papai, Mamãe e Ravi, juntinhos desde o primeiro segundo. ❤',
+        actions: [
+          { label: '👀 Ver o quadro', run: startFamilyFrameView }
+        ]
       }
     ];
     deskInteractives.forEach((it) => { it.pointMeshes = createInteractivePin(it.point[0], it.y, it.point[1]); });
@@ -9272,7 +9294,12 @@
           if (obs.z > 92 - r) { obs.z = 92 - r; obs.vz = -Math.abs(obs.vz) * e; }
         }
 
-        const baseY = surfaceBaseY(obs.level === 'desk' ? 0 : FLOOR_SURFACE_Y) + (obs.restOffset || 0);
+        // Terreno sob o objeto: no quarto soma o gramado das ilhas (sai da ilha = desce; sobe ao entrar)
+        const terrainY = obs.level === 'desk' ? surfaceBaseY(0) : FLOOR_SURFACE_Y + Math.max(0, floorExtraHeight(obs.x, obs.z));
+        const baseY = terrainY + (obs.restOffset || 0);
+        if (!obs.isFalling && obs.level === 'floor' && !obs.pin && !(obs.stackOffset > 0) && !(obs.hop > 0) && !obs.hopV) {
+          grp.position.y = baseY;
+        }
         if (!obs.isFalling) {
           // Quique vertical com perda de energia (bola sempre; outros objetos após batidas fortes)
           if (!obs.pin && !(obs.stackOffset > 0) && (obs.ball || obs.hopV || obs.hop)) {
@@ -9717,6 +9744,17 @@
         const altitude = clamp((rp.y - rocketLaunch.baseY) / 75, 0, 1);
         const fovTarget = 62 - altitude * 26;
         if (Math.abs(camera.fov - fovTarget) > 0.05) { camera.fov += (fovTarget - camera.fov) * (1 - Math.exp(-dt * 3)); camera.updateProjectionMatrix(); }
+        camFollowTarget.copy(lookTarget);
+      } else if (familyView) {
+        // Aproximação lenta e suave até o quadro; acelerar ou dar ré (ou 12 s) volta ao jogo
+        familyView.t += dt;
+        const ease = 1 - Math.exp(-familyView.t * 0.6);
+        const goal = new THREE.Vector3(-31, 9.6, -28 - ease * 7); // levemente à direita: o pórtico da pista fica fora do quadro
+        camera.position.lerp(goal, 1 - Math.exp(-dt * 2.5));
+        familyView.look.lerp(FAMILY_FRAME_POS, 1 - Math.exp(-dt * 3));
+        camera.lookAt(familyView.look);
+        const wantsToDrive = keys.forward || keys.backward || padInput.throttle > 0.2 || padInput.reverse > 0.2;
+        if (familyView.t > 12 || (familyView.t > 1 && wantsToDrive)) familyView = null;
         camFollowTarget.copy(lookTarget);
       } else {
         if (rocketCamFovRestore !== null) {
