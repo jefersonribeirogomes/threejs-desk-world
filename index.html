@@ -4756,8 +4756,12 @@
         toggleGrabItem();
       }
       if (e.code === 'Space') {
-        keys.spray = true;
-        spawnWaterJet();
+        if (devModeActive || isFreeCameraActive) {
+          keys.spray = false;
+        } else {
+          keys.spray = true;
+          spawnWaterJet();
+        }
       }
     });
 
@@ -5668,21 +5672,40 @@
         alert('Selecione um objeto primeiro clicando nele!');
         return;
       }
-      const objName = devSelectedObject.name || 'Objeto';
-      if (devSelectedObject.parent) {
-        devSelectedObject.parent.remove(devSelectedObject);
-      }
-      const obsIdx = obstacles.findIndex(o => o.group === devSelectedObject);
-      if (obsIdx !== -1) obstacles.splice(obsIdx, 1);
-      const dynIdx = dynamicObstacles.findIndex(o => o.group === devSelectedObject);
-      if (dynIdx !== -1) dynamicObstacles.splice(dynIdx, 1);
-      const grabIdx = grabbableItems.findIndex(g => g.group === devSelectedObject);
-      if (grabIdx !== -1) grabbableItems.splice(grabIdx, 1);
+      const targetObj = devSelectedObject;
+      const objName = targetObj.name || 'Objeto';
 
+      // 1. Desanexa primeiro o TransformControls para evitar recursão
       transformControl.detach();
       devSelectedObject = null;
       devSelectedNameEl.textContent = '(Nenhum selecionado)';
-      setStatusBanner(`🗑️ ${objName} excluído da cena!`, '#ff5252');
+
+      // 2. Remove recursivamente geometrias e retira de todos os mundos
+      targetObj.traverse((child) => {
+        if (child.isMesh && child.geometry) {
+          child.geometry.dispose();
+        }
+      });
+
+      if (targetObj.parent) {
+        targetObj.parent.remove(targetObj);
+      }
+      scene.remove(targetObj);
+      deskWorld.remove(targetObj);
+      bedroomWorld.remove(targetObj);
+
+      // 3. Remove de todas as listas de física, colisores e arrastáveis
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        if (obstacles[i].group === targetObj) obstacles.splice(i, 1);
+      }
+      for (let i = dynamicObstacles.length - 1; i >= 0; i--) {
+        if (dynamicObstacles[i].group === targetObj) dynamicObstacles.splice(i, 1);
+      }
+      for (let i = grabbableItems.length - 1; i >= 0; i--) {
+        if (grabbableItems[i].group === targetObj) grabbableItems.splice(i, 1);
+      }
+
+      setStatusBanner(`🗑️ ${objName} excluído com sucesso!`, '#ff5252');
       logInteractionEvent(`🗑️ Desenvolvedor excluiu o objeto: ${objName}`);
     }
 
