@@ -40,6 +40,14 @@ Passo fixo de 60 Hz (mesma velocidade em qualquer monitor), pulos/quedas com gra
 
 Os GLBs em `models/` vêm sem materiais; o jogo os encaixa pelo bounding box real, coloca o pivô na base e aplica pintura procedural por face (`MODEL_LIBRARY` em `index.html`).
 
+## 🔐 Conta, ranking global e segurança
+
+- Login opcional com **Google** (Firebase Auth) e banco **Firestore** para sincronizar conquistas, cores do carrinho e recordes, além do **ranking global** de voltas e do boliche.
+- Sem configuração, tudo funciona offline com o salvamento local do navegador.
+- Dados mínimos (apelido de 3 letras, recordes, conquistas e cores), sem e-mail ou foto; botão **Apagar meus dados** no menu.
+- Regras do Firestore com negação por padrão e validação de todos os campos: [`firestore.rules`](firestore.rules).
+- Content-Security-Policy, restrição de chave por domínio e App Check: passo a passo em [`docs/FIREBASE.md`](docs/FIREBASE.md).
+
 ## 🚀 Como rodar localmente
 
 ```bash

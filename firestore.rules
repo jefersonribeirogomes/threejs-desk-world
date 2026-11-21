@@ -1,0 +1,87 @@
+rules_version = '2';
+
+// Regras do Firestore do Desk World
+// - Tudo é negado por padrão.
+// - Cada usuário só lê/grava o próprio perfil (users/{uid}).
+// - Rankings (laps, bowling) têm leitura pública, mas cada um só grava o próprio documento,
+//   com formato validado e apenas quando o resultado novo é MELHOR que o anterior.
+// - Nenhum dado pessoal (e-mail, foto, nome completo) é aceito.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function validTag(t) { return t is string && t.matches('^[A-Z0-9]{3}$'); }
+    function stamped() { return request.resource.data.updatedAt == request.time; }
+
+    function optInt(data, key, lo, hi) {
+      return !(key in data) || (data[key] is int && data[key] >= lo && data[key] <= hi);
+    }
+    function optColor(c, key) {
+      return !(key in c) || (c[key] is string && c[key].matches('^#[0-9a-f]{6}$'));
+    }
+    function validCustom(data) {
+      return !('custom' in data) || (
+        data.custom is map
+        && data.custom.keys().hasOnly(['body', 'wheels', 'tires', 'glass'])
+        && optColor(data.custom, 'body') && optColor(data.custom, 'wheels')
+        && optColor(data.custom, 'tires') && optColor(data.custom, 'glass')
+      );
+    }
+    function validAchievements(data) {
+      return !('achievements' in data) || (
+        data.achievements is map
+        && data.achievements.keys().hasOnly(['unlocked', 'progress', 'sets'])
+        && (!('unlocked' in data.achievements) || (data.achievements.unlocked is map && data.achievements.unlocked.size() <= 64))
+        && (!('progress' in data.achievements) || (data.achievements.progress is map && data.achievements.progress.size() <= 64))
+        && (!('sets' in data.achievements) || (data.achievements.sets is map && data.achievements.sets.size() <= 32))
+      );
+    }
+
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['tag', 'paint', 'custom', 'bestLapMs', 'bowlingBest', 'achievements', 'updatedAt'])
+        && stamped()
+        && (!('tag' in request.resource.data) || validTag(request.resource.data.tag))
+        && (!('paint' in request.resource.data) || (request.resource.data.paint is string && request.resource.data.paint.matches('^[a-z0-9_-]{1,24}$')))
+        && optInt(request.resource.data, 'bestLapMs', 20000, 3600000)
+        && optInt(request.resource.data, 'bowlingBest', 0, 100000)
+        && validCustom(request.resource.data)
+        && validAchievements(request.resource.data);
+    }
+
+    match /laps/{uid} {
+      function validLap() {
+        return request.resource.data.keys().hasOnly(['tag', 'time', 'updatedAt'])
+          && validTag(request.resource.data.tag)
+          && request.resource.data.time is int
+          && request.resource.data.time >= 20000 && request.resource.data.time <= 3600000
+          && stamped();
+      }
+      allow read: if true;
+      allow create: if isOwner(uid) && validLap();
+      allow update: if isOwner(uid) && validLap() && request.resource.data.time < resource.data.time;
+      allow delete: if isOwner(uid);
+    }
+
+    match /bowling/{uid} {
+      function validBowling() {
+        return request.resource.data.keys().hasOnly(['tag', 'score', 'updatedAt'])
+          && validTag(request.resource.data.tag)
+          && request.resource.data.score is int
+          && request.resource.data.score > 0 && request.resource.data.score <= 100000
+          && stamped();
+      }
+      allow read: if true;
+      allow create: if isOwner(uid) && validBowling();
+      allow update: if isOwner(uid) && validBowling() && request.resource.data.score > resource.data.score;
+      allow delete: if isOwner(uid);
+    }
+
+    // Qualquer outro caminho: bloqueado
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

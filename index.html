@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Fire Engine Desk World</title>
+  <!-- Segurança: só carrega scripts, frames e conexões de origens conhecidas (site, Firebase/Google e YouTube do rádio) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://i.ytimg.com https://avatars.githubusercontent.com; media-src 'self' blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://www.google.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://*.firebaseapp.com https://accounts.google.com https://www.google.com https://www.recaptcha.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Jeferson Ribeiro Gomes · Desk World</title>
   <link rel="icon" type="image/svg+xml" href="./assets/ui/favicon.svg">
   <!-- Bruno Simon Design System (tokens, tipografia e componentes originais) -->
   <link rel="stylesheet" href="./assets/css/bruno-ds.css">
@@ -164,6 +167,54 @@
     html.is-mode-touch .interact-prompt .key { display: none; }
     html.is-mode-touch .grab-prompt .key { display: inline-block; }
     .modals .modal.island .island-actions { flex-wrap: wrap; }
+    /* ---------- Celular deitado / telas baixas: menu e painéis do DS em escala compacta ---------- */
+    @media only screen and (max-height: 560px) and (orientation: landscape) {
+      /* Menu: sem a imagem de pré-visualização (ganha a largura toda) e quase a altura toda da tela */
+      .menu .inner { width: min(760px, 100% - 24px); height: calc(100% - 64px); top: 26px; }
+      .menu .previews { display: none; }
+      .menu .contents { width: 100%; }
+      .menu .content .content-inner { padding: 14px 18px; }
+      .menu .content .title { font-size: 1.9rem; }
+      .menu .content .text, .menu table.options td { font-size: 14px; }
+      .menu .content .section-title { font-size: 1.3rem; }
+      .menu .button { font-size: 14px; }
+      .menu .navigation .item { transform: scale(.85); }
+      /* Painéis de ilha, convite de corrida, loja de cores e demais modais */
+      .modals .modal .content { max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); overflow-y: auto; }
+      .modals .modal.island .content { width: min(560px, 100vw - 24px); padding: 14px 18px; font-size: 14px; }
+      .modals .modal.island .content .title { font-size: 1.8rem; margin-bottom: 4px; }
+      .modals .modal.island .content .text { font-size: 14px; margin: 0 0 8px; }
+      .modals .modal .button { font-size: 14px; }
+      .paint-swatches { grid-template-columns: repeat(8, 1fr); gap: 6px; }
+      .paint-swatch { border-radius: 8px; }
+      .race-invite-records li { padding: 4px 10px; font-size: 14px; }
+      /* Avisos (notificações) menores para não cobrir o jogo */
+      .notifications .notification { transform-origin: top center; scale: .82; }
+      /* HUD do tanque e bateria mais compacto */
+      .hud-water { transform: scale(.78); transform-origin: top left; }
+    }
+    /* Ilha das Cores */
+    .paint-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+    .paint-tabs .button.is-active { background: var(--ds-trigger); border-color: transparent; }
+    .paint-swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
+    .paint-swatch { aspect-ratio: 1; border-radius: 10px; border: 3px solid #ffffff22; cursor: pointer; padding: 0; transition: transform .15s, border-color .15s; }
+    .paint-swatch:hover { transform: scale(1.08); }
+    .paint-swatch.gp-focus { transform: scale(1.14); outline: 3px solid #fff; outline-offset: 2px; }
+    .paint-special.gp-focus, .paint-tabs .button.gp-focus { outline: 3px solid #fff; outline-offset: 2px; }
+    .paint-swatch.is-active { border-color: #fff; transform: scale(1.08); box-shadow: 0 0 0 3px var(--ds-reveal); }
+    .paint-specials { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .paint-specials:empty { display: none; }
+    .paint-special { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 10px; border: 2px solid #ffffff22; background: #ffffff0d; color: #fff; cursor: pointer; font: inherit; }
+    .paint-special img { width: 34px; height: 34px; border-radius: 8px; }
+    .paint-special.is-active { border-color: #fff; box-shadow: 0 0 0 3px var(--ds-reveal); }
+    .paint-special.is-locked { opacity: .45; cursor: default; }
+    @media (max-width: 600px) { .paint-swatches { grid-template-columns: repeat(6, 1fr); gap: 6px; } }
+    /* Conta (login opcional) */
+    .account-box { margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: var(--ds-glass); border: 1px solid #ffffff1f; display: flex; flex-direction: column; gap: 10px; align-self: stretch; }
+    .account-box .account-status { margin: 0; }
+    .account-box .account-privacy { margin: 0; font-size: 12.5px; opacity: .7; }
+    .account-box .button.is-disabled { opacity: .45; pointer-events: none; }
+    .leaderboard-scope { margin: 0 0 6px; font-size: 13px; opacity: .8; }
     /* Marcos de carreira: mural de madeira laranja, título Amatic, faixa roxa, setas roxas e miniaturas */
     .modals .modal.career .content.career-board {
       width: min(1100px, calc(100vw - 32px)); max-width: none; max-height: calc(100vh - 32px); overflow: auto;
@@ -200,13 +251,41 @@
     .career-thumb .lbl { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-family: var(--ds-font-title); font-size: 21px; font-weight: 700; color: #fff; background: #e98f4f; padding: 0 10px; border-radius: 4px; box-shadow: 0 2px 0 #b85f2a; }
     .career-thumb.is-active { border-color: #fff; transform: scale(1.04); }
     .career-thumb:hover, .career-thumb.gp-focus { transform: scale(1.05); }
-    @media (max-width: 820px) {
+    /* Mural compacto: celulares (deitados ou em pé) e telas baixas — mesmo visual do DS, em escala menor */
+    @media (max-height: 560px), (max-width: 820px) {
+      .modals .modal.career .content.career-board {
+        width: calc(100vw - 20px); max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px);
+        grid-template-columns: 1fr 96px; gap: 10px; padding: 10px; border-width: 4px; overflow: hidden;
+      }
+      .career-board .close { top: -12px; right: -12px; transform: scale(.8); }
+      .career-stage { min-height: 0; }
+      .career-sign { padding: 6px 10px 18px; }
+      .career-title { font-size: clamp(24px, 6vh, 34px); }
+      .career-pill { font-size: clamp(13px, 3.4vh, 17px); bottom: -11px; padding: 1px 10px; }
+      .career-main { grid-template-columns: 34px 1fr 34px; gap: 6px; margin-top: 18px; min-height: 0; }
+      .career-arrow { height: 42px; font-size: 20px; box-shadow: 0 3px 0 #6e1f98; }
+      .career-screen { grid-template-columns: 92px 1fr; gap: 10px; min-height: 0; padding: 8px; border-width: 3px;
+        max-height: calc(100vh - 140px); max-height: calc(100dvh - 140px); }
+      .career-art { min-height: 0; }
+      .career-emoji { font-size: 48px; }
+      .career-portal { font-size: 15px; left: 4px; top: 4px; padding: 0 6px; }
+      .career-info { gap: 5px; overflow-y: auto; padding-right: 4px; }
+      .career-role { font-size: 20px; }
+      .career-meta { font-size: 11.5px; }
+      .career-intro { font-size: 12px; }
+      .career-bullets { font-size: 12px; line-height: 1.38; gap: 4px; padding-left: 16px; }
+      .career-tags span { font-size: 10.5px; padding: 2px 7px; }
+      .career-thumbs { gap: 8px; overflow-y: auto; padding: 22px 2px 10px; } /* espaço para o botão fechar */
+      .career-thumb { height: auto; min-height: 44px; flex: 1 1 0; font-size: 22px; border-width: 3px; }
+      .career-thumb .lbl { font-size: 13px; bottom: -8px; padding: 0 6px; }
+    }
+    /* Celular em pé: miniaturas viram uma fileira embaixo e a arte fica em cima do texto */
+    @media (max-width: 560px) and (min-height: 561px) {
       .modals .modal.career .content.career-board { grid-template-columns: 1fr; }
-      .career-screen { grid-template-columns: 1fr; min-height: 0; }
-      .career-art { min-height: 120px; }
-      .career-main { grid-template-columns: 40px 1fr 40px; }
-      .career-thumbs { flex-direction: row; overflow-x: auto; padding-bottom: 14px; }
-      .career-thumb { flex: 0 0 110px; height: 70px; font-size: 30px; }
+      .career-screen { grid-template-columns: 1fr; }
+      .career-art { min-height: 90px; }
+      .career-thumbs { flex-direction: row; overflow-x: auto; }
+      .career-thumb { flex: 0 0 84px; min-height: 56px; }
     }
     /* Convite da corrida: pódio dos recordes */
     .race-invite-records { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 6px; }
@@ -280,14 +359,24 @@
       background: radial-gradient(farthest-side at 0 0, var(--ds-plum-1), var(--ds-plum-2));
       transition: opacity .6s;
       text-align: center; padding: 20px;
+      overflow-y: auto; /* telas baixas: rola em vez de cortar o texto */
     }
+    @supports (justify-content: safe center) { .intro { justify-content: safe center; } }
     .intro.is-hidden { opacity: 0; pointer-events: none; }
-    .intro .ring-wrap { position: relative; width: 168px; height: 168px; }
+    /* Círculo da foto: 2x maior, mas nunca maior que ~34% da altura da tela */
+    .intro .ring-wrap { position: relative; width: min(400px, 38vh, 72vw); height: min(400px, 38vh, 72vw); flex-shrink: 0; }
     .intro .ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-    /* A foto é o selo "Agentblazer Champion": ampliada para mostrar só o retrato do meio */
+    /* Foto de perfil: o retrato redondo ocupa ~70% da imagem original, então ampliamos para preencher o círculo */
     .intro .intro-photo { position: absolute; inset: 12px; border-radius: 50%; overflow: hidden; background: #000; box-shadow: 0 6px 24px #0008; }
-    .intro .intro-photo img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.7); transform-origin: 50% 50%; display: block; }
-    @media (max-width: 600px) { .intro .title { font-size: 2.1rem; } }
+    /* Foto local (Jeferson e Ravi, vertical): recorte quadrado central mostra os dois rostos, sem ampliar */
+    .intro .intro-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 48%; display: block; }
+    /* Avatar do GitHub é o selo Agentblazer: amplia mais para mostrar só o retrato do meio */
+    .intro .intro-photo img.is-badge { transform: scale(1.78); }
+    /* Mesmo tamanho de letra do botão (herda a escala do DS: 20px → 18px → 16px) */
+    .intro .intro-welcome { max-width: 720px; margin: 0; color: var(--ds-text-soft); font-size: 1em; line-height: 1.45; display: flex; flex-direction: column; gap: 8px; }
+    .intro .intro-welcome p { margin: 0; }
+    .intro .intro-welcome strong { color: var(--ds-peach); }
+    .intro .intro-welcome .intro-soon { font-family: var(--ds-font-title); font-size: 26px; color: var(--ds-reveal); letter-spacing: .03em; }
     .intro .ring circle { fill: none; stroke-width: 3; }
     .intro .ring .track { stroke: #ffffff26; }
     .intro .ring .progress { stroke: var(--ds-reveal); stroke-linecap: round; transition: stroke-dashoffset .25s; }
@@ -296,6 +385,29 @@
     .intro .text { max-width: 420px; margin: 0; color: var(--ds-text-soft); }
     .intro .button { min-width: 180px; }
     .intro .button.is-disabled { opacity: .45; }
+    .intro .text { font-size: 1em; }
+    /* --- Responsivo da tela inicial (precisa vir depois das regras base) --- */
+    @media (max-width: 600px) { .intro .title { font-size: 2.1rem; } }
+    @media (max-height: 720px) { .intro .intro-welcome { gap: 4px; line-height: 1.35; } }
+    /* Telas largas e baixas (notebook/paisagem): foto à esquerda, textos e botão à direita — tudo cabe sem rolar */
+    @media (min-aspect-ratio: 4/3) and (max-height: 900px) {
+      .intro { display: grid; grid-template-columns: auto minmax(0, 700px); column-gap: clamp(24px, 4vw, 64px); row-gap: 12px;
+        align-content: center; justify-content: center; justify-items: start; text-align: left; }
+      .intro .ring-wrap { grid-column: 1; grid-row: 1 / span 5; align-self: center; width: min(400px, 56vh, 38vw); height: min(400px, 56vh, 38vw); }
+      .intro .title, .intro .intro-welcome, .intro .text, .intro .button { grid-column: 2; }
+      .intro .text { max-width: none; }
+      .intro .title { font-size: clamp(2rem, 3.3vw, 3rem); }
+      .intro .title .accent { white-space: nowrap; }
+    }
+    /* Celular deitado / telas bem baixas: escala menor (texto e botão continuam do mesmo tamanho entre si) */
+    @media (max-height: 520px) {
+      .intro { font-size: 14px; row-gap: 6px; gap: 8px; padding: 12px 20px; }
+      .intro .title { font-size: clamp(1.5rem, 4.2vw, 2.2rem); }
+      .intro .intro-welcome { gap: 3px; line-height: 1.3; }
+      .intro .intro-welcome .intro-soon { font-size: 20px; }
+      .intro .button { min-width: 140px; padding-top: 6px; padding-bottom: 6px; }
+      .intro .ring-wrap { width: min(260px, 70vh, 32vw); height: min(260px, 70vh, 32vw); }
+    }
 
     /* ==========================================================================
        MENU — previews capturados da cena 3D e conteúdos do jogo
@@ -407,6 +519,9 @@
       .hud-water .title { font-size: 1.4rem; }
     }
   </style>
+  <!-- Nuvem opcional (login Google + ranking global). Sem configuração, tudo funciona só no aparelho. -->
+  <script src="./firebase-config.js"></script>
+  <script type="module" src="./assets/js/cloud.js"></script>
   <script src="./three.min.js"></script>
   <script src="./GLTFLoader.js"></script>
   <script src="./OrbitControls.js"></script>
@@ -422,16 +537,36 @@
   <div class="intro" id="intro">
     <div class="ring-wrap">
       <!-- Foto do Jeferson no centro do círculo de carregamento (some sozinha se o arquivo não existir) -->
-      <div class="intro-photo"><img src="./assets/foto-jeferson.jpg" alt="Jeferson Ribeiro Gomes" onerror="this.parentNode.style.display='none'"></div>
+      <!-- Foto: arquivo local (se existir) ou o avatar público do GitHub do Jeferson (selo Agentblazer Champion) -->
+      <div class="intro-photo"><img id="intro-photo-img" src="./assets/foto-jeferson.jpg" alt="Jeferson Ribeiro Gomes" referrerpolicy="no-referrer"></div>
       <svg class="ring" viewBox="0 0 110 110" aria-hidden="true">
         <circle class="track" cx="55" cy="55" r="50"></circle>
         <circle class="progress" id="intro-progress" cx="55" cy="55" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"></circle>
       </svg>
     </div>
     <div class="title">// Jeferson Ribeiro Gomes // <span class="accent">Desk World</span></div>
+    <div class="intro-welcome">
+      <p><strong>Seja bem-vindo ao meu currículo interativo!</strong> Um pouco do meu dia a dia na visão do pequeno Ravi.</p>
+      <p>Para conhecer minha trajetória profissional é bem simples: siga o circuito do <strong>portal 1 ao portal 6</strong>.</p>
+      <p>Informações sobre mim você encontra perto do computador… mas cuidado para não hackear demais, rsrs.</p>
+      <p>No mais, explore este pequeno mundo, descubra os desafios e os mini-games — espero que se divirta!</p>
+      <p class="intro-soon">Novidades chegando em breve!!!</p>
+    </div>
     <p class="text" id="intro-text">Carregando a mesa do Ravi…</p>
     <button class="button is-disabled" id="intro-start" type="button">Começar</button>
   </div>
+  <script>
+    // Foto da tela inicial: tenta o arquivo local; se não existir, usa o avatar público do GitHub
+    (function () {
+      var img = document.getElementById('intro-photo-img');
+      var GITHUB_AVATAR = 'https://avatars.githubusercontent.com/u/10172471?v=4&s=460';
+      img.addEventListener('error', function onErr() {
+        if (img.src.indexOf('avatars.githubusercontent.com') === -1) { img.classList.add('is-badge'); img.src = GITHUB_AVATAR; }
+        else { img.removeEventListener('error', onErr); img.parentNode.style.display = 'none'; }
+      });
+      if (img.complete && img.naturalWidth === 0) { img.classList.add('is-badge'); img.src = GITHUB_AVATAR; }
+    })();
+  </script>
 
   <!-- ===== HUD: TANQUE D'ÁGUA + STATUS ===== -->
   <div class="hud-water ds-frame" id="hud-water">
@@ -552,6 +687,17 @@
                 <button class="button" id="menu-btn-play" type="button">Jogar</button>
                 <button class="button" id="menu-btn-map" type="button">Abrir mapa</button>
               </div>
+              <!-- Conta (opcional): guarda recordes e conquistas na nuvem -->
+              <div class="account-box" id="account-box">
+                <div class="section-title">Sua conta</div>
+                <p class="text account-status" id="account-status">Carregando…</p>
+                <div class="horizontal-group" style="justify-content:flex-start">
+                  <button class="button" id="account-signin" type="button">Entrar com Google</button>
+                  <button class="button" id="account-signout" type="button" hidden>Sair</button>
+                  <button class="button is-small" id="account-delete" type="button" hidden>Apagar meus dados</button>
+                </div>
+                <p class="text account-privacy">Guardamos só o necessário: apelido de 3 letras, recordes, conquistas e as cores do carrinho. Nada de e-mail ou foto. Você pode apagar tudo quando quiser.</p>
+              </div>
             </div>
           </div>
           <!-- OPÇÕES -->
@@ -669,6 +815,7 @@
               <div class="title">Circuito</div>
               <p class="text">Uma volta completa passa pela <strong>mesa</strong>, desce a <strong>rampa de papelão</strong>, cruza o circuito <strong>embaixo da mesa</strong> e sobe de volta pela outra rampa. Passe pelos 6 portais na ordem!</p>
               <div class="leaderboard-container" id="leaderboard-container">
+                <p class="leaderboard-scope" id="leaderboard-scope"></p>
                 <table class="leaderboard" id="leaderboard"><tbody></tbody></table>
                 <p class="no-score">Nenhuma volta ainda. Seja o primeiro!</p>
               </div>
@@ -783,6 +930,25 @@
         <div class="career-thumbs" id="career-thumbs"></div>
       </div>
     </div>
+    <!-- Ilha das Cores: personalização do carrinho por peça -->
+    <div class="modal island paint-shop" id="paint-modal" data-name="paint">
+      <div class="content">
+        <button class="close js-close" id="paint-close" type="button" aria-label="Fechar"><img class="icon is-default" src="./assets/ui/close.svg" alt=""></button>
+        <div class="title">Ilha das Cores 🎨</div>
+        <div class="paint-tabs" id="paint-tabs" role="tablist">
+          <button class="button is-small is-active" type="button" data-part="body">Carroceria</button>
+          <button class="button is-small" type="button" data-part="wheels">Rodas</button>
+          <button class="button is-small" type="button" data-part="tires">Pneus</button>
+          <button class="button is-small" type="button" data-part="glass">Vidro</button>
+        </div>
+        <div class="paint-swatches" id="paint-swatches"></div>
+        <div class="paint-specials" id="paint-specials"></div>
+        <div class="horizontal-group island-actions">
+          <button class="button" id="paint-reset" type="button">Restaurar padrão</button>
+          <button class="button" id="paint-done" type="button">Pronto!</button>
+        </div>
+      </div>
+    </div>
     <!-- Convite para correr (aparece ao passar pela largada) -->
     <div class="modal island race-invite" id="race-invite-modal" data-name="race-invite">
       <div class="content">
@@ -840,6 +1006,7 @@
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xd5cfc7);
 
+    const decorLights = []; // luzes decorativas controladas pela qualidade
     const sizes = {
       width: window.innerWidth,
       height: window.innerHeight
@@ -3585,6 +3752,7 @@
       return tex;
     }
 
+    const trackPaintUniforms = { uMagic: { value: 0 }, uTrackTime: { value: 0 } };
     const trackMesh = (() => {
       const N = trackSamples.length;
       const positions = new Float32Array((N + 1) * 2 * 3);
@@ -3610,6 +3778,42 @@
         map: createTrackTexture(), roughness: 0.82, metalness: 0,
         polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, side: THREE.DoubleSide
       });
+      // Pintura com o lápis de cor: cada vértice guarda se foi pintado (aPaint) e a cor do giz (aHue)
+      geo.setAttribute('aPaint', new THREE.BufferAttribute(new Float32Array((N + 1) * 2), 1));
+      geo.setAttribute('aHue', new THREE.BufferAttribute(new Float32Array((N + 1) * 2), 1));
+      mat.onBeforeCompile = (shader) => {
+        Object.assign(shader.uniforms, trackPaintUniforms);
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', `#include <common>
+            attribute float aPaint; attribute float aHue;
+            varying float vPaint; varying float vHue; varying vec2 vTrackUv;`)
+          .replace('#include <begin_vertex>', `#include <begin_vertex>
+            vPaint = aPaint; vHue = aHue; vTrackUv = uv;`);
+        shader.fragmentShader = shader.fragmentShader
+          .replace('#include <common>', `#include <common>
+            uniform float uMagic; uniform float uTrackTime;
+            varying float vPaint; varying float vHue; varying vec2 vTrackUv;
+            vec3 hsv2rgbT(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
+            vec3 trackGlow = vec3(0.0);`)
+          .replace('#include <map_fragment>', `#include <map_fragment>
+            // Riscos de giz de cera: listras levemente irregulares ao longo da pista
+            if (vPaint > 0.01) {
+              float wax = 0.72 + 0.28 * sin(vTrackUv.x * 46.0 + sin(vTrackUv.y * 9.0) * 2.0);
+              vec3 crayon = hsv2rgbT(vec3(vHue, 0.8, 0.85)) * wax;
+              diffuseColor.rgb = mix(diffuseColor.rgb, crayon, clamp(vPaint, 0.0, 1.0) * 0.42);
+            }
+            // Pista mágica (conquista secreta): brilho de arco-íris suave correndo pela pista
+            if (uMagic > 0.5) {
+              float h = fract(vTrackUv.y * 0.11 + vTrackUv.x * 0.18 - uTrackTime * 0.06);
+              vec3 rainbow = hsv2rgbT(vec3(h, 0.75, 0.8));
+              float pulse = 0.2 + 0.06 * sin(uTrackTime * 2.2 + vTrackUv.y * 2.5);
+              diffuseColor.rgb = mix(diffuseColor.rgb, rainbow, pulse);
+              trackGlow = rainbow * 0.05;
+            }`)
+          .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+            totalEmissiveRadiance += trackGlow;`);
+      };
+      mat.customProgramCacheKey = () => 'track-paint-v1';
       const mesh = new THREE.Mesh(geo, mat);
       mesh.receiveShadow = true;
       mesh.name = 'Circuito do Ravi';
@@ -3638,6 +3842,9 @@
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
       geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      // Mesmo material da pista principal: atributos de pintura zerados (atalho não entra na conta)
+      geo.setAttribute('aPaint', new THREE.Float32BufferAttribute(new Float32Array(positions.length / 3), 1));
+      geo.setAttribute('aHue', new THREE.Float32BufferAttribute(new Float32Array(positions.length / 3), 1));
       geo.setIndex(idx);
       geo.computeVertexNormals();
       const mesh = new THREE.Mesh(geo, trackMesh.material);
@@ -4113,6 +4320,112 @@
       raceTrackTexture.needsUpdate = true;
     }
     resetRaceTrackCanvas();
+
+    // ---------- Pintar a PISTA com o lápis (mesa, rampas e chão) ----------
+    // Cada amostra da pista guarda a cor do giz (0 = sem tinta). Salvo no aparelho para dar para completar aos poucos.
+    const TRACK_PAINT_KEY = 'fire_engine_track_paint_v1';
+    const trackPaintHue = new Uint8Array(trackSamples.length); // 0 = sem tinta; 1..255 = matiz
+    let trackPaintedCount = 0, trackPaintSaveTimer = null, trackPaintDirty = false;
+    function applyTrackPaintSample(k) {
+      const N = trackSamples.length;
+      const paint = trackMesh.geometry.attributes.aPaint, hue = trackMesh.geometry.attributes.aHue;
+      const h = trackPaintHue[k] ? (trackPaintHue[k] - 1) / 254 : 0;
+      const v = trackPaintHue[k] ? 1 : 0;
+      [k, k === 0 ? N : -1].forEach((vk) => {
+        if (vk < 0) return;
+        paint.setX(vk * 2, v); paint.setX(vk * 2 + 1, v);
+        hue.setX(vk * 2, h); hue.setX(vk * 2 + 1, h);
+      });
+    }
+    function paintTrackAt(x, y, z) {
+      // Amostra mais próxima no mesmo andar (a altura evita pintar a pista do chão estando na mesa e vice-versa)
+      let best = -1, bestD = Infinity;
+      for (let k = 0; k < trackSamples.length; k++) {
+        const s = trackSamples[k];
+        if (Math.abs(s.y - y) > 5) continue;
+        const d = (s.x - x) ** 2 + (s.z - z) ** 2;
+        if (d < bestD) { bestD = d; best = k; }
+      }
+      if (best < 0 || Math.sqrt(bestD) > TRACK_WIDTH / 2 + 1.5) return false;
+      const N = trackSamples.length;
+      const hueByte = 1 + Math.round((crayonHue / 360) * 254);
+      let changed = false;
+      for (let o = -3; o <= 3; o++) {
+        const k = ((best + o) % N + N) % N;
+        if (!trackPaintHue[k]) trackPaintedCount++;
+        if (trackPaintHue[k] !== hueByte) { trackPaintHue[k] = hueByte; applyTrackPaintSample(k); changed = true; }
+      }
+      if (changed) {
+        trackMesh.geometry.attributes.aPaint.needsUpdate = true;
+        trackMesh.geometry.attributes.aHue.needsUpdate = true;
+        trackPaintDirty = true;
+        clearTimeout(trackPaintSaveTimer);
+        trackPaintSaveTimer = setTimeout(saveTrackPaint, 1500);
+        updateRainbowTrackProgress();
+      }
+      return true;
+    }
+    function saveTrackPaint() {
+      if (!trackPaintDirty) return;
+      trackPaintDirty = false;
+      let s = '';
+      for (let i = 0; i < trackPaintHue.length; i++) s += String.fromCharCode(trackPaintHue[i]);
+      try { localStorage.setItem(TRACK_PAINT_KEY, btoa(s)); } catch (e) { /* ignora */ }
+    }
+    function restoreTrackPaint() {
+      try {
+        const raw = localStorage.getItem(TRACK_PAINT_KEY);
+        if (raw) {
+          const s = atob(raw);
+          if (s.length === trackPaintHue.length) {
+            for (let i = 0; i < s.length; i++) { trackPaintHue[i] = s.charCodeAt(i); if (trackPaintHue[i]) trackPaintedCount++; applyTrackPaintSample(i); }
+            trackMesh.geometry.attributes.aPaint.needsUpdate = true;
+            trackMesh.geometry.attributes.aHue.needsUpdate = true;
+          }
+        }
+      } catch (e) { /* dados antigos/ inválidos: começa do zero */ }
+      if (achievementState.unlocked.rainbowTrack) trackPaintUniforms.uMagic.value = 1;
+    }
+    // Conquista secreta "Pista mágica": 98% da pista pintada
+    function updateRainbowTrackProgress() {
+      const pct = Math.floor((trackPaintedCount / trackSamples.length) * 100);
+      if (achievementState.unlocked.rainbowTrack) return;
+      if (pct >= 98) {
+        unlockAchievement('rainbowTrack');
+        trackPaintUniforms.uMagic.value = 1;
+        notify({ type: 'achievement', title: '✨ Pista mágica!', description: 'A pista inteira ganhou cores de arco-íris para sempre.', duration: 6000 });
+        showCarSpeech('Que pista mais linda! 🌈', 2600);
+        for (let i = 0; i < 8; i++) {
+          const s = trackSamples[Math.floor(Math.random() * trackSamples.length)];
+          confettiBurst(s.x, s.y + 1, s.z, 30);
+        }
+      } else {
+        progressAchievement('rainbowTrack', pct, true);
+      }
+    }
+    // Faíscas de arco-íris saindo das rodas traseiras quando a pista está mágica
+    let magicTrailAcc = 0;
+    function updateMagicTrail(dt, time) {
+      trackPaintUniforms.uTrackTime.value = time;
+      if (trackPaintUniforms.uMagic.value < 0.5 || Math.abs(carSpeed) < 0.06 || carAirborne) return;
+      const vp = vehicle.position;
+      let near = false;
+      for (let k = 0; k < trackSamples.length; k += 3) {
+        const s = trackSamples[k];
+        if (Math.abs(s.y - vp.y) < 4 && (s.x - vp.x) ** 2 + (s.z - vp.z) ** 2 < (TRACK_WIDTH / 2 + 0.5) ** 2) { near = true; break; }
+      }
+      if (!near) return;
+      magicTrailAcc += dt * (18 + Math.abs(carSpeed) * 30);
+      const back = -1.9, sideX = 1.15, sn = Math.sin(carAngle), cs = Math.cos(carAngle);
+      while (magicTrailAcc >= 1) {
+        magicTrailAcc -= 1;
+        const side = Math.random() < 0.5 ? -1 : 1;
+        const lx = side * sideX, lz = back;
+        const wx = vp.x + lx * cs + lz * sn, wz = vp.z - lx * sn + lz * cs;
+        const col = new THREE.Color().setHSL((time * 0.25 + Math.random() * 0.3) % 1, 0.85, 0.65).getHex();
+        spawnFx(wx, vp.y + 0.25, wz, (Math.random() - 0.5) * 1.2, 1.2 + Math.random() * 1.6, (Math.random() - 0.5) * 1.2, col, 0.16 + Math.random() * 0.1, -0.6, 0.9);
+      }
+    }
 
     // LÁPIS DE COR GIGANTE (Segure com o carrinho para desenhar/revelar a pista de corrida!)
     const pencilGroup = new THREE.Group();
@@ -6059,7 +6372,8 @@
       actions: [
         { label: '🎵 Brilha, brilha estrelinha', run: () => playIslandSong('estrelinha') },
         { label: '🐋 A baleia é amiga da sereia', run: () => playIslandSong('baleia') },
-        { label: '🐮 Ia ia ô (Seu Lobato)', run: () => playIslandSong('lobato') }
+        { label: '🐮 Ia ia ô (Seu Lobato)', run: () => playIslandSong('lobato') },
+        { label: '🐋 Ouvir a baleia original ↗', run: () => openExternal('https://www.youtube.com/watch?v=xK4sbpVnzTE') }
       ]
     });
     const toysIsland = createIsland({
@@ -6072,6 +6386,110 @@
       text: 'Uma ilhazinha no meio do lago, cheia de cogumelos e árvores. Os peixinhos adoram quando alguém aparece por aqui!',
       action: 'Alimentar os peixinhos', labelHeight: 17
     });
+    // Ilha das Cores: caixa de lápis de cor, lápis espalhados, potes de guache e tinta → personalização do carrinho
+    const PAINT_ISLAND = { x: -108, z: -6 };
+    const paintIsland = createIsland({
+      id: 'paint', name: 'Ilha das Cores', x: PAINT_ISLAND.x, z: PAINT_ISLAND.z, r: 10, point: [PAINT_ISLAND.x + 4, PAINT_ISLAND.z + 5],
+      text: 'Lápis de cor, guache e tinta: aqui o Ravi pinta o caminhãozinho do jeito que quiser. Escolha as cores da carroceria, das rodas, dos pneus e do vidro!',
+      actions: [{ label: '🎨 Personalizar o carrinho', run: () => openPaintShop() }]
+    });
+    (function buildPaintIslandProps() {
+      const X = PAINT_ISLAND.x, Z = PAINT_ISLAND.z, Y = ISLAND_Y;
+      const CRAYON_COLORS = [0xe63946, 0xfb8500, 0xffbe0b, 0x7ee787, 0x2a9d8f, 0x3a86ff, 0x8338ec, 0xff8fab, 0x8d5524, 0x222326];
+      function crayon(color, len = 4.2) {
+        const g = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.55 });
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, len, 8), mat);
+        body.position.y = len / 2;
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.8, 8), mat);
+        tip.position.y = len + 0.4;
+        const label = new THREE.Mesh(new THREE.CylinderGeometry(0.335, 0.335, len * 0.55, 8), new THREE.MeshStandardMaterial({ color: 0xfff6e0, roughness: 0.7 }));
+        label.position.y = len * 0.42;
+        const band = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.18, 8), mat);
+        band.position.y = len * 0.42;
+        g.add(body, tip, label, band);
+        g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+        return g;
+      }
+      // Caixa de lápis aberta com 10 lápis em pé (degrau de alturas, como na caixa nova)
+      const box = new THREE.Group();
+      box.position.set(X - 3, Y, Z - 2.5);
+      box.rotation.y = 0.35;
+      const boxMat = new THREE.MeshStandardMaterial({ color: 0xffd23f, roughness: 0.6 });
+      const front = new THREE.Mesh(new THREE.BoxGeometry(7.2, 3.2, 0.25), boxMat);
+      front.position.set(0, 1.6, 1.0);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(7.2, 5.4, 0.25), boxMat);
+      back.position.set(0, 2.7, -1.0);
+      const sides = [-3.6, 3.6].map((sx) => { const s = new THREE.Mesh(new THREE.BoxGeometry(0.25, 3.2, 2.2), boxMat); s.position.set(sx, 1.6, 0); return s; });
+      const bottom = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.25, 2.2), boxMat);
+      bottom.position.y = 0.12;
+      box.add(front, back, bottom, ...sides);
+      // Faixa colorida estampada na frente da caixa
+      const c = document.createElement('canvas'); c.width = 512; c.height = 220;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffd23f'; ctx.fillRect(0, 0, 512, 220);
+      const stripe = ['#e63946', '#fb8500', '#ffbe0b', '#7ee787', '#3a86ff', '#8338ec'];
+      stripe.forEach((col, i) => { ctx.fillStyle = col; ctx.fillRect(i * 512 / 6, 150, 512 / 6, 40); });
+      ctx.fillStyle = '#251f2b'; ctx.font = 'bold 74px "Amatic SC", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('LÁPIS DE COR', 256, 110);
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(7.0, 3.0), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), roughness: 0.6 }));
+      face.position.set(0, 1.6, 1.13);
+      box.add(face);
+      CRAYON_COLORS.forEach((col, i) => {
+        const cr = crayon(col, 4.6 + (i % 2) * 0.4);
+        cr.position.set(-3.1 + i * 0.69, 0.25, 0);
+        box.add(cr);
+      });
+      box.traverse(o => { if (o.isMesh) o.castShadow = true; });
+      scene.add(box);
+      obstacles.push({ x: box.position.x, z: box.position.z, r: 3.8, box: { hx: 3.7, hz: 1.2 }, boxRot: 0.35, name: 'CAIXA DE LÁPIS DE COR', isStatic: true, level: 'floor', h: 6 });
+      // Lápis espalhados deitados na grama
+      [[4.5, -3.5, 0.4], [6.5, 1.0, 2.1], [-6.5, 3.5, -0.8], [1.2, 6.5, 1.3], [-2.0, 5.2, 2.7]].forEach(([dx, dz, rot], i) => {
+        const cr = crayon(CRAYON_COLORS[(i * 3) % CRAYON_COLORS.length], 4.0);
+        cr.rotation.set(0, rot, Math.PI / 2);
+        cr.position.set(X + dx, Y + 0.32, Z + dz);
+        scene.add(cr);
+      });
+      // Potes de guache com tampa colorida e tinta escorrendo
+      [[5.5, 4.5, 0xe63946], [7.2, 6.0, 0x3a86ff], [3.8, 7.2, 0xffbe0b], [8.2, 3.2, 0x7ee787]].forEach(([dx, dz, col]) => {
+        const g = new THREE.Group();
+        const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 1.6, 20), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0.1 }));
+        jar.position.y = 0.8;
+        const paint = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.82, 1.2, 20), new THREE.MeshStandardMaterial({ color: col, roughness: 0.35 }));
+        paint.position.y = 0.62;
+        const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.35, 20), new THREE.MeshStandardMaterial({ color: col, roughness: 0.3 }));
+        lid.position.set(0.9, 0.2, 0.4); lid.rotation.z = 1.3; // tampa aberta caída ao lado
+        const drip = new THREE.Mesh(new THREE.CircleGeometry(1.1, 20), new THREE.MeshStandardMaterial({ color: col, roughness: 0.2 }));
+        drip.rotation.x = -Math.PI / 2; drip.position.set(-0.6, 0.03, 0.5); drip.scale.set(1.3, 0.8, 1);
+        g.add(jar, paint, lid, drip);
+        g.position.set(X + dx, Y, Z + dz);
+        g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+        scene.add(g);
+        obstacles.push({ x: X + dx, z: Z + dz, r: 1.0, name: 'POTE DE GUACHE', isStatic: true, level: 'floor', h: 1.7 });
+      });
+      // Bisnaga de tinta e paleta de pintor com montinhos de cores
+      const palette = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.18, 28), new THREE.MeshStandardMaterial({ color: 0xc98b4b, roughness: 0.7 }));
+      palette.scale.set(1.3, 1, 1);
+      palette.position.set(X - 5.5, Y + 0.1, Z + 4.5);
+      scene.add(palette);
+      [0xe63946, 0xffbe0b, 0x3a86ff, 0x7ee787, 0xffffff, 0x8338ec].forEach((col, i) => {
+        const a = (i / 6) * Math.PI * 2;
+        const blob = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 8), new THREE.MeshStandardMaterial({ color: col, roughness: 0.25 }));
+        blob.scale.set(1, 0.45, 1);
+        blob.position.set(X - 5.5 + Math.cos(a) * 2.2, Y + 0.25, Z + 4.5 + Math.sin(a) * 1.6);
+        scene.add(blob);
+      });
+      const tube = new THREE.Group();
+      const tubeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.75, 3.2, 16), new THREE.MeshStandardMaterial({ color: 0xf4f1de, roughness: 0.4, metalness: 0.3 }));
+      tubeBody.rotation.z = Math.PI / 2;
+      const tubeCap = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.6, 12), new THREE.MeshStandardMaterial({ color: 0x8338ec, roughness: 0.3 }));
+      tubeCap.rotation.z = Math.PI / 2; tubeCap.position.x = 1.9;
+      const squeeze = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 8), new THREE.MeshStandardMaterial({ color: 0x8338ec, roughness: 0.2 }));
+      squeeze.scale.set(1.6, 0.35, 1); squeeze.position.set(3.0, -0.4, 0);
+      tube.add(tubeBody, tubeCap, squeeze);
+      tube.position.set(X - 1.5, Y + 0.75, Z + 7.5);
+      tube.rotation.y = -0.5;
+      scene.add(tube);
+    })();
 
     // Árvores (folhagem com shader de vento)
     createTree(-110, 80, ISLAND_Y, 0.9, 0); // fora do prédio do posto
@@ -6495,14 +6913,19 @@
           const light = new THREE.PointLight(0xffd49a, 0.85, 46, 2);
           light.position.set(0, post.userData.dims.h * 0.92, 0);
           post.add(light);
+          decorLights.push(light);
+          light.visible = window.__highQuality !== false;
         }
       });
     });
+    // Luzes decorativas (postes e preenchimento): desligadas na qualidade Baixa para aliviar aparelhos fracos
+    // (cada luz pontual a mais pesa no cálculo de todos os materiais)
     // Luz ambiente suave embaixo do tampo (o circuito do chão fica legível)
     [[-45, -18, 0], [45, -18, 0]].forEach(([x, y, z]) => {
       const l = new THREE.PointLight(0xfff3e0, 0.45, 95, 2);
       l.position.set(x, y, z);
       scene.add(l);
+      decorLights.push(l);
     });
 
     // ============================================================================
@@ -6530,12 +6953,64 @@
       o.start(ac.currentTime + start);
       o.stop(ac.currentTime + start + dur + 0.05);
     }
+    // Buzina de carrinho de brinquedo: "bi-bi!" — dois toques curtos e anasalados
+    // (acorde de duas notas em onda quadrada passando por um filtro, com leve queda de tom no fim)
     function playHonk() {
-      playTone(392, 0, 0.18, 'square', 0.07);
-      playTone(494, 0, 0.18, 'square', 0.05);
-      playTone(392, 0.22, 0.26, 'square', 0.07);
-      playTone(494, 0.22, 0.26, 'square', 0.05);
+      const ac = getAudio();
+      if (!ac) return;
+      const t0 = ac.currentTime;
+      [[0, 0.11], [0.17, 0.16]].forEach(([start, dur]) => {
+        const out = ac.createGain();
+        const filter = ac.createBiquadFilter();
+        filter.type = 'bandpass'; filter.frequency.value = 1100; filter.Q.value = 1.6;
+        out.gain.setValueAtTime(0.0001, t0 + start);
+        out.gain.exponentialRampToValueAtTime(0.16, t0 + start + 0.012);
+        out.gain.setValueAtTime(0.16, t0 + start + dur - 0.03);
+        out.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur);
+        filter.connect(out).connect(ac.destination);
+        [523.3, 659.3].forEach((f) => {
+          const o = ac.createOscillator();
+          o.type = 'square';
+          o.frequency.setValueAtTime(f, t0 + start);
+          o.frequency.linearRampToValueAtTime(f * 0.94, t0 + start + dur);
+          o.connect(filter);
+          o.start(t0 + start);
+          o.stop(t0 + start + dur + 0.02);
+        });
+      });
     }
+
+    // Sirene de bombeiro: só toca (e só pisca) enquanto o jato d'água está ligado
+    let sirenAudio = null;
+    function setSirenSound(on) {
+      const ac = getAudio();
+      if (!ac) return;
+      if (on && !sirenAudio) {
+        const osc = ac.createOscillator(), lfo = ac.createOscillator(), lfoGain = ac.createGain();
+        const filter = ac.createBiquadFilter(), out = ac.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 820;
+        lfo.type = 'triangle';
+        lfo.frequency.value = 0.85;  // sobe e desce (uiu-uiu) menos de uma vez por segundo
+        lfoGain.gain.value = 230;    // varia de ~590 Hz a ~1050 Hz
+        lfo.connect(lfoGain).connect(osc.frequency);
+        filter.type = 'lowpass'; filter.frequency.value = 2200;
+        out.gain.setValueAtTime(0.0001, ac.currentTime);
+        out.gain.exponentialRampToValueAtTime(0.045, ac.currentTime + 0.15);
+        osc.connect(filter).connect(out).connect(ac.destination);
+        osc.start(); lfo.start();
+        sirenAudio = { osc, lfo, out };
+      } else if (!on && sirenAudio) {
+        const { osc, lfo, out } = sirenAudio;
+        out.gain.cancelScheduledValues(ac.currentTime);
+        out.gain.setValueAtTime(Math.max(0.0001, out.gain.value), ac.currentTime);
+        out.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.25);
+        osc.stop(ac.currentTime + 0.3); lfo.stop(ac.currentTime + 0.3);
+        sirenAudio = null;
+      }
+    }
+    // Aba escondida: sirene nunca fica tocando sozinha
+    document.addEventListener('visibilitychange', () => { if (document.hidden) setSirenSound(false); });
 
     // Notas musicais flutuantes (ícone music-note do DS)
     const musicNoteTexture = new THREE.TextureLoader().load('./assets/ui/music-note.svg');
@@ -6590,12 +7065,21 @@
         notes: [['C4', 1], ['C4', 1], ['G4', 1], ['G4', 1], ['A4', 1], ['A4', 1], ['G4', 2],
                 ['F4', 1], ['F4', 1], ['E4', 1], ['E4', 1], ['D4', 1], ['D4', 1], ['C4', 2]]
       },
+      // Ritmo das sílabas da cantiga (8 + 8 + 6 + 6 + 4 + 4); "tibum" sobe e o "chuá" desce, como um mergulho
       baleia: {
-        title: 'A baleia é amiga da sereia', speech: '🐋 a baleia é amiga da sereia!', beat: 0.26,
-        notes: [['E4', 1], ['G4', 1], ['G4', 1], ['E4', 1], ['E4', 1], ['G4', 1], ['G4', 2],
-                ['A4', 1], ['A4', 1], ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1], ['C4', 2],
-                ['E4', 1], ['G4', 1], ['C5', 1], ['C5', 1], ['B4', 1], ['A4', 1], ['G4', 2],
-                ['F4', 1], ['A4', 1], ['G4', 1], ['E4', 1], ['D4', 1], ['E4', 1], ['C4', 3]]
+        title: 'A baleia é amiga da sereia', speech: '🐋 tibum, chuá!', beat: 0.21,
+        notes: [
+          // frase 1 (duas vezes, a segunda um tom acima)
+          ['G4', 1], ['C5', 1], ['C5', 1], ['C5', 2], ['G4', 1], ['D5', 1], ['D5', 1], ['D5', 2],
+          // frase 2
+          ['E5', 1], ['D5', 1], ['C5', 1], ['D5', 1], ['E5', 1], ['E5', 1], ['D5', 1], ['C5', 2],
+          // frase 3 (duas vezes)
+          ['C5', 1], ['A4', 1], ['C5', 1], ['A4', 1], ['G4', 1], ['E4', 2],
+          ['C5', 1], ['A4', 1], ['C5', 1], ['A4', 1], ['G4', 1], ['G4', 2],
+          // tibum, chuá (duas vezes)
+          ['G4', 1], ['C5', 1], ['E5', 1], ['C5', 2],
+          ['G4', 1], ['C5', 1], ['G4', 1], ['C5', 3]
+        ]
       },
       lobato: {
         title: 'Ia ia ô (Seu Lobato tinha um sítio)', speech: '🐮 ia ia ô!', beat: 0.28,
@@ -7113,6 +7597,35 @@
       scene.add(mesh);
       return mesh;
     })();
+    // Visual de "ilha" do boliche: duas faixas de gramado (mesma terra/grama das ilhas) ladeando a pista,
+    // com a frente aberta como entrada. Baixinhas (0,12) para o carrinho passar sem tropeçar.
+    (function bowlingIslandBanks() {
+      const H = 0.12;
+      [[BOWLING.x - 10.6, 7.2], [BOWLING.x + 10.6, 7.2]].forEach(([cx, w]) => {
+        const z0 = BOWLING.zStart - 6, z1 = BOWLING.zEnd - 0.5, len = z1 - z0, r = 2.2;
+        const s = new THREE.Shape();
+        const hx = w / 2, hz = len / 2;
+        s.moveTo(-hx + r, -hz); s.lineTo(hx - r, -hz); s.quadraticCurveTo(hx, -hz, hx, -hz + r);
+        s.lineTo(hx, hz - r); s.quadraticCurveTo(hx, hz, hx - r, hz); s.lineTo(-hx + r, hz);
+        s.quadraticCurveTo(-hx, hz, -hx, hz - r); s.lineTo(-hx, -hz + r); s.quadraticCurveTo(-hx, -hz, -hx + r, -hz);
+        const geo = new THREE.ExtrudeGeometry(s, { depth: H, bevelEnabled: false });
+        geo.rotateX(-Math.PI / 2);
+        // Extrusão: grupo 0 = topo/base (grama), grupo 1 = laterais (terra)
+        const bank = new THREE.Mesh(geo, [islandGroundMat[1], islandGroundMat[0]]);
+        bank.position.set(cx, FLOOR_SURFACE_Y, (z0 + z1) / 2);
+        bank.receiveShadow = true;
+        bedroomWorld.add(bank);
+        const pts = [];
+        for (let i = 0; i < Math.round(w * len * 2.6); i++) {
+          pts.push({ x: cx + (Math.random() - 0.5) * (w - 0.8), y: FLOOR_SURFACE_Y + H, z: z0 + 0.4 + Math.random() * (len - 0.8), h: 0.45 + Math.random() * 0.8 });
+        }
+        createGrassPatch(pts);
+        createBush(cx, z1 - 3.5, FLOOR_SURFACE_Y + H, 0.75, 1);
+        createBush(cx, z0 + 3.0, FLOOR_SURFACE_Y + H, 0.6, 2);
+      });
+      placeModel('mushroom_02', { x: BOWLING.x - 12.4, z: BOWLING.zStart + 16, y: FLOOR_SURFACE_Y + 0.12, isStatic: true, r: 1.2, rotY: 0.6 });
+      placeModel('mushroom_03', { x: BOWLING.x + 12.2, z: BOWLING.zStart + 24, y: FLOOR_SURFACE_Y + 0.12, isStatic: true, r: 1.3, rotY: 2.1 });
+    })();
     // Marcações da pista: linha de falta, pontos-guia e flechas extras
     (function bowlingLaneMarks() {
       const markMat = new THREE.MeshBasicMaterial({ color: 0x2b1d2e });
@@ -7157,7 +7670,8 @@
       ctx.fillStyle = '#d5ff95';
       ctx.fillText(g.lastText || (g.active ? 'Empurre a bola!' : 'Aperte o ponto do boliche para jogar'), 256, 180);
       ctx.fillStyle = '#ffc67b'; ctx.font = '22px Nunito, sans-serif';
-      ctx.fillText(`Strikes: ${g.strikes}   ·   Recorde: ${bowlingBest}`, 256, 222);
+      const globalTop = window.__globalBowlingTop || 0;
+      ctx.fillText(globalTop > bowlingBest ? `Strikes: ${g.strikes} · Seu: ${bowlingBest} · Global: ${globalTop}` : `Strikes: ${g.strikes}   ·   Recorde: ${bowlingBest}`, 256, 222);
       tex.needsUpdate = true;
     }
     drawBowlingBoard();
@@ -7189,6 +7703,7 @@
       if (bowlingGame.total > bowlingBest) {
         bowlingBest = bowlingGame.total;
         try { localStorage.setItem(BOWLING_BEST_KEY, String(bowlingBest)); } catch (e) { /* ignora */ }
+        try { cloudSubmitBowling(bowlingBest); } catch (e) { /* nuvem indisponível */ }
       }
       bowlingGame.lastText = `Fim de jogo: ${bowlingGame.total} pontos`;
       drawBowlingBoard();
@@ -7292,6 +7807,75 @@
       roughness: 0.18
     });
     const speakerHoleMat = new THREE.MeshBasicMaterial({ color: 0x260804 });
+    // Janelas laterais com material próprio (personalizável como "vidro" na Ilha das Cores)
+    const sideWindowMat = new THREE.MeshStandardMaterial({ color: 0xffcf48, roughness: 0.18 });
+
+    // ---------- Pinturas especiais da carroceria (shader no próprio material) ----------
+    // Modo 0 = cor lisa · 1 = Chamas (estilo Hot Wheels) · 2 = Abissal (azul-marinho com estrelas)
+    // O desenho usa a posição no espaço do CARRINHO, então fica contínuo em todas as peças da carroceria.
+    const paintUniforms = { uPaintMode: { value: 0 }, uCarInv: { value: new THREE.Matrix4() }, uPaintTime: { value: 0 } };
+    carOrangeMat.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, paintUniforms);
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', `#include <common>
+          uniform mat4 uCarInv;
+          varying vec3 vCarPos;
+          varying vec3 vCarNormal;`)
+        .replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
+          vCarPos = (uCarInv * modelMatrix * vec4(transformed, 1.0)).xyz;
+          vCarNormal = normalize(mat3(uCarInv) * mat3(modelMatrix) * objectNormal);`);
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', `#include <common>
+          uniform float uPaintMode;
+          uniform float uPaintTime;
+          varying vec3 vCarPos;
+          varying vec3 vCarNormal;
+          vec3 paintGlow = vec3(0.0);
+          float pHash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+          vec3 paintFlames(vec3 p, vec3 n) {
+            // t: 0 na frente do carrinho → 1 na traseira
+            float t = clamp((1.95 - p.z) / 3.7, 0.0, 1.0);
+            bool top = n.y > 0.55;
+            float lateral = top ? abs(p.x) * 1.25 : abs(p.y - 1.2);
+            // Línguas de fogo: largas na frente, afinando em pontas onduladas para trás
+            // Pontas bem marcadas: |sen| elevado gera línguas separadas que afinam rumo à traseira
+            float tongues = pow(abs(sin(t * 8.5 + (top ? 0.0 : 0.9) + sin(t * 3.0) * 0.8)), 0.55);
+            float amp = (0.58 * pow(1.0 - t, 0.75) * (0.35 + 0.65 * tongues) + 0.015) * step(t, 0.92);
+            float r = lateral / max(amp, 0.001);
+            vec3 base = vec3(0.24, 0.015, 0.03);
+            if (r > 1.06 || amp < 0.02) return base;
+            vec3 col = mix(vec3(1.0, 0.88, 0.25), vec3(1.0, 0.45, 0.02), smoothstep(0.1, 0.5, r));
+            col = mix(col, vec3(0.82, 0.08, 0.02), smoothstep(0.5, 0.82, r));
+            float outline = smoothstep(0.82, 0.9, r);
+            col = mix(col, vec3(0.12, 0.0, 0.015), outline);
+            col = mix(col, base, smoothstep(0.98, 1.06, r));
+            paintGlow = col * (1.0 - smoothstep(0.3, 0.8, r)) * 0.12;
+            return col;
+          }
+          vec3 paintAbyssal(vec3 p) {
+            vec3 col = mix(vec3(0.02, 0.03, 0.12), vec3(0.14, 0.05, 0.26), smoothstep(0.4, 2.4, p.y));
+            vec3 cell = floor(p * 11.0);
+            float h = pHash(cell);
+            if (h > 0.9) {
+              vec3 center = (cell + 0.5 + (vec3(pHash(cell + 1.3), pHash(cell + 2.7), pHash(cell + 4.1)) - 0.5) * 0.6) / 11.0;
+              float d = length(p - center) * 11.0;
+              float tw = 0.6 + 0.4 * sin(uPaintTime * 3.0 + h * 40.0);
+              float star = (1.0 - smoothstep(0.0, 0.22 + (h - 0.9) * 2.0, d)) * tw;
+              col += vec3(0.85, 0.9, 1.0) * star;
+              paintGlow = vec3(0.7, 0.8, 1.0) * star * 0.8;
+            }
+            return col;
+          }`)
+        .replace('#include <color_fragment>', `#include <color_fragment>
+          if (uPaintMode > 0.5 && uPaintMode < 1.5) diffuseColor.rgb = paintFlames(vCarPos, normalize(vCarNormal));
+          else if (uPaintMode > 1.5) diffuseColor.rgb = paintAbyssal(vCarPos);`)
+        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+          totalEmissiveRadiance += paintGlow;`);
+    };
+    carOrangeMat.customProgramCacheKey = () => 'car-paint-v1';
+    function updatePaintUniforms(time) {
+      paintUniforms.uPaintTime.value = time;
+    }
 
     const carBodyGroup = new THREE.Group();
     vehicle.add(carBodyGroup);
@@ -7330,6 +7914,8 @@
     mainBodyGeo.rotateY(-Math.PI / 2);
 
     const mainBodyMesh = new THREE.Mesh(mainBodyGeo, carOrangeMat);
+    // Matriz do carrinho lida no instante do desenho (as matrizes já estão atualizadas): pintura presa à carroceria
+    mainBodyMesh.onBeforeRender = () => { paintUniforms.uCarInv.value.copy(vehicle.matrixWorld).invert(); };
     mainBodyMesh.castShadow = true;
     mainBodyMesh.receiveShadow = true;
     carBodyGroup.add(mainBodyMesh);
@@ -7447,7 +8033,7 @@
       const dir = sideX > 0 ? -1 : 1;
 
       // 4a. Janela Amarela em Arco (na frente, z = +0.58)
-      const winMesh = new THREE.Mesh(sideWinGeo, yellowDetailMat);
+      const winMesh = new THREE.Mesh(sideWinGeo, sideWindowMat);
       winMesh.position.set(dir * 0.58, 1.66, 0);
       sideGroup.add(winMesh);
 
@@ -7774,11 +8360,18 @@
     const sirenBlue = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.2, 0.28), sirenBlueMat);
     sirenBlue.position.set(0.36, 2.76, 1.18);
     carBodyGroup.add(sirenBase, sirenRed, sirenBlue);
+    // Sirene (luz + som) só com o jato d'água ligado; parada, as lentes ficam apagadas
     function updateSiren(time) {
-      const fast = (typeof keys !== 'undefined' && keys.spray) || (typeof monitorState !== 'undefined' && monitorState === 'burning');
-      const phase = Math.floor(time * (fast ? 8 : 2.5)) % 2;
-      sirenRedMat.emissiveIntensity = phase ? 1.4 : 0.15;
-      sirenBlueMat.emissiveIntensity = phase ? 0.15 : 1.4;
+      const spraying = keys.spray && !inputBlocked() && waterLevel > 0;
+      setSirenSound(spraying);
+      if (!spraying) {
+        sirenRedMat.emissiveIntensity = 0.12;
+        sirenBlueMat.emissiveIntensity = 0.12;
+        return;
+      }
+      const phase = Math.floor(time * 7) % 2;
+      sirenRedMat.emissiveIntensity = phase ? 1.6 : 0.15;
+      sirenBlueMat.emissiveIntensity = phase ? 0.15 : 1.6;
     }
 
     vehicle.position.set(11.5, 0.14, 11.5);
@@ -7952,6 +8545,10 @@
       { id: 'bowling', title: 'Strike!', description: 'Derrube os 10 pinos do boliche', total: 1 },
       { id: 'shortcut', title: 'Atalho secreto', description: 'Salte da rampa escondida embaixo da mesa', total: 1 },
       { id: 'career', title: 'Linha do tempo', description: 'Visite os 6 marcos de carreira nos portais da pista', total: 6 },
+      // Secretas: nome e descrição ficam escondidos ("???") até serem desbloqueadas
+      { id: 'ballDesk', title: 'Bola de mesa', description: 'Leve uma bola do quarto, pela rampa, até a mesa perto do aquário', total: 1, secret: true },
+      { id: 'allIslands', title: 'Explorador das ilhas', description: 'Visite e interaja com todas as ilhas do quarto', total: islands.length, secret: true },
+      { id: 'rainbowTrack', title: 'Pista mágica', description: 'Pinte a pista inteira com o lápis de cor (mesa, rampas e chão)', total: 100, secret: true },
       { id: 'nitro', title: 'Nitro!', description: 'Sobrecarregue a bateria acima de 120%', total: 1 },
       { id: 'kaboom', title: 'Sobrecarga', description: 'Passe de 140% de bateria e exploda (sem quebrar o carrinho)', total: 1 },
       { id: 'crates', title: 'Surpresa!', description: 'Exploda 5 caixas-surpresa', total: 5 },
@@ -7980,6 +8577,7 @@
 
     function saveAchievements() {
       try { localStorage.setItem(ACH_STORAGE_KEY, JSON.stringify(achievementState)); } catch (e) { /* ignora */ }
+      try { scheduleCloudSave(); } catch (e) { /* nuvem ainda não inicializada */ }
     }
     function unlockedCount() { return ACHIEVEMENTS.filter(a => achievementState.unlocked[a.id]).length; }
 
@@ -8017,12 +8615,36 @@
       progressAchievement(id, set.length, true);
     }
 
+    // Pintura da carroceria: recompensas (Chamas e Abissal usam o shader) ou cor personalizada da Ilha das Cores
+    const PAINT_MODES = { flames: 1, abyssal: 2 };
     function applyPaint(id) {
-      const r = REWARDS.find(x => x.id === id) || REWARDS[0];
-      carOrangeMat.color.setHex(r.color);
-      carOrangeMat.emissive = new THREE.Color(r.emissive || 0x000000);
-      achievementState.paint = r.id;
+      if (id === 'custom' && achievementState.custom && achievementState.custom.body) {
+        carOrangeMat.color.set(achievementState.custom.body);
+        carOrangeMat.emissive.setHex(0x000000);
+        paintUniforms.uPaintMode.value = 0;
+        achievementState.paint = 'custom';
+      } else {
+        const r = REWARDS.find(x => x.id === id) || REWARDS[0];
+        carOrangeMat.color.setHex(r.color);
+        carOrangeMat.emissive.setHex(0x000000);
+        paintUniforms.uPaintMode.value = PAINT_MODES[r.id] || 0;
+        achievementState.paint = r.id;
+      }
       saveAchievements();
+    }
+    // Rodas, pneus e vidros personalizados (cores padrão quando não escolhidas)
+    const CAR_PART_DEFAULTS = { wheels: '#38d9e8', tires: '#1b1e23', glass: '#169cc2' };
+    function applyCarCustom() {
+      const c = achievementState.custom || {};
+      const wheels = new THREE.Color(c.wheels || CAR_PART_DEFAULTS.wheels);
+      cyanWheelMat.color.copy(wheels);
+      rimDarkMat.color.copy(wheels).lerp(new THREE.Color(0x111111), 0.65);
+      const tires = new THREE.Color(c.tires || CAR_PART_DEFAULTS.tires);
+      tireChunkyMat.color.copy(tires);
+      tireDarkMat.color.copy(tires).multiplyScalar(0.85);
+      visor3DMesh.material.color.set(c.glass || CAR_PART_DEFAULTS.glass);
+      // As janelas laterais acompanham o vidro escolhido (amarelas no padrão do caminhãozinho)
+      sideWindowMat.color.set(c.glass || '#ffcf48');
     }
 
     const achItemsEl = document.getElementById('ach-items');
@@ -8039,8 +8661,10 @@
         const el = document.createElement('div');
         el.className = 'achievement' + (done ? ' is-achieved' : '');
         el.innerHTML = `<div class="title"></div><div class="description"><p class="text"></p><div class="progress"><span class="check-icon"></span><span>${prog} / ${a.total}</span></div></div><div class="bar"><div class="fill" style="transform:scaleX(${prog / a.total})"></div></div>`;
-        el.querySelector('.title').textContent = a.title;
-        el.querySelector('.text').textContent = a.description;
+        const hidden = a.secret && !done;
+        el.querySelector('.title').textContent = hidden ? '??? Conquista secreta' : a.title;
+        el.querySelector('.text').textContent = hidden ? 'Explore o mundo para descobrir…' : a.description;
+        if (hidden) el.classList.add('is-secret');
         achItemsEl.appendChild(el);
       });
       achRewardsEl.innerHTML = '';
@@ -8068,6 +8692,81 @@
       notify({ type: 'danger', title: 'Conquistas zeradas', duration: 2600 });
     });
     applyPaint(achievementState.paint);
+    applyCarCustom();
+    restoreTrackPaint();
+
+    // ---------- Ilha das Cores: loja de pintura (prévia ao vivo no carrinho) ----------
+    const PAINT_PALETTE = ['#ff4518', '#e63946', '#b5179e', '#ff8fab', '#8338ec', '#3a86ff', '#38d9e8', '#2a9d8f',
+      '#7ee787', '#ffcf48', '#fb8500', '#8d5524', '#f2f2f2', '#9aa0a6', '#222326', '#0b0b0d'];
+    let paintPart = 'body';
+    const paintSwatchesEl = document.getElementById('paint-swatches');
+    const paintSpecialsEl = document.getElementById('paint-specials');
+    function currentPartColor(part) {
+      const c = achievementState.custom || {};
+      if (part === 'body') return achievementState.paint === 'custom' ? c.body : (REWARDS.find(r => r.id === achievementState.paint) ? '#' + REWARDS.find(r => r.id === achievementState.paint).color.toString(16).padStart(6, '0') : null);
+      return c[part] || CAR_PART_DEFAULTS[part];
+    }
+    function renderPaintShop() {
+      // Se o foco (teclado/controle) estava numa cor, lembra qual para manter depois de redesenhar
+      const prevSwatch = uiFocusEl && uiFocusEl.classList.contains('paint-swatch') ? [...paintSwatchesEl.children].indexOf(uiFocusEl) : -1;
+      const prevSpecial = uiFocusEl && uiFocusEl.classList.contains('paint-special') ? [...paintSpecialsEl.children].indexOf(uiFocusEl) : -1;
+      document.querySelectorAll('#paint-tabs .button').forEach(b => b.classList.toggle('is-active', b.dataset.part === paintPart));
+      const active = (currentPartColor(paintPart) || '').toLowerCase();
+      paintSwatchesEl.innerHTML = '';
+      PAINT_PALETTE.forEach((hex) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'paint-swatch' + (hex === active && !(paintPart === 'body' && PAINT_MODES[achievementState.paint]) ? ' is-active' : '');
+        b.style.background = hex;
+        b.setAttribute('aria-label', `Cor ${hex}`);
+        b.addEventListener('click', () => setPartColor(paintPart, hex));
+        paintSwatchesEl.appendChild(b);
+      });
+      // Acabamentos especiais (conquistas) só para a carroceria
+      paintSpecialsEl.innerHTML = '';
+      if (paintPart === 'body') {
+        const count = unlockedCount();
+        REWARDS.filter(r => PAINT_MODES[r.id]).forEach((r) => {
+          const locked = count < r.unlockAt;
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'paint-special' + (locked ? ' is-locked' : '') + (achievementState.paint === r.id ? ' is-active' : '');
+          b.innerHTML = `<img src="./assets/ui/achievements/rewards/${r.image}.webp" alt=""><span></span>`;
+          b.querySelector('span').textContent = locked ? `${r.label} (${r.unlockAt} conquistas)` : r.label;
+          b.addEventListener('click', () => { if (locked) return; applyPaint(r.id); renderPaintShop(); playTone(880, 0, 0.08, 'triangle', 0.05); });
+          paintSpecialsEl.appendChild(b);
+        });
+      }
+      if (modalsOpen === 'paint') {
+        if (prevSwatch >= 0) focusUiElement(paintSwatchesEl.children[prevSwatch]);
+        else if (prevSpecial >= 0 && paintSpecialsEl.children[prevSpecial]) focusUiElement(paintSpecialsEl.children[prevSpecial]);
+      }
+    }
+    function setPartColor(part, hex) {
+      achievementState.custom = Object.assign({}, achievementState.custom || {}, { [part]: hex });
+      if (part === 'body') applyPaint('custom'); else { applyCarCustom(); saveAchievements(); }
+      renderPaintShop();
+      playTone(520 + PAINT_PALETTE.indexOf(hex) * 30, 0, 0.07, 'triangle', 0.05);
+    }
+    function openPaintShop() {
+      paintPart = 'body';
+      renderPaintShop();
+      openModalPanel('paint');
+      // Já abre com a cor atual selecionada: setas/D-pad navegam e Enter/✕ escolhem
+      focusUiElement(paintSwatchesEl.querySelector('.is-active') || paintSwatchesEl.firstElementChild);
+      // Câmera mostra o carrinho de perto para ver a prévia das cores
+      setCameraMode('close');
+    }
+    document.querySelectorAll('#paint-tabs .button').forEach((b) => b.addEventListener('click', () => { paintPart = b.dataset.part; renderPaintShop(); }));
+    document.getElementById('paint-reset').addEventListener('click', () => {
+      achievementState.custom = {};
+      applyPaint('orange');
+      applyCarCustom();
+      renderPaintShop();
+      notify({ type: 'info', title: 'Cores originais', description: 'O caminhãozinho voltou ao laranja de fábrica.', duration: 2500 });
+    });
+    document.getElementById('paint-done').addEventListener('click', () => { closeModals(); showCarSpeech('Ficou lindo! 🎨', 2000); });
+    document.getElementById('paint-close').addEventListener('click', closeModals);
 
     // ---------- Menu split-pane ----------
     const menuEl = document.getElementById('menu');
@@ -8157,6 +8856,8 @@
     function applyQuality() {
       renderer.setPixelRatio(highQuality ? Math.min(window.devicePixelRatio, 2) : 1);
       renderer.shadowMap.enabled = highQuality;
+      window.__highQuality = highQuality;
+      decorLights.forEach((l) => { l.visible = highQuality; });
       scene.traverse((o) => {
         if (!o.material) return;
         (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; });
@@ -8164,6 +8865,27 @@
       optQualityEl.querySelector('span').textContent = highQuality ? 'Alta' : 'Baixa';
       optQualityEl.classList.toggle('is-success', highQuality);
     }
+    // Detecção automática: se o aparelho estiver lento nos primeiros segundos de jogo (e a pessoa nunca escolheu
+    // a qualidade), muda para Baixa uma única vez e avisa
+    (function autoQuality() {
+      let chosen = null;
+      try { chosen = localStorage.getItem('fire_engine_quality'); } catch (e) { /* ignora */ }
+      if (chosen || !highQuality) return;
+      let frames = 0, start = 0;
+      function sample(now) {
+        if (introActive || document.hidden) { start = 0; frames = 0; requestAnimationFrame(sample); return; }
+        if (!start) start = now;
+        frames++;
+        if (now - start < 5000) { requestAnimationFrame(sample); return; }
+        const fps = frames / ((now - start) / 1000);
+        if (fps < 32) {
+          highQuality = false;
+          applyQuality();
+          notify({ type: 'info', title: 'Qualidade ajustada', description: `O jogo estava a ${Math.round(fps)} quadros/s: mudei para qualidade Baixa (dá para trocar em Opções).`, duration: 6000 });
+        }
+      }
+      requestAnimationFrame(sample);
+    })();
     optQualityEl.addEventListener('click', () => {
       highQuality = !highQuality;
       try { localStorage.setItem('fire_engine_quality', highQuality ? 'high' : 'low'); } catch (e) { /* ignora */ }
@@ -8870,6 +9592,15 @@
         return;
       }
       if (modalsOpen === 'map' && e.code === 'KeyM') { closeModals(); return; }
+      // Navegação por teclado em painéis e no menu (mesmo foco usado pelo controle): setas/WASD movem, Enter/Espaço selecionam
+      if ((modalsOpen && modalsOpen !== 'career') || menuOpen) {
+        const KEY_DIRS = { ArrowLeft: [-1, 0], KeyA: [-1, 0], ArrowRight: [1, 0], KeyD: [1, 0], ArrowUp: [0, -1], KeyW: [0, -1], ArrowDown: [0, 1], KeyS: [0, 1] };
+        const dir = KEY_DIRS[e.code];
+        if (dir) { e.preventDefault(); moveUiFocus(dir[0], dir[1]); return; }
+        if ((e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') && uiFocusEl && uiFocusables().includes(uiFocusEl)) {
+          e.preventDefault(); activateUiFocus(); return;
+        }
+      }
       if (modalsOpen === 'island' && e.code === 'Enter') { e.preventDefault(); runPrimaryIslandAction(); return; }
       if (menuOpen || modalsOpen) return;
 
@@ -9125,9 +9856,12 @@
         btn.type = 'button';
         btn.className = 'button';
         btn.textContent = action.label;
+        const islandHere = currentIsland;
         btn.addEventListener('click', () => {
           closeModals();
           setTimeout(() => action.run(), 120);
+          // Conquista secreta: interagir com todas as ilhas do quarto
+          if (islands.includes(islandHere)) trackAchievementSet('allIslands', islandHere.id);
         });
         islandActionsEl.appendChild(btn);
       });
@@ -9254,14 +9988,17 @@
     function renderLeaderboard(highlight) {
       const tbody = document.querySelector('#leaderboard tbody');
       tbody.innerHTML = '';
-      leaderboard.slice(0, 10).forEach((entry, i) => {
+      const board = lapBoard();
+      board.slice(0, 10).forEach((entry, i) => {
         const tr = document.createElement('tr');
-        if (entry === highlight) tr.className = 'is-new';
+        if (entry === highlight || (highlight && entry.name === highlight.name && Math.round(entry.time) === Math.round(highlight.time)) || entry.mine) tr.className = 'is-new';
         tr.innerHTML = `<td>${i + 1}</td><td></td><td>${formatRaceTime(entry.time)}</td>`;
         tr.children[1].textContent = entry.name;
         tbody.appendChild(tr);
       });
-      document.getElementById('leaderboard-container').classList.toggle('has-no-score', leaderboard.length === 0);
+      document.getElementById('leaderboard-container').classList.toggle('has-no-score', board.length === 0);
+      const scopeEl = document.getElementById('leaderboard-scope');
+      if (scopeEl) scopeEl.textContent = (globalLaps && globalLaps.length) ? '🌎 Ranking global' : '📱 Recordes deste aparelho';
       drawNotebooks();
     }
 
@@ -9403,7 +10140,9 @@
       careerThumbsEl.querySelectorAll('.career-thumb').forEach((el, k) => el.classList.toggle('is-active', k === careerIndex));
       playTone(520 + careerIndex * 40, 0, 0.08, 'triangle', 0.04);
     }
+    let careerOpenedAt = 0;
     function openCareerBoard(i) {
+      careerOpenedAt = performance.now();
       showCareerMilestone(i);
       openModalPanel('career');
       const m = CAREER_MILESTONES[careerIndex];
@@ -9417,20 +10156,29 @@
     // Setas do teclado trocam o marco com o mural aberto
     window.addEventListener('keydown', (e) => {
       if (modalsOpen !== 'career') return;
-      if (e.key === 'ArrowLeft') { showCareerMilestone(careerIndex - 1); e.preventDefault(); }
-      if (e.key === 'ArrowRight') { showCareerMilestone(careerIndex + 1); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { showCareerMilestone(careerIndex - 1); e.preventDefault(); return; }
+      if (e.key === 'ArrowRight') { showCareerMilestone(careerIndex + 1); e.preventDefault(); return; }
+      // Qualquer outra tecla (acelerar, pular, Esc, espaço...) fecha o mural e volta ao jogo
+      if (['Shift', 'Control', 'Alt', 'Meta', 'Tab'].includes(e.key) || e.repeat || performance.now() - careerOpenedAt < 700) return;
+      e.preventDefault();
+      closeModals();
     });
+    // Toque em qualquer botão do controle na tela também fecha o mural
+    document.addEventListener('pointerdown', (e) => {
+      if (modalsOpen === 'career' && performance.now() - careerOpenedAt > 700 && e.target.closest('.touch-pad, .touch-steer, .touch-buttons')) closeModals();
+    }, true);
 
     function openRaceInvite() {
       const list = document.getElementById('race-invite-records');
       list.innerHTML = '';
-      if (!leaderboard.length) {
+      const board = lapBoard();
+      if (!board.length) {
         const li = document.createElement('li');
         li.className = 'is-empty';
         li.textContent = 'Nenhum recorde ainda — seja o primeiro!';
         list.appendChild(li);
       } else {
-        leaderboard.slice(0, 5).forEach((e, i) => {
+        board.slice(0, 5).forEach((e, i) => {
           const li = document.createElement('li');
           li.innerHTML = `<span class="pos">${['🥇', '🥈', '🥉'][i] || (i + 1) + 'º'}</span><span class="name"></span><span class="time">${formatRaceTime(e.time)}</span>`;
           li.querySelector('.name').textContent = e.name;
@@ -9461,11 +10209,176 @@
       leaderboard = leaderboard.slice(0, 10);
       try { localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard)); } catch (err) { /* ignora */ }
       lastLapSaved = true;
+      setPlayerTag(entry.name);
       renderLeaderboard(entry);
       closeModals();
       openMenu('circuit');
       notify({ type: 'success', title: 'Recorde salvo!', description: `${entry.name} · ${formatRaceTime(entry.time)}` });
+      cloudSubmitLap(entry.name, entry.time);
     });
+
+    // ============================================================================
+    // CONTA E NUVEM (login com Google + Firestore) — opcional, nunca bloqueia o jogo
+    // ============================================================================
+    const TAG_STORAGE_KEY = 'fire_engine_tag_v1';
+    let playerTag = null;
+    try { playerTag = localStorage.getItem(TAG_STORAGE_KEY); } catch (e) { /* ignora */ }
+    function setPlayerTag(tag) {
+      if (!/^[A-Z0-9]{3}$/.test(tag || '')) return;
+      playerTag = tag;
+      try { localStorage.setItem(TAG_STORAGE_KEY, tag); } catch (e) { /* ignora */ }
+      scheduleCloudSave();
+    }
+    let globalLaps = null, globalBowlingTop = 0, cloudUid = null, cloudSaveTimer = null, cloudApplying = false;
+    function getCloud() { return window.cloud || null; }
+    function cloudSignedIn() { const c = getCloud(); return !!(c && c.enabled && c.user); }
+    // Ranking exibido: global (quando a nuvem está ativa) ou o deste aparelho
+    function lapBoard() { return globalLaps && globalLaps.length ? globalLaps : leaderboard; }
+
+    function localProfile() {
+      return {
+        tag: playerTag || undefined,
+        paint: achievementState.paint,
+        custom: achievementState.custom || undefined,
+        bestLapMs: leaderboard.length ? Math.round(leaderboard[0].time) : undefined,
+        bowlingBest: bowlingBest || undefined,
+        achievements: { unlocked: achievementState.unlocked, progress: achievementState.progress, sets: achievementState.sets }
+      };
+    }
+    function scheduleCloudSave() {
+      if (cloudApplying || !cloudSignedIn()) return;
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(() => {
+        const c = getCloud();
+        if (c && c.user && c.saveProfile) c.saveProfile(localProfile()).catch((e) => console.warn('[cloud] save', e));
+      }, 2500);
+    }
+    // Junta o progresso da conta com o deste aparelho (fica sempre com o melhor de cada um)
+    function mergeRemoteProfile(remote) {
+      if (!remote) return;
+      cloudApplying = true;
+      const a = remote.achievements || {};
+      Object.entries(a.unlocked || {}).forEach(([k, v]) => { if (!achievementState.unlocked[k]) achievementState.unlocked[k] = v; });
+      Object.entries(a.progress || {}).forEach(([k, v]) => { achievementState.progress[k] = Math.max(achievementState.progress[k] || 0, v); });
+      Object.entries(a.sets || {}).forEach(([k, v]) => { achievementState.sets[k] = [...new Set([...(achievementState.sets[k] || []), ...v])]; });
+      if (remote.paint) achievementState.paint = remote.paint;
+      if (remote.custom) achievementState.custom = Object.assign({}, achievementState.custom || {}, remote.custom);
+      if (remote.tag && !playerTag) { playerTag = remote.tag; try { localStorage.setItem(TAG_STORAGE_KEY, playerTag); } catch (e) { /* ignora */ } }
+      if (remote.bowlingBest > bowlingBest) {
+        bowlingBest = remote.bowlingBest;
+        try { localStorage.setItem(BOWLING_BEST_KEY, String(bowlingBest)); } catch (e) { /* ignora */ }
+        drawBowlingBoard();
+      }
+      if (remote.bestLapMs && !leaderboard.some(e => Math.round(e.time) === remote.bestLapMs)) {
+        leaderboard.push({ name: remote.tag || 'EU', time: remote.bestLapMs, date: Date.now() });
+        leaderboard.sort((x, y) => x.time - y.time);
+        leaderboard = leaderboard.slice(0, 10);
+        try { localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard)); } catch (e) { /* ignora */ }
+      }
+      saveAchievements();
+      applyPaint(achievementState.paint);
+      if (typeof applyCarCustom === 'function') applyCarCustom();
+      renderAchievements();
+      renderLeaderboard();
+      cloudApplying = false;
+    }
+    async function refreshGlobalBoards() {
+      const c = getCloud();
+      if (!c || !c.enabled) return;
+      try {
+        globalLaps = await c.topLaps(10);
+        const top = await c.topBowling(1);
+        globalBowlingTop = top.length ? top[0].score : 0;
+        window.__globalBowlingTop = globalBowlingTop;
+        renderLeaderboard();
+        drawBowlingBoard();
+      } catch (e) { console.warn('[cloud] ranking', e); }
+    }
+    function cloudSubmitLap(tag, time) {
+      const c = getCloud();
+      if (!cloudSignedIn()) return;
+      c.submitLap(tag, time).then((improved) => {
+        if (improved) notify({ type: 'success', title: 'Ranking global', description: 'Sua melhor volta foi publicada!' });
+        refreshGlobalBoards();
+      }).catch((e) => console.warn('[cloud] lap', e));
+      scheduleCloudSave();
+    }
+    function cloudSubmitBowling(score) {
+      const c = getCloud();
+      if (!cloudSignedIn()) return;
+      c.submitBowling(playerTag || 'JOG', score).then(() => refreshGlobalBoards()).catch((e) => console.warn('[cloud] bowling', e));
+      scheduleCloudSave();
+    }
+
+    // Interface da conta (menu inicial)
+    const accStatusEl = document.getElementById('account-status');
+    const accSignInEl = document.getElementById('account-signin');
+    const accSignOutEl = document.getElementById('account-signout');
+    const accDeleteEl = document.getElementById('account-delete');
+    let deleteArmedUntil = 0;
+    function renderAccount() {
+      const c = getCloud();
+      const signed = cloudSignedIn();
+      accSignInEl.hidden = signed;
+      accSignOutEl.hidden = !signed;
+      accDeleteEl.hidden = !signed;
+      accSignInEl.disabled = !(c && c.enabled);
+      accSignInEl.classList.toggle('is-disabled', !(c && c.enabled));
+      if (!c || !c.ready) accStatusEl.textContent = 'Conectando…';
+      else if (c.error) accStatusEl.textContent = c.error;
+      else if (!c.enabled) accStatusEl.textContent = 'Ranking online em breve. Por enquanto seu progresso fica salvo neste aparelho.';
+      else if (!signed) accStatusEl.textContent = 'Entre para guardar recordes e conquistas em qualquer aparelho e aparecer no ranking global.';
+      else accStatusEl.textContent = `Olá, ${c.user.name}! Seu progresso está sincronizado${playerTag ? ` como ${playerTag}` : ''}.`;
+    }
+    accSignInEl.addEventListener('click', async () => {
+      const c = getCloud();
+      if (!c || !c.enabled) return;
+      try { await c.signIn(); } catch (e) { notify({ type: 'danger', title: 'Não foi possível entrar', description: 'Tente novamente em instantes.' }); }
+    });
+    accSignOutEl.addEventListener('click', () => { const c = getCloud(); if (c && c.signOut) c.signOut(); });
+    // Exclusão em dois cliques (sem janelas do navegador)
+    accDeleteEl.addEventListener('click', async () => {
+      const c = getCloud();
+      if (!cloudSignedIn()) return;
+      if (Date.now() > deleteArmedUntil) {
+        deleteArmedUntil = Date.now() + 4000;
+        accDeleteEl.textContent = 'Clique de novo para apagar';
+        setTimeout(() => { accDeleteEl.textContent = 'Apagar meus dados'; }, 4000);
+        return;
+      }
+      try {
+        await c.deleteMyData();
+        await c.signOut();
+        notify({ type: 'success', title: 'Dados apagados', description: 'Tudo o que estava na sua conta foi removido do servidor.' });
+        refreshGlobalBoards();
+      } catch (e) { notify({ type: 'danger', title: 'Falha ao apagar', description: 'Tente novamente em instantes.' }); }
+    });
+    function onCloudChange() {
+      const c = getCloud();
+      renderAccount();
+      if (!c || !c.ready || !c.enabled) return;
+      const uid = c.user ? c.user.uid : null;
+      if (uid && uid !== cloudUid) {
+        cloudUid = uid;
+        c.loadProfile().then((remote) => {
+          mergeRemoteProfile(remote);
+          return c.saveProfile(localProfile());
+        }).then(() => {
+          // Publica os recordes deste aparelho que ainda não estavam no ranking global
+          if (leaderboard.length && playerTag) c.submitLap(playerTag, leaderboard[0].time).catch(() => {});
+          if (bowlingBest > 0) c.submitBowling(playerTag || 'JOG', bowlingBest).catch(() => {});
+          notify({ type: 'success', title: 'Conta conectada', description: 'Recordes e conquistas sincronizados.' });
+          renderAccount();
+          refreshGlobalBoards();
+        }).catch((e) => console.warn('[cloud] sync', e));
+      } else if (!uid) {
+        cloudUid = null;
+      }
+      if (globalLaps === null) refreshGlobalBoards();
+    }
+    window.addEventListener('cloud-change', onCloudChange);
+    renderAccount();
+    if (window.cloud) onCloudChange();
 
     // Pulos: L1/Q = pulinho; △/F = pulo; △/F duas vezes rápido = pulo duplo para a frente (−10% de bateria)
     let lastJumpPressAt = 0;
@@ -9592,7 +10505,7 @@
       const achLines = ACHIEVEMENTS.map((a) => {
         const done = !!achievementState.unlocked[a.id];
         const prog = done ? a.total : (achievementState.progress[a.id] || 0);
-        return { text: a.title, done, right: a.total > 1 ? `${prog}/${a.total}` : '' };
+        return { text: a.secret && !done ? '???' : a.title, done, right: a.total > 1 ? `${prog}/${a.total}` : '' };
       });
       const half = Math.ceil(achLines.length / 2);
       const pages = [
@@ -9686,6 +10599,16 @@
       // Botões de ação (borda de subida)
       if (introActive) {
         if (justPressed(0) || justPressed(9)) startExperience();
+      } else if (modalsOpen === 'career') {
+        // Mural de carreira: ← → (D-pad/analógico) trocam o marco; acelerar (R2) ou qualquer outro botão fecha
+        const lx = deadzone(gp.axes[0] || 0, 0.35);
+        const now = performance.now();
+        const dirX = (lx > 0.6 || pressed(15)) ? 1 : (lx < -0.6 || pressed(14)) ? -1 : 0;
+        if (dirX && now - uiNavLastMove > 320) { uiNavLastMove = now; showCareerMilestone(careerIndex + dirX); }
+        if (!dirX) uiNavLastMove = 0;
+        const anyButton = [0, 1, 2, 3, 4, 5, 8, 9, 12, 13].some(i => justPressed(i));
+        const fresh = performance.now() - careerOpenedAt > 700;
+        if (fresh && (anyButton || justPressed(7) || justPressed(6))) closeModals();
       } else if (modalsOpen || menuOpen) {
         // Navegação de interface: analógico esquerdo / D-pad move o foco, ✕ seleciona, ○ volta
         const lx = deadzone(gp.axes[0] || 0, 0.35), ly = deadzone(gp.axes[1] || 0, 0.35);
@@ -9739,7 +10662,8 @@
       if (!root) return [];
       const list = [...root.querySelectorAll('button, a.button, a.radio-link, .location, input.input-text')];
       return list.filter((el) => {
-        if (el.disabled || el.closest('.content:not(.is-visible)') || el.closest('.tabs-content-item:not(.is-active)')) return false;
+        // Seções escondidas do MENU (abas) ficam de fora; nos painéis (.modal .content) todos os botões valem
+        if (el.disabled || el.closest('#menu .content:not(.is-visible)') || el.closest('.tabs-content-item:not(.is-active)')) return false;
         const r = el.getBoundingClientRect();
         return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
       });
@@ -10218,7 +11142,8 @@
 
       // Colisões com obstáculos (somente do mesmo nível e na altura do carrinho)
       const carLevel = levelOfY(curY);
-      const carHeight = curY - (surfaceBaseY(curY) + CAR_DESK_Y);
+      // Na rampa a altura do carrinho é medida a partir da própria rampa (antes, na metade de baixo, ele não colidia com nada)
+      const carHeight = carOnRamp ? curY - rampHeightAt(curX) : curY - (surfaceBaseY(curY) + CAR_DESK_Y);
 
       // Varredura em subpassos: em alta velocidade o carrinho para no primeiro contato
       // (impede "pular" objetos finos como tijolos e cercas entre um passo e outro)
@@ -10505,8 +11430,11 @@
         const dragZ = nextZ - Math.cos(carAngle) * dragDist;
         heldItem.group.position.set(dragX, y - CAR_DESK_Y + itemRestOffset(heldItem) + 0.35, dragZ);
         heldItem.group.rotation.y = carAngle;
-        if (heldItem.type === 'pencil' && Math.abs(carSpeed) > 0.01 && y > -15) {
-          revealTrackAtWorldPos(dragX, dragZ);
+        if (heldItem.type === 'pencil' && Math.abs(carSpeed) > 0.01) {
+          // Pinta a pista onde o lápis passar (mesa, rampas e chão); fora da pista, na mesa, vira rabisco livre
+          const onTrack = paintTrackAt(dragX, y, dragZ);
+          if (!onTrack && y > -15) revealTrackAtWorldPos(dragX, dragZ);
+          else crayonHue = (crayonHue + 1.2) % 360;
           logInteractionEvent('🖍️ Rabiscando a mesa com o lápis de cor!');
           pencilDrawTime += dt;
           if (pencilDrawTime > 3) unlockAchievement('artist');
@@ -10557,7 +11485,8 @@
         if (!grp || (heldItem && heldItem.obs === obs)) continue;
 
         // Empurrado para fora da mesa -> cai até o chão (antes podia congelar no ar)
-        if (!obs.isFalling && obs.level === 'desk' &&
+        // (bolas que entram na rampa de papelão NÃO caem: rolam pela rampa)
+        if (!obs.isFalling && obs.level === 'desk' && !(obs.ball && rampZoneAt(obs.x, obs.z)) &&
             (Math.abs(obs.x) > DESK_HALF_W + 0.6 || Math.abs(obs.z) > DESK_HALF_D + 0.6)) {
           obs.isFalling = true;
           obs.vy = 0;
@@ -10602,8 +11531,26 @@
           if (obs.z > 92 - r) { obs.z = 92 - r; obs.vz = -Math.abs(obs.vz) * e; }
         }
 
+        // Bolas na rampa de papelão: altura acompanha a rampa, gravidade puxa para baixo,
+        // abas laterais seguram e o nível (mesa/chão) muda conforme a altura — dá para levar a bola até a mesa
+        const rampZoneObs = (obs.ball && !obs.isFalling) ? rampZoneAt(obs.x, obs.z) : null;
+        obs.onRamp = !!rampZoneObs && obs.x < -DESK_HALF_W && obs.x > -DESK_HALF_W - 45;
+        let rampBase = null;
+        if (obs.onRamp) {
+          const h = rampHeightAt(obs.x);
+          rampBase = surfaceBaseY(0) + (h - CAR_DESK_Y);
+          obs.level = levelOfY(h);
+          // Componente da gravidade ao longo da rampa (esfera rolando: ~5/7 de g·sen·cos)
+          obs.vx -= GRAVITY * 0.34;
+          const zMin = (rampZoneObs === 'down' ? 10.8 : 30.8) + obs.r, zMax = (rampZoneObs === 'down' ? 25.2 : 45.2) - obs.r;
+          if (obs.z < zMin) { obs.z = zMin; obs.vz = Math.abs(obs.vz) * 0.5; }
+          if (obs.z > zMax) { obs.z = zMax; obs.vz = -Math.abs(obs.vz) * 0.5; }
+        } else if (obs.ball && !obs.isFalling && obs.x >= -DESK_HALF_W && obs.x < -DESK_HALF_W + 2.5 && rampZoneObs) {
+          obs.level = 'desk'; // chegou no topo da rampa: agora está na mesa
+        }
         // Terreno sob o objeto: no quarto soma o gramado das ilhas (sai da ilha = desce; sobe ao entrar)
-        const terrainY = obs.level === 'desk' ? surfaceBaseY(0) : FLOOR_SURFACE_Y + Math.max(0, floorExtraHeight(obs.x, obs.z));
+        const terrainY = rampBase !== null ? rampBase
+          : obs.level === 'desk' ? surfaceBaseY(0) : FLOOR_SURFACE_Y + Math.max(0, floorExtraHeight(obs.x, obs.z));
         const baseY = terrainY + (obs.restOffset || 0);
         if (!obs.isFalling && obs.level === 'floor' && !obs.pin && !(obs.stackOffset > 0) && !(obs.hop > 0) && !obs.hopV) {
           grp.position.y = baseY;
@@ -10712,7 +11659,7 @@
       // Objetos em movimento também não atravessam o carrinho (ex.: bola rolando contra ele parado)
       const cp = vehicle.position;
       const carLvl = levelOfY(cp.y);
-      const carH = cp.y - (surfaceBaseY(cp.y) + CAR_DESK_Y);
+      const carH = carOnRamp ? cp.y - rampHeightAt(cp.x) : cp.y - (surfaceBaseY(cp.y) + CAR_DESK_Y);
       for (let i = 0; i < dynamicObstacles.length; i++) {
         const o = dynamicObstacles[i];
         if (!obstacleCollidesWithCar(o, carLvl, carH)) continue;
@@ -10823,6 +11770,20 @@
       }
     }
 
+    // Conquista secreta: alguma bola (vôlei ou boliche) chegou à mesa, perto do aquário
+    function checkBallOnDesk() {
+      if (achievementState.unlocked.ballDesk) return;
+      for (let i = 0; i < dynamicObstacles.length; i++) {
+        const o = dynamicObstacles[i];
+        if (!o.ball || o.level !== 'desk' || o.onRamp || o.isFalling) continue;
+        if (Math.hypot(o.x - AQ_X, o.z - AQ_Z) < 24) {
+          unlockAchievement('ballDesk');
+          confettiBurst(o.x, 3, o.z, 60);
+          showCarSpeech('Gol de placa! ⚽', 2200);
+          return;
+        }
+      }
+    }
     function physicsStep(time) {
       // Posição física anterior de cada objeto móvel (para interpolar o desenho entre passos)
       for (let i = 0; i < dynamicObstacles.length; i++) {
@@ -10832,6 +11793,7 @@
       if (!isModalOpen) stepVehicle(time);
       updateRace();
       stepDynamicObjects();
+      checkBallOnDesk();
       stepWaterDrops(time);
       stepSparks();
     }
@@ -11017,6 +11979,8 @@
       updateWorldEffects(elapsedTime, dt);
       updateGateGlow(elapsedTime);
       updateSiren(elapsedTime);
+      updatePaintUniforms(elapsedTime);
+      updateMagicTrail(dt, elapsedTime);
 
       // Preset automático: em cima da mesa = Isométrica; ao descer para o quarto = Atrás do carrinho
       // (só alterna entre esses dois; Quarto e Mesa completa continuam fixos se escolhidos no menu)
