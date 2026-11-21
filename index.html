@@ -2223,7 +2223,8 @@
     scene.add(bedroomWorld);
 
     // 1. CHÃO DE AZULEJO CERÂMICO CLARO DO QUARTO (y = -36.0)
-    const floorGeo = new THREE.PlaneGeometry(360, 260);
+    // Quarto expandido para acomodar o novo setor de Rally Off-Road e a Ilha do Baja!
+    const floorGeo = new THREE.PlaneGeometry(450, 260);
     const floorMat = new THREE.MeshStandardMaterial({
       map: createTileFloorTexture(),
       roughness: 0.62,
@@ -2233,7 +2234,7 @@
     });
     const bedroomFloor = new THREE.Mesh(floorGeo, floorMat);
     bedroomFloor.rotation.x = -Math.PI / 2;
-    bedroomFloor.position.set(0, -36.0, 15);
+    bedroomFloor.position.set(35, -36.0, 10);
     bedroomFloor.receiveShadow = true;
     bedroomWorld.add(bedroomFloor);
 
@@ -2257,14 +2258,14 @@
       return wall;
     }
 
-    // Parede Norte (Fundo): z = -75
-    createRoomWall(320, 56, 4, -22, -8, -75);
-    // Parede Sul (Frente): z = 95
-    createRoomWall(320, 56, 4, -22, -8, 95);
+    // Parede Norte (Fundo): z = -75, cobrindo de x = -170 a x = 240
+    createRoomWall(414, 56, 4, 35, -8, -75);
+    // Parede Sul (Frente): z = 95, cobrindo de x = -170 a x = 240
+    createRoomWall(414, 56, 4, 35, -8, 95);
     // Parede Oeste (Esquerda): x = -170
     createRoomWall(4, 56, 174, -170, -8, 10);
-    // Parede Leste (Direita): x = 125
-    createRoomWall(4, 56, 174, 125, -8, 10);
+    // Parede Leste (Direita): x = 240 (quarto expandido para o setor de rally!)
+    createRoomWall(4, 56, 174, 240, -8, 10);
 
 
     // 2. TAPETE LISTRADO PRETO E BRANCO (Estilo Tear Artesanal da Foto Real!)
@@ -3931,22 +3932,24 @@
     }
     (function createHiddenShortcut() {
       const FY = -35.815, ramp = (z) => -36 + footrestTopAt(z) + 0.06;
-      buildTrackRibbon([[0, FY, -37.5], [2, FY, -30], [4, FY, -24], [4, FY, -20.8]], 7);
-      // Rampinha de acesso: sobe do chão até a borda baixa da placa (antes a pista sumia sob a base de papelão)
+      buildTrackRibbon([[0, FY, -37.5], [2, FY, -30], [4, FY, -25], [4, FY, -23.5]], 7);
+      // Rampinha de acesso: sobe suavemente do chão até a borda baixa da placa
       const yA = FY, yB = ramp(-15.25);
-      buildTrackRibbon([[4, yA, -20.8], [4, (yA + yB) / 2, -18.0], [4, yB, -15.25]], 7);
+      buildTrackRibbon([[4, yA, -23.5], [4, (yA * 2 + yB) / 3, -19.5], [4, yB, -15.25]], 7);
       (function accessWedge() {
-        const len = Math.hypot(5.55, yB - yA), ang = Math.atan2(yB - yA, 5.55);
-        const wedge = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.5, len + 0.3), rampMat);
+        const dZ = 8.25;
+        const len = Math.hypot(dZ, yB - yA), ang = Math.atan2(yB - yA, dZ);
+        // Rampinha larga cobrindo todo o apoio de pés (16.2 de largura) com chanfro suave na entrada
+        const wedge = new THREE.Mesh(new THREE.BoxGeometry(16.2, 0.45, len + 0.4), rampMat);
         wedge.rotation.x = -ang;
-        wedge.position.set(4, (yA + yB) / 2 - 0.3, -18.03);
+        wedge.position.set(4, (yA + yB) / 2 - 0.22, -19.38);
         wedge.castShadow = true; wedge.receiveShadow = true;
         scene.add(wedge);
-        // Abas laterais da rampinha (papelão dobrado)
-        [-4.3, 4.3].forEach((dx) => {
-          const flap = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.0, len), rampMat);
+        // Abas laterais chanfradas da rampa de papelão
+        [-8.2, 8.2].forEach((dx) => {
+          const flap = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.9, len), rampMat);
           flap.rotation.x = -ang;
-          flap.position.set(4 + dx, (yA + yB) / 2 + 0.25, -18.03);
+          flap.position.set(4 + dx, (yA + yB) / 2 + 0.22, -19.38);
           scene.add(flap);
         });
       })();
@@ -4498,18 +4501,37 @@
         progressAchievement('rainbowTrack', pct, true);
       }
     }
-    // Faíscas de arco-íris saindo das rodas traseiras quando a pista está mágica
+    function isCarOnRainbowTrack(px, pz, py) {
+      if (trackPaintUniforms.uMagic.value < 0.5) return false;
+      const x = px !== undefined ? px : vehicle.position.x;
+      const z = pz !== undefined ? pz : vehicle.position.z;
+      const y = py !== undefined ? py : vehicle.position.y;
+      for (let k = 0; k < trackSamples.length; k += 3) {
+        const s = trackSamples[k];
+        if (Math.abs(s.y - y) < 4 && (s.x - x) ** 2 + (s.z - z) ** 2 < (TRACK_WIDTH / 2 + 0.8) ** 2) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Faíscas de arco-íris saindo das rodas traseiras quando a pista está mágica + recarga até 130%
     let magicTrailAcc = 0;
     function updateMagicTrail(dt, time) {
       trackPaintUniforms.uTrackTime.value = time;
-      if (trackPaintUniforms.uMagic.value < 0.5 || Math.abs(carSpeed) < 0.06 || carAirborne) return;
-      const vp = vehicle.position;
-      let near = false;
-      for (let k = 0; k < trackSamples.length; k += 3) {
-        const s = trackSamples[k];
-        if (Math.abs(s.y - vp.y) < 4 && (s.x - vp.x) ** 2 + (s.z - vp.z) ** 2 < (TRACK_WIDTH / 2 + 0.5) ** 2) { near = true; break; }
-      }
+      if (trackPaintUniforms.uMagic.value < 0.5 || carAirborne) return;
+      const near = isCarOnRainbowTrack();
       if (!near) return;
+
+      // Ao concluir a conquista Pista Mágica, andar sobre a pista recarrega continuamente até 130% (sem sobrecarregar/explodir!)
+      if (carBattery < 130) {
+        carBattery = Math.min(130, carBattery + dt * 14);
+        if (carBattery >= 10) batteryLowWarned = false;
+        updateBatteryHUD();
+      }
+
+      if (Math.abs(carSpeed) < 0.06) return;
+      const vp = vehicle.position;
       magicTrailAcc += dt * (18 + Math.abs(carSpeed) * 30);
       const back = -1.9, sideX = 1.15, sn = Math.sin(carAngle), cs = Math.cos(carAngle);
       while (magicTrailAcc >= 1) {
@@ -5249,9 +5271,10 @@
       });
     });
 
-    // Pilhas usadas reaparecem após 3 minutos (com um "pop" de escala)
+    // As pilhas palito agora aparecem uma única vez na cena (coerente com a conquista de 15 pilhas)
     function updateBatteryRespawns(time) {
       turboBatteries.forEach((tb) => {
+        if (tb.collected) return;
         if (tb.sparkle) { tb.sparkle.rotation.y = time * 3; tb.sparkle.position.y = 1.1 + Math.sin(time * 4) * 0.15; }
         if (tb.respawnAt && time >= tb.respawnAt) {
           tb.respawnAt = 0;
@@ -5268,8 +5291,27 @@
         }
       });
     }
-    function respawnAllBatteries() {
-      turboBatteries.forEach((tb) => { tb.respawnAt = 0; tb.group.visible = true; tb.group.scale.setScalar(1); if (tb.bolt) tb.bolt.visible = true; });
+    function respawnAllBatteries(forceReset = false) {
+      turboBatteries.forEach((tb) => {
+        if (!forceReset && tb.collected) return;
+        tb.collected = false;
+        tb.respawnAt = 0;
+        tb.group.visible = true;
+        tb.group.scale.setScalar(1);
+        if (tb.bolt) tb.bolt.visible = true;
+      });
+    }
+
+    function syncBatteriesWithSavedState() {
+      const collected = (typeof achievementState !== 'undefined' && achievementState.sets && achievementState.sets.turbo) ? achievementState.sets.turbo : [];
+      turboBatteries.forEach((tb) => {
+        if (collected.includes(tb.id)) {
+          tb.collected = true;
+          tb.respawnAt = 0;
+          tb.group.visible = false;
+          if (tb.bolt) tb.bolt.visible = false;
+        }
+      });
     }
 
     // 12. CABOS USB ENROLADOS NA MESA
@@ -6595,6 +6637,262 @@
     createTree(81, 76, ISLAND_Y, 0.75, 0);
     createTree(-150, 70, FLOOR_SURFACE_Y, 0.8, 2);
     createTree(108, 64, FLOOR_SURFACE_Y, 0.85, 1);
+
+    // ============================================================================
+    // CIRCUITO OFF-ROAD BAJA RALLY & ILHA DO BAJA (THIAGO RIBEIRO)
+    // ============================================================================
+    const bajaIsland = createIsland({
+      id: 'baja',
+      name: 'Projeto Baja SAE · Thiago Ribeiro',
+      x: 185,
+      z: 60,
+      r: 12,
+      point: [185, 52],
+      text: 'Circuito Off-Road & Mini Baja SAE! Inspirado no incrível projeto de modelagem 3D de Thiago Ribeiro e no carro Baja 13 "Piratas do Vale" Unesp. Acelere na lama, supere troncos caídos e salte pela ponte de madeira!',
+      actions: [
+        {
+          label: '🏎️ Dirigir o Carro Baja 13',
+          run: () => switchVehicleModel('baja')
+        },
+        {
+          label: '🚒 Dirigir o Caminhãozinho do Ravi',
+          run: () => switchVehicleModel('truck')
+        },
+        {
+          label: '🌐 Abrir Projeto 3D do Thiago Ribeiro (Sketchfab) ↗',
+          run: () => openExternal('https://sketchfab.com/3d-models/wheels-n-wheels-mud-track-30a2cff9317440c999d3fe1522ba80f1')
+        }
+      ]
+    });
+
+    (function buildBajaRallyTrack() {
+      // 1. Trilha de terra batida (Rally Mud Track)
+      const dirtMat = new THREE.MeshStandardMaterial({
+        color: 0x5a3d24,
+        roughness: 0.95,
+        flatShading: true,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
+      });
+      const RALLY_POINTS = [
+        [140, 10], [152, 42], [178, 62], [210, 52], [226, 12], [216, -34], [185, -55], [152, -45], [138, -14], [140, 10]
+      ];
+      const rallyCurve = new THREE.CatmullRomCurve3(
+        RALLY_POINTS.map(([rx, rz]) => new THREE.Vector3(rx, FLOOR_SURFACE_Y + 0.05, rz)),
+        true
+      );
+      const rallyPoints = rallyCurve.getPoints(120);
+      const dirtGeo = new THREE.BufferGeometry();
+      const dirtPositions = [];
+      const W = 11.0;
+      for (let i = 0; i < rallyPoints.length; i++) {
+        const p = rallyPoints[i];
+        const next = rallyPoints[(i + 1) % rallyPoints.length];
+        const prev = rallyPoints[(i - 1 + rallyPoints.length) % rallyPoints.length];
+        let tx = next.x - prev.x, tz = next.z - prev.z;
+        const len = Math.hypot(tx, tz) || 1;
+        tx /= len; tz /= len;
+        const nx = -tz, nz = tx;
+        dirtPositions.push(p.x - nx * (W / 2), p.y, p.z - nz * (W / 2));
+        dirtPositions.push(p.x + nx * (W / 2), p.y, p.z + nz * (W / 2));
+      }
+      const dirtIndices = [];
+      const N = rallyPoints.length;
+      for (let i = 0; i < N; i++) {
+        const i0 = i * 2, i1 = i * 2 + 1;
+        const next0 = ((i + 1) % N) * 2, next1 = ((i + 1) % N) * 2 + 1;
+        dirtIndices.push(i0, next0, i1);
+        dirtIndices.push(i1, next0, next1);
+      }
+      dirtGeo.setAttribute('position', new THREE.Float32BufferAttribute(dirtPositions, 3));
+      dirtGeo.setIndex(dirtIndices);
+      dirtGeo.computeVertexNormals();
+      const dirtTrackMesh = new THREE.Mesh(dirtGeo, dirtMat);
+      dirtTrackMesh.receiveShadow = true;
+      bedroomWorld.add(dirtTrackMesh);
+
+      // 2. Poças de lama reflexivas (Mud Puddles)
+      const mudMat = new THREE.MeshStandardMaterial({
+        color: 0x3d2614,
+        roughness: 0.18,
+        metalness: 0.15,
+        polygonOffset: true,
+        polygonOffsetFactor: -3,
+        polygonOffsetUnits: -3
+      });
+      [
+        { x: 162, z: 46, rx: 7.5, rz: 6.2, rot: 0.4 },
+        { x: 206, z: -25, rx: 8.5, rz: 7.2, rot: -0.3 }
+      ].forEach((mp) => {
+        const puddleGeo = new THREE.CircleGeometry(1, 32);
+        const puddleMesh = new THREE.Mesh(puddleGeo, mudMat);
+        puddleMesh.rotation.x = -Math.PI / 2;
+        puddleMesh.rotation.z = mp.rot;
+        puddleMesh.scale.set(mp.rx, mp.rz, 1);
+        puddleMesh.position.set(mp.x, FLOOR_SURFACE_Y + 0.08, mp.z);
+        puddleMesh.receiveShadow = true;
+        bedroomWorld.add(puddleMesh);
+
+        // Bordas irregulares de terra molhada
+        const rimMat = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.85 });
+        const rimGeo = new THREE.RingGeometry(0.85, 1.15, 32);
+        const rimMesh = new THREE.Mesh(rimGeo, rimMat);
+        rimMesh.rotation.x = -Math.PI / 2;
+        rimMesh.rotation.z = mp.rot;
+        rimMesh.scale.set(mp.rx, mp.rz, 1);
+        rimMesh.position.set(mp.x, FLOOR_SURFACE_Y + 0.07, mp.z);
+        rimMesh.receiveShadow = true;
+        bedroomWorld.add(rimMesh);
+      });
+
+      // 3. Vala com água sob a ponte de rally
+      const streamMat = new THREE.MeshStandardMaterial({
+        color: 0x2b8a9e,
+        transparent: true,
+        opacity: 0.78,
+        roughness: 0.08,
+        metalness: 0.25
+      });
+      const streamGeo = new THREE.PlaneGeometry(42, 16);
+      const streamMesh = new THREE.Mesh(streamGeo, streamMat);
+      streamMesh.rotation.x = -Math.PI / 2;
+      streamMesh.position.set(186, FLOOR_SURFACE_Y - 0.22, 0);
+      streamMesh.receiveShadow = true;
+      bedroomWorld.add(streamMesh);
+
+      // Margens de pedra da vala
+      const bankMat = new THREE.MeshStandardMaterial({ color: 0x4b382a, roughness: 0.9 });
+      [-8.2, 8.2].forEach((bz) => {
+        const bank = new THREE.Mesh(new THREE.BoxGeometry(44, 0.4, 2.5), bankMat);
+        bank.position.set(186, FLOOR_SURFACE_Y - 0.05, bz);
+        bank.receiveShadow = true;
+        bedroomWorld.add(bank);
+      });
+
+      // 4. Ponte de Madeira Arqueada (Wooden Rally Bridge)
+      const woodPlankMat = new THREE.MeshStandardMaterial({ color: 0x82522c, roughness: 0.75 });
+      const woodBeamMat = new THREE.MeshStandardMaterial({ color: 0x4a2e19, roughness: 0.85 });
+      const bridgeGroup = new THREE.Group();
+      bridgeGroup.position.set(186, FLOOR_SURFACE_Y, 0);
+
+      const planksCount = 28;
+      for (let i = 0; i < planksCount; i++) {
+        const u = i / (planksCount - 1);
+        const z = -12.0 + u * 24.0;
+        const archY = Math.sin(u * Math.PI) * 2.8;
+        const tilt = Math.cos(u * Math.PI) * 0.28;
+        const plank = new THREE.Mesh(new THREE.BoxGeometry(11.2, 0.28, 0.75), woodPlankMat);
+        plank.position.set(0, archY + 0.14, z);
+        plank.rotation.x = -tilt;
+        plank.castShadow = true; plank.receiveShadow = true;
+        bridgeGroup.add(plank);
+      }
+      // Vigas laterais e corrimão da ponte
+      [-5.6, 5.6].forEach((bx) => {
+        // Estacas verticais de tronco
+        for (let i = 0; i <= 6; i++) {
+          const u = i / 6;
+          const z = -12.0 + u * 24.0;
+          const archY = Math.sin(u * Math.PI) * 2.8;
+          const post = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, archY + 1.8, 8), woodBeamMat);
+          post.position.set(bx, (archY + 1.8) / 2, z);
+          post.castShadow = true;
+          bridgeGroup.add(post);
+        }
+        // Trilho superior (corrimão curvado)
+        for (let i = 0; i < 6; i++) {
+          const u0 = i / 6, u1 = (i + 1) / 6;
+          const z0 = -12.0 + u0 * 24.0, z1 = -12.0 + u1 * 24.0;
+          const y0 = Math.sin(u0 * Math.PI) * 2.8 + 1.6, y1 = Math.sin(u1 * Math.PI) * 2.8 + 1.6;
+          const dZ = z1 - z0, dY = y1 - y0;
+          const segLen = Math.hypot(dZ, dY);
+          const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, segLen, 8), woodBeamMat);
+          rail.rotation.x = Math.atan2(dZ, dY) - Math.PI / 2;
+          rail.position.set(bx, (y0 + y1) / 2, (z0 + z1) / 2);
+          rail.castShadow = true;
+          bridgeGroup.add(rail);
+        }
+      });
+      bedroomWorld.add(bridgeGroup);
+
+      // 5. Troncos caídos de árvore (Drift Logs como obstáculos transponíveis)
+      const barkMat = new THREE.MeshStandardMaterial({ color: 0x5a381e, roughness: 0.9 });
+      const cutWoodMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.7 });
+      const fallenLogs = [
+        { x: 148, z: 22, rotY: 0.35, len: 12, r: 0.7 },
+        { x: 218, z: 24, rotY: -0.30, len: 12, r: 0.75 },
+        { x: 185, z: -45, rotY: 1.25, len: 10, r: 0.65 }
+      ];
+      fallenLogs.forEach((lg) => {
+        const logGroup = new THREE.Group();
+        logGroup.position.set(lg.x, FLOOR_SURFACE_Y + lg.r * 0.75, lg.z);
+        logGroup.rotation.y = lg.rotY;
+
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(lg.r, lg.r * 1.08, lg.len, 14), barkMat);
+        trunk.rotation.z = Math.PI / 2;
+        trunk.castShadow = true; trunk.receiveShadow = true;
+        logGroup.add(trunk);
+
+        // Extremidades de corte com anéis de crescimento
+        [-lg.len / 2, lg.len / 2].forEach((ex) => {
+          const cut = new THREE.Mesh(new THREE.CircleGeometry(lg.r * 0.96, 14), cutWoodMat);
+          cut.rotation.y = ex > 0 ? Math.PI / 2 : -Math.PI / 2;
+          cut.position.x = ex;
+          logGroup.add(cut);
+        });
+
+        // Pequenos cogumelos brotando no tronco
+        for (let m = -2; m <= 2; m += 2) {
+          const shroom = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.35, 8), new THREE.MeshStandardMaterial({ color: 0xe63946, roughness: 0.5 }));
+          shroom.position.set(m, lg.r + 0.15, (Math.random() - 0.5) * 0.3);
+          logGroup.add(shroom);
+        }
+        bedroomWorld.add(logGroup);
+      });
+
+      // 6. Pedrinhas de rio (River Rocks)
+      const riverRockMat = new THREE.MeshStandardMaterial({ color: 0x6c757d, roughness: 0.85, flatShading: true });
+      [
+        [154, -10, 1.2], [156, -9, 0.8], [212, -8, 1.1], [210, -11, 0.9], [172, 58, 1.3], [175, 59, 0.8]
+      ].forEach(([rx, rz, s]) => {
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(s, 0), riverRockMat);
+        rock.scale.set(1.4, 0.55, 1.2);
+        rock.position.set(rx, FLOOR_SURFACE_Y + s * 0.3, rz);
+        rock.castShadow = true; rock.receiveShadow = true;
+        bedroomWorld.add(rock);
+      });
+
+      // 7. Pneus de rally empilhados nas curvas (Guardrails esportivos)
+      const tireRallyMat = new THREE.MeshStandardMaterial({ color: 0x1b1e23, roughness: 0.9 });
+      [
+        [135, 12], [136, 14], [135.5, 13], [228, 8], [229, 10], [228.5, 9], [182, -58], [184, -58]
+      ].forEach(([tx, tz], i) => {
+        const tire = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.8, 16), tireRallyMat);
+        tire.position.set(tx, FLOOR_SURFACE_Y + (i % 3 === 2 ? 0.9 : 0.4), tz);
+        tire.castShadow = true; tire.receiveShadow = true;
+        bedroomWorld.add(tire);
+      });
+    })();
+
+    // Floresta e Vegetação Exuberante no Setor Baja Rally (Estilo Bruno Simon)
+    [
+      [136, -60, 0.9, 0], [162, -66, 0.95, 2], [205, -62, 1.05, 1], [232, -45, 0.85, 0],
+      [234, 0, 1.1, 1], [232, 45, 0.9, 2], [225, 78, 0.95, 0], [198, 84, 1.0, 1],
+      [165, 80, 0.9, 2], [138, 72, 0.85, 0], [170, -25, 0.95, 1], [200, 25, 0.85, 2],
+      [172, 35, 1.0, 0], [148, -25, 0.8, 1], [220, -15, 0.9, 0], [192, -35, 0.85, 2]
+    ].forEach(([tx, tz, ts, tv]) => {
+      createTree(tx, tz, FLOOR_SURFACE_Y, ts, tv);
+    });
+
+    // Moitas e arbustos densos contornando o rally
+    [
+      [145, 2], [148, 50], [170, 68], [195, 66], [220, 60], [230, 25], [222, -42],
+      [195, -62], [165, -58], [144, -35], [175, -15], [198, -15], [174, 18], [198, 18],
+      [158, 30], [212, 35], [160, -32], [210, -48], [182, 38], [188, -20]
+    ].forEach(([bx, bz], i) => {
+      createBush(bx, bz, FLOOR_SURFACE_Y, 0.65 + (i % 4) * 0.15, i % 3);
+    });
 
     // Grama solta na margem do lago e perto das árvores do chão
     (function shoreGrass() {
@@ -8015,6 +8313,69 @@
     const carBodyGroup = new THREE.Group();
     vehicle.add(carBodyGroup);
 
+    // Carro Baja SAE 13 Unesp ("Piratas do Vale")
+    const bajaBodyGroup = new THREE.Group();
+    bajaBodyGroup.visible = false;
+    vehicle.add(bajaBodyGroup);
+    let currentVehicleType = 'truck';
+    let bajaModelRef = null;
+
+    gltfLoader.load('models/carro_baja/carro_baja.glb', (gltf) => {
+      const bajaScene = gltf.scene;
+      bajaScene.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          if (child.material) {
+            child.material.vertexColors = true;
+            child.material.roughness = 0.45;
+            child.material.metalness = 0.3;
+          }
+        }
+      });
+      // Escala e alinhamento com a física do veículo
+      bajaScene.scale.setScalar(0.74);
+      bajaScene.position.set(0, 0.42, 0);
+      bajaBodyGroup.add(bajaScene);
+      bajaModelRef = bajaScene;
+
+      // Pódio comemorativo com o Baja 13 na Ilha do Baja
+      const standBaja = bajaScene.clone(true);
+      standBaja.scale.setScalar(0.85);
+      standBaja.position.set(185, FLOOR_SURFACE_Y + ISLAND_TOP + 1.8, 62);
+      standBaja.rotation.y = -0.65;
+      bedroomWorld.add(standBaja);
+
+      // Base do pódio de exibição
+      const pMat = new THREE.MeshStandardMaterial({ color: 0x1f2227, roughness: 0.5, metalness: 0.4 });
+      const standBase = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.8, 1.2, 32), pMat);
+      standBase.position.set(185, FLOOR_SURFACE_Y + ISLAND_TOP + 0.6, 62);
+      standBase.castShadow = true; standBase.receiveShadow = true;
+      bedroomWorld.add(standBase);
+    }, undefined, (err) => {
+      console.warn('Carro Baja GLB:', err);
+    });
+
+    function switchVehicleModel(type) {
+      currentVehicleType = type;
+      if (type === 'baja') {
+        carBodyGroup.visible = false;
+        bajaBodyGroup.visible = true;
+        showCarSpeech('🏎️ MODO BAJA 13 ATIVADO!', 2600);
+        setStatusBanner('🏎️ Carro Baja SAE 13 Unesp ativado! Suspensão esportiva para o rally off-road.', '#ffd700');
+        notify({ type: 'success', title: 'Carro Baja 13', description: 'Gaiola tubular, número 13 e suspensão off-road ativados!', duration: 4000 });
+        playTone(330, 0, 0.15, 'sawtooth', 0.08); playTone(440, 0.1, 0.2, 'sawtooth', 0.07);
+      } else {
+        carBodyGroup.visible = true;
+        bajaBodyGroup.visible = false;
+        showCarSpeech('🚒 Caminhãozinho do Ravi!', 2200);
+        setStatusBanner('🚒 Caminhãozinho do Ravi de volta à pista!', '#ff7a1a');
+        notify({ type: 'info', title: 'Caminhãozinho do Ravi', description: 'Veículo original restaurado.', duration: 3000 });
+        playTone(440, 0, 0.15, 'triangle', 0.08); playTone(660, 0.1, 0.2, 'triangle', 0.07);
+      }
+      rumble(0.25, 0.5, 140);
+    }
+
     // 1. CORPO PRINCIPAL ESCULPIDO PELO PERFIL LATERAL (Com Degrau do Capô Frontal e Curvatura Traseira!)
     // No plano 2D do Shape: x_2d = eixo Z (+ frente, - traseira), y_2d = eixo Y (altura)
     const sideProfile = new THREE.Shape();
@@ -8709,6 +9070,7 @@
       const raw = localStorage.getItem(ACH_STORAGE_KEY);
       if (raw) achievementState = Object.assign(achievementState, JSON.parse(raw));
     } catch (e) { /* storage indisponível: segue em memória */ }
+    syncBatteriesWithSavedState();
 
     function saveAchievements() {
       try { localStorage.setItem(ACH_STORAGE_KEY, JSON.stringify(achievementState)); } catch (e) { /* ignora */ }
@@ -9074,8 +9436,8 @@
     modalBtn.addEventListener('click', () => resetAllGameState());
 
     // ---------- Mapa / fast travel ----------
-    // Enquadramento do mapa = interior das 4 paredes do quarto (x -170..125, z -75..95)
-    const MAP_MIN_X = -170, MAP_MAX_X = 125, MAP_MIN_Z = -75, MAP_MAX_Z = 95;
+    // Enquadramento do mapa = interior das 4 paredes do quarto expandido (x -170..240, z -75..95)
+    const MAP_MIN_X = -170, MAP_MAX_X = 240, MAP_MIN_Z = -75, MAP_MAX_Z = 95;
     const MAP_W = MAP_MAX_X - MAP_MIN_X, MAP_D = MAP_MAX_Z - MAP_MIN_Z;
     const mapTextureEl = document.getElementById('map-texture');
     const mapPlayerEl = document.getElementById('map-player');
@@ -9096,7 +9458,9 @@
       { name: 'Ilha dos Brinquedos', x: -36, z: 70, angle: -Math.PI / 2, floor: true },
       { name: 'Lago', x: 52, z: 62, angle: Math.PI / 2, floor: true },
       { name: 'Boliche', x: 42, z: 52, angle: 0, floor: true },
-      { name: 'Cama do Ravi', x: 88, z: 8, angle: Math.PI / 2, floor: true }
+      { name: 'Cama do Ravi', x: 88, z: 8, angle: Math.PI / 2, floor: true },
+      { name: 'Circuito Baja Rally', x: 185, z: 15, angle: 0, floor: true },
+      { name: 'Ilha do Baja (Thiago Ribeiro)', x: 185, z: 60, angle: -Math.PI / 2, floor: true }
     ];
     function worldToMap(x, z) {
       return { left: ((x - MAP_MIN_X) / MAP_W) * 100, top: ((z - MAP_MIN_Z) / MAP_D) * 100 };
@@ -9347,13 +9711,15 @@
       updateBatteryHUD();
       return before;
     }
-    // Coleta de pilha: carga conforme o tipo; a pilha some e reaparece em 3 minutos
+    // Coleta de pilha: a pilha palito aparece apenas uma única vez na cena (coerente com a conquista)
     function collectBattery(tb, time) {
       const type = tb.type;
-      tb.respawnAt = time + BATTERY_RESPAWN_S;
+      tb.collected = true;
+      tb.respawnAt = 0; // Nunca mais respawna
       tb.group.visible = false;
       if (tb.bolt) tb.bolt.visible = false;
       trackAchievementSet('turbo', tb.id);
+      saveAchievements();
       const p = tb.group.position;
       for (let i = 0; i < (type.gold ? 18 : 8); i++) {
         const a = Math.random() * Math.PI * 2;
@@ -10895,6 +11261,7 @@
     let pencilDrawTime = 0;
     let hasDescendedToRoom = false;
     let wasInLake = false;
+    let wasInMud = false;
 
     // Mini-turbo das pilhas palito
     let turboBoostTimer = 0;
@@ -10959,22 +11326,71 @@
       if (curY > -15 && Math.abs(x) <= DESK_HALF_W + 1.2 && Math.abs(z) <= DESK_HALF_D + 1.2) {
         return { y: CAR_DESK_Y, ramp: null, level: 'desk' };
       }
-      // Rampinha de acesso ao apoio de pés (chão → borda baixa da placa), alinhada com a pista do atalho
-      if (x >= 0.0 && x <= 8.0 && z >= -20.8 && z < FOOTREST.z0) {
-        const tA = (z + 20.8) / (FOOTREST.z0 + 20.8);
+      // Rampinha de acesso ao apoio de pés (chão → borda baixa da placa), suave e cobrindo a largura inteira
+      if (x >= FOOTREST.x0 - 0.8 && x <= FOOTREST.x1 + 0.8 && z >= -23.5 && z < FOOTREST.z0) {
+        const tA = clamp((z + 23.5) / (FOOTREST.z0 + 23.5), 0, 1);
         const rampY = FLOOR_CAR_Y + tA * (FLOOR_SURFACE_Y + footrestTopAt(FOOTREST.z0) + 0.15 - FLOOR_CAR_Y);
-        if (curY > rampY - 1.3) return { y: rampY, ramp: null, level: 'floor', footrest: true };
+        return { y: rampY, ramp: null, level: 'floor', footrest: true };
       }
       // Apoio de pés sob a mesa = rampa do atalho escondido (sobe em direção à frente da mesa, +z)
-      if (x >= FOOTREST.x0 && x <= FOOTREST.x1 && z >= FOOTREST.z0 && z <= FOOTREST.z1) {
-        const rampY = FLOOR_SURFACE_Y + footrestTopAt(z) + 0.15;
-        if (curY > rampY - 1.3) return { y: rampY, ramp: null, level: 'floor', footrest: true };
+      if (x >= FOOTREST.x0 - 0.8 && x <= FOOTREST.x1 + 0.8 && z >= FOOTREST.z0 && z <= FOOTREST.z1 + 0.8) {
+        const clampZ = Math.min(z, FOOTREST.z1);
+        const rampY = FLOOR_SURFACE_Y + footrestTopAt(clampZ) + 0.15;
+        if (curY > rampY - 1.8) return { y: rampY, ramp: null, level: 'floor', footrest: true };
         // Chegando por baixo (lado ou frente alta): é uma parede, não um teleporte para cima
         return { y: FLOOR_CAR_Y, ramp: null, level: 'floor', wall: true };
+      }
+      // Setor Baja Rally (ponte de madeira, riacho, poças de lama, troncos e pedrinhas)
+      const rally = bajaRallyGround(x, z, curY);
+      if (rally) {
+        return { y: rally.y, ramp: null, level: 'floor', bridge: rally.bridge, lake: rally.lake, mud: rally.mud, log: rally.log, rock: rally.rock, island: rally.island };
       }
       // Ilhas (gramado elevado) e fundo do lago
       const extra = floorExtraHeight(x, z);
       return { y: FLOOR_CAR_Y + extra, ramp: null, level: 'floor', lake: extra < 0, island: extra > 0 };
+    }
+
+    function bajaRallyGround(x, z, curY) {
+      if (x < 128) return null;
+      // 1. Ponte de madeira arqueada: cruzando a vala entre x = 180 e 192, de z = -12.5 a 12.5
+      if (x >= 180 && x <= 192 && z >= -12.5 && z <= 12.5) {
+        const u = clamp((z + 12.5) / 25.0, 0, 1);
+        const archY = Math.sin(u * Math.PI) * 2.8;
+        const bridgeY = FLOOR_CAR_Y + archY;
+        if (curY > bridgeY - 1.8) return { y: bridgeY, bridge: true };
+      }
+      // 2. Vala com água sob a ponte (entre x = 166 e 208, z entre -8 e 8, exceto sob a ponte)
+      if (x >= 166 && x <= 208 && z >= -8 && z <= 8) {
+        return { y: FLOOR_CAR_Y - 0.28, lake: true };
+      }
+      // 3. Poças de lama reflexivas (desacelera e espirra barro)
+      if (Math.hypot(x - 162, z - 46) < 7.5 || Math.hypot(x - 206, z + 25) < 8.5) {
+        return { y: FLOOR_CAR_Y - 0.08, mud: true };
+      }
+      // 4. Troncos caídos de árvore (lombadas onde o carrinho passa por cima dando salto/sacolejo suave)
+      const logs = [
+        { x: 148, z: 22, h: 0.95, r: 1.4 },
+        { x: 218, z: 24, h: 1.05, r: 1.4 },
+        { x: 185, z: -45, h: 0.85, r: 1.2 }
+      ];
+      for (let i = 0; i < logs.length; i++) {
+        const lg = logs[i];
+        const d = Math.hypot(x - lg.x, z - lg.z);
+        if (d < lg.r * 2.2) {
+          const bump = Math.max(0, lg.h * (1 - (d / (lg.r * 2.2)) ** 2));
+          if (bump > 0.04) return { y: FLOOR_CAR_Y + bump, log: true };
+        }
+      }
+      // 5. Pedrinhas de rio (pequenas irregularidades que o carro galga)
+      const rocks = [
+        { x: 154, z: -10, h: 0.5 }, { x: 212, z: -8, h: 0.48 }, { x: 172, z: 58, h: 0.55 }
+      ];
+      for (let i = 0; i < rocks.length; i++) {
+        const rk = rocks[i];
+        const d = Math.hypot(x - rk.x, z - rk.z);
+        if (d < 2.2) return { y: FLOOR_CAR_Y + Math.max(0, rk.h * (1 - d / 2.2)), rock: true };
+      }
+      return null;
     }
 
     // Quique em objetos fixos/paredes; 3 batidas seguidas = capotamento
@@ -11245,9 +11661,9 @@
         if (Math.round(carBattery) !== prevPct) updateBatteryHUD();
         if (carBattery < 10 && !batteryLowWarned) {
           batteryLowWarned = true;
-          showCarSpeech('Bateria fraca!', 2400);
-          setStatusBanner('🔋 Bateria abaixo de 10%! Passe numa pilha ou no Posto do Bombeiro.', '#ff5252');
-          notify({ type: 'danger', title: 'Bateria fraca', description: 'Recarregue nas pilhas ou no Posto do Bombeiro', duration: 3500 });
+          showCarSpeech('ihhh acabou a pilha, preciso achar alguma pilha perdida, ou ir até o postinho', 3500);
+          setStatusBanner('🔋 Bateria baixa! Procure uma pilha perdida ou vá até o Posto do Bombeiro.', '#ff5252');
+          notify({ type: 'danger', title: 'Bateria fraca', description: 'ihhh acabou a pilha, preciso achar alguma pilha perdida, ou ir até o postinho', duration: 4000 });
         }
       }
       const currentMaxSpeed = (turboBoostTimer > 0 ? baseMaxSpeed * 1.9 : baseMaxSpeed) * (boostOn ? 1.35 : 1) * (nitroOn ? 1.45 : powerK);
@@ -11293,11 +11709,11 @@
           else carSpeed *= 0.9;
         };
         if (nextX <= -165) { nextX = -164.5; wallHit('Parede esquerda', 1, 0); }
-        else if (nextX >= 120) { nextX = 119.5; wallHit('Parede direita', -1, 0); }
+        else if (nextX >= 235) { nextX = 234.5; wallHit('Parede direita', -1, 0); }
         if (nextZ <= -70) { nextZ = -69.5; wallHit('Parede do fundo', 0, 1); }
         else if (nextZ >= 90) { nextZ = 89.5; wallHit('Parede da frente', 0, -1); }
       }
-      if (nextX < -175 || nextX > 130 || nextZ < -80 || nextZ > 100) {
+      if (nextX < -175 || nextX > 245 || nextZ < -80 || nextZ > 100) {
         isFallingOff = true;
         fallVelocityY = -0.15;
         return;
@@ -11455,8 +11871,14 @@
 
       // Pilhas palito (na mesa e no circuito do chão): lombada + mini turbo
       if (!g.ramp) {
+        const onMagic = isCarOnRainbowTrack(nextX, nextZ, groundY);
         turboBatteries.forEach((tb) => {
-          if (tb.respawnAt) return; // usada: some por 3 minutos
+          if (tb.collected || tb.respawnAt) return; // agora somem de vez após coletadas!
+          // Se a pista mágica está ativa e o carrinho está nela, ignora pilhas que estiverem sobre ela (para não explodir!)
+          if (onMagic) {
+            const isNearTrack = trackSamples.some(s => Math.abs(s.y - tb.y) < 4 && (s.x - tb.x) ** 2 + (s.z - tb.z) ** 2 < (TRACK_WIDTH / 2 + 1.2) ** 2);
+            if (isNearTrack) return;
+          }
           if (tb.level !== g.level || Math.hypot(nextX - tb.x, nextZ - tb.z) >= 2.65) return;
           groundY = Math.max(groundY, tb.y - 0.15 + 0.52);
           if (carHeight < 1.5 && time - tb.lastBoostTime > 1.2) {
@@ -11466,18 +11888,33 @@
         });
       }
 
-      // Lago: água desacelera, respinga e enche o tanque
+      // Lago & Riacho do Rally: água desacelera, respinga e enche o tanque
       if (g.lake && !carAirborne) {
         carSpeed *= 0.975;
         if (waterLevel < 100) {
           waterLevel = Math.min(100, waterLevel + dt * 30);
           updateWaterHUD();
-          setStatusBanner(`💧 Enchendo o tanque no lago: ${Math.round(waterLevel)}%`, '#35e0ff');
+          setStatusBanner(`💧 Enchendo o tanque: ${Math.round(waterLevel)}%`, '#35e0ff');
         }
         if (Math.abs(carSpeed) > 0.05 && Math.random() < 0.5) splashAt(nextX - Math.sin(carAngle) * 1.2, FLOOR_SURFACE_Y + 0.3, nextZ - Math.cos(carAngle) * 1.2, 2, 0.6);
         if (!wasInLake) { showCarSpeech('Splash!', 1600); splashAt(nextX, FLOOR_SURFACE_Y + 0.3, nextZ, 16, 1.1); }
       }
       wasInLake = !!g.lake && !carAirborne;
+
+      // Lamaçal do Rally: espirra lama marrom e reduz levemente a aderência
+      if (g.mud && !carAirborne) {
+        carSpeed *= 0.985;
+        if (Math.abs(carSpeed) > 0.06 && Math.random() < 0.45) {
+          const sx = nextX - Math.sin(carAngle) * 1.3 + (Math.random() - 0.5) * 0.8;
+          const sz = nextZ - Math.cos(carAngle) * 1.3 + (Math.random() - 0.5) * 0.8;
+          spawnFx(sx, FLOOR_SURFACE_Y + 0.25, sz, (Math.random() - 0.5) * 2, 2.5 + Math.random() * 2.5, (Math.random() - 0.5) * 2, 0x422a18, 0.4, 14, 0.75);
+        }
+        if (!wasInMud) {
+          showCarSpeech('Lamaçal de rally! 🛞', 1600);
+          playTone(110, 0, 0.12, 'square', 0.04);
+        }
+      }
+      wasInMud = !!g.mud && !carAirborne;
 
       // Chegada em uma ilha (descoberta de área, como no mundo do DS)
       if (g.island) {
@@ -11632,6 +12069,11 @@
       } else {
         carBodyGroup.rotation.x += (-carSpeed * 0.25 - carBodyGroup.rotation.x) * 0.3;
         carBodyGroup.rotation.z = (kL ? 0.06 : kR ? -0.06 : 0) * (Math.abs(carSpeed) / currentMaxSpeed);
+      }
+
+      if (bajaBodyGroup) {
+        bajaBodyGroup.rotation.copy(carBodyGroup.rotation);
+        bajaBodyGroup.position.copy(carBodyGroup.position);
       }
 
       wheels.forEach((w, idx) => {
