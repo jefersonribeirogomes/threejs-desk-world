@@ -738,6 +738,15 @@
       height: window.innerHeight
     };
 
+    // Todas as texturas desenhadas em canvas (pista, zebras, telas, placas, cadernos...) são cores em sRGB.
+    // Sem isso elas saíam lavadas/desbotadas com a saída sRGB do renderer (ex.: zebra vermelha virava salmão).
+    (function canvasTexturesInSRGB() {
+      const BaseCanvasTexture = THREE.CanvasTexture;
+      THREE.CanvasTexture = class extends BaseCanvasTexture {
+        constructor(...args) { super(...args); this.encoding = THREE.sRGBEncoding; }
+      };
+    })();
+
     const camera = new THREE.PerspectiveCamera(34, sizes.width / sizes.height, 0.5, 450);
     let camMode = 'iso';
     let zoomFactor = 1.0;
@@ -3336,9 +3345,11 @@
       return mesh;
     }
     (function createHiddenShortcut() {
-      const FY = -35.815, ramp = (z) => -36 + footrestTopAt(z) + 0.04;
+      const FY = -35.815, ramp = (z) => -36 + footrestTopAt(z) + 0.06;
       buildTrackRibbon([[0, FY, -37.5], [2, FY, -30], [4, FY, -22], [4, FY, -16.6]], 7);
-      buildTrackRibbon([[4, ramp(-15.3), -15.3], [4, ramp(-10), -10], [4, ramp(-4.7), -4.7]], 7);
+      // Trecho sobre a placa: reta exata no plano inclinado (sem curva Catmull que afunda no meio)
+      const rampRibbon = buildTrackRibbon([[4, ramp(-15.2), -15.2], [4, ramp(-10.15), -10.15], [4, ramp(-5.1), -5.1]], 7);
+      rampRibbon.renderOrder = 2;
       buildTrackRibbon([[4, FY, 4], [5, FY, 11], [7, FY, 19], [9, FY, 25], [11, FY, 28.5]], 7);
     })();
 
@@ -5401,8 +5412,13 @@
     });
     const musicIsland = createIsland({
       id: 'music', name: 'Ilha da Música', x: 104, z: -46, r: 12, point: [97, -38],
-      text: 'Piano, guitarra e caixinhas de som: a banda do Ravi ensaia aqui todos os dias. Quer ouvir uma música?',
-      action: 'Tocar uma música'
+      text: 'Piano, guitarra e caixinhas de som: a banda do Ravi ensaia aqui todos os dias. Qual música vamos tocar?',
+      action: 'Tocar uma música',
+      actions: [
+        { label: '🎵 Brilha, brilha estrelinha', run: () => playIslandSong('estrelinha') },
+        { label: '🐋 A baleia é amiga da sereia', run: () => playIslandSong('baleia') },
+        { label: '🐮 Ia ia ô (Seu Lobato)', run: () => playIslandSong('lobato') }
+      ]
     });
     const toysIsland = createIsland({
       id: 'toys', name: 'Ilha dos Brinquedos', x: -52, z: 79, r: 11, point: [-45, 71],
@@ -5505,7 +5521,12 @@
         inner.children.forEach(c => { c.position.y -= half; });
         m.userData.rolls = true;
         const o = m.userData.obs;
-        if (o) { o.ball = true; o.friction = 0.988; o.canTopple = false; }
+        // Bola de vôlei: leve e elástica, colisor do tamanho real da bola
+        if (o) {
+          o.ball = true; o.canTopple = false; o.box = null;
+          o.r = half * 0.98; o.h = half * 2;
+          o.mass = 0.32; o.restitution = 0.72; o.friction = 0.986; o.bounce = 0.62; o.wallE = 0.75; o.lift = 0.55;
+        }
         // Bolas não são "pegáveis": só rolam e quicam quando empurradas (como o boliche do DS)
         for (let i = grabbableItems.length - 1; i >= 0; i--) if (grabbableItems[i].group === m) grabbableItems.splice(i, 1);
       }
@@ -5625,6 +5646,54 @@
     placeModel('retro_tv', { x: -100, z: -68, y: FLOOR_SURFACE_Y + 26, physics: false, name: 'TV Retrô' });
     placeModel('wall_clock', { x: 0, z: -72.9, y: 6, physics: false, name: 'Relógio de Parede' });
     placeModel('painting_frame_01', { x: -66, z: -72.9, y: 4, physics: false, name: 'Quadro' });
+
+    // Quadro da família na parede do fundo: moldura de madeira clara com a foto em assets/quadro-familia.jpg
+    (function familyFrame() {
+      const SIZE = 13, BAR = 0.8, X = -36, Y = 10.5, Z = -72.6; // acima do tampo da mesa, abaixo do teto
+      const g = new THREE.Group();
+      g.position.set(X, Y, Z);
+      g.name = 'Quadro da Família';
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0xb98a52, roughness: 0.7 });
+      const outer = SIZE + BAR * 2;
+      [[0, (SIZE + BAR) / 2, outer, BAR], [0, -(SIZE + BAR) / 2, outer, BAR],
+       [(SIZE + BAR) / 2, 0, BAR, SIZE], [-(SIZE + BAR) / 2, 0, BAR, SIZE]].forEach(([x, y, w, h]) => {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.8), woodMat);
+        bar.position.set(x, y, 0.4);
+        bar.castShadow = true;
+        g.add(bar);
+      });
+      const photoMat = new THREE.MeshStandardMaterial({ color: 0xd8d8d8, roughness: 0.55, metalness: 0 });
+      const photo = new THREE.Mesh(new THREE.PlaneGeometry(SIZE, SIZE), photoMat);
+      photo.position.z = 0.15;
+      g.add(photo);
+      // Enquanto a foto não existir, mostra uma moldura com aviso (em vez de um buraco preto)
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#efe6da'; ctx.fillRect(0, 0, 256, 256);
+      ctx.strokeStyle = '#cdbfae'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(128, 8); ctx.lineTo(128, 248); ctx.moveTo(8, 128); ctx.lineTo(248, 128); ctx.stroke();
+      ctx.fillStyle = '#9b8b7a'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('foto da família', 128, 122); ctx.fillText('em breve ❤', 128, 150);
+      photoMat.map = new THREE.CanvasTexture(c);
+      new THREE.TextureLoader().load('assets/quadro-familia.jpg', (tex) => {
+        tex.encoding = THREE.sRGBEncoding;
+        tex.anisotropy = 8;
+        // Recorte só das 4 fotos (a imagem original mostra também a parede e a moldura real)
+        const iw = tex.image.width, ih = tex.image.height;
+        const crop = { x: 498 / 1599, y: 35 / 899, w: 820 / 1599, h: 835 / 899 }; // frações da imagem
+        tex.repeat.set(crop.w, crop.h);
+        tex.offset.set(crop.x, 1 - crop.y - crop.h);
+        if (Math.abs(iw / ih - 1599 / 899) > 0.05) { // outra foto: recorte quadrado central
+          const s = Math.min(iw, ih);
+          tex.repeat.set(s / iw, s / ih);
+          tex.offset.set((1 - s / iw) / 2, (1 - s / ih) / 2);
+        }
+        photoMat.map = tex;
+        photoMat.needsUpdate = true;
+      }, undefined, () => { /* sem foto ainda: fica o aviso */ });
+      scene.add(g);
+    })();
     (function kidDrawing() {
       // Desenho do Ravi dentro da moldura
       const c = document.createElement('canvas');
@@ -5723,6 +5792,8 @@
     }
 
     let rocketLaunch = null;
+    const CAMERA_FOV_DEFAULT = 34;
+    let rocketCamFovRestore = null; // volta suave ao FOV normal depois da câmera do foguete
     const jumpingFish = [];
     function spawnJumpingFish() {
       for (let i = 0; i < 4; i++) {
@@ -5743,6 +5814,48 @@
       }
     }
 
+    // Músicas da Ilha da Música: melodias tocadas em notas (frequência Hz, duração em tempos)
+    const SONG_NOTE_HZ = { C4: 261.6, D4: 293.7, E4: 329.6, F4: 349.2, G4: 392, A4: 440, B4: 493.9, C5: 523.3, D5: 587.3, E5: 659.3 };
+    const ISLAND_SONGS = {
+      estrelinha: {
+        title: 'Brilha, brilha estrelinha', speech: '🎵 brilha, brilha...', beat: 0.32,
+        notes: [['C4', 1], ['C4', 1], ['G4', 1], ['G4', 1], ['A4', 1], ['A4', 1], ['G4', 2],
+                ['F4', 1], ['F4', 1], ['E4', 1], ['E4', 1], ['D4', 1], ['D4', 1], ['C4', 2]]
+      },
+      baleia: {
+        title: 'A baleia é amiga da sereia', speech: '🐋 a baleia é amiga da sereia!', beat: 0.26,
+        notes: [['E4', 1], ['G4', 1], ['G4', 1], ['E4', 1], ['E4', 1], ['G4', 1], ['G4', 2],
+                ['A4', 1], ['A4', 1], ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1], ['C4', 2],
+                ['E4', 1], ['G4', 1], ['C5', 1], ['C5', 1], ['B4', 1], ['A4', 1], ['G4', 2],
+                ['F4', 1], ['A4', 1], ['G4', 1], ['E4', 1], ['D4', 1], ['E4', 1], ['C4', 3]]
+      },
+      lobato: {
+        title: 'Ia ia ô (Seu Lobato tinha um sítio)', speech: '🐮 ia ia ô!', beat: 0.28,
+        notes: [['G4', 1], ['G4', 1], ['G4', 1], ['D4', 1], ['E4', 1], ['E4', 1], ['D4', 2],
+                ['B4', 1], ['B4', 1], ['A4', 1], ['A4', 1], ['G4', 3], ['D4', 1],
+                ['G4', 1], ['G4', 1], ['G4', 1], ['D4', 1], ['E4', 1], ['E4', 1], ['D4', 2],
+                ['B4', 1], ['B4', 1], ['A4', 1], ['A4', 1], ['G4', 3]]
+      }
+    };
+    let islandSongTimers = [];
+    function playIslandSong(id) {
+      const song = ISLAND_SONGS[id];
+      if (!song) return;
+      // Troca de música: para a anterior antes de começar a nova
+      islandSongTimers.forEach(clearTimeout);
+      islandSongTimers = [];
+      let t = 0;
+      song.notes.forEach(([note, beats]) => {
+        const dur = beats * song.beat;
+        playTone(SONG_NOTE_HZ[note], t, Math.max(0.12, dur * 0.92), 'triangle', 0.14);
+        islandSongTimers.push(setTimeout(() => spawnMusicNote(104 + (Math.random() - 0.5) * 8, ISLAND_Y + 5, -46 + (Math.random() - 0.5) * 8), t * 1000));
+        t += dur;
+      });
+      notify({ type: 'music', title: song.title, description: 'Tocando agora na Ilha da Música', duration: Math.max(4000, t * 1000) });
+      showCarSpeech(song.speech, 2600);
+      progressAchievement('islandActions', 1);
+    }
+
     function performIslandAction(isl) {
       if (isl.id === 'fire') {
         waterLevel = 100;
@@ -5757,11 +5870,8 @@
         showCarSpeech('3, 2, 1... decolar!', 2600);
         notify({ type: 'music', title: 'Decolagem!', description: 'O foguete do Ravi foi visitar a Lua' });
       } else if (isl.id === 'music') {
-        const melody = [261.6, 261.6, 392, 392, 440, 440, 392, 349.2, 349.2, 329.6, 329.6, 293.7, 293.7, 261.6];
-        melody.forEach((f, i) => playTone(f, i * 0.32 + (i === 7 || i === 13 ? 0.16 : 0), 0.3, 'triangle', 0.14));
-        for (let i = 0; i < 14; i++) setTimeout(() => spawnMusicNote(104 + (Math.random() - 0.5) * 8, ISLAND_Y + 5, -46 + (Math.random() - 0.5) * 8), i * 320);
-        notify({ type: 'music', title: 'Brilha, brilha estrelinha', description: 'Tocando agora na Ilha da Música', duration: 5000 });
-        showCarSpeech('🎵 la la la', 2600);
+        playIslandSong('estrelinha');
+        return;
       } else if (isl.id === 'toys') {
         confettiBurst(-52, ISLAND_Y + 3, 79, 90);
         playTone(523, 0, 0.12); playTone(659, 0.12, 0.12); playTone(784, 0.24, 0.2);
@@ -5797,21 +5907,33 @@
         rocketLaunch.t += dt;
         const t = rocketLaunch.t;
         let y = rocketLaunch.baseY;
-        if (t < 0.8) spaceRocket.rotation.z = Math.sin(t * 60) * 0.03;
-        else if (t < 3.2) {
-          const k = (t - 0.8) / 2.4;
-          y += k * k * 70;
+        const rx = spaceRocket.position.x, rz = spaceRocket.position.z;
+        const flame = (vy, n) => {
+          for (let i = 0; i < n; i++) spawnFx(rx + (Math.random() - 0.5) * 1.2, y + 0.2, rz + (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 3, vy - Math.random() * 4, (Math.random() - 0.5) * 3, Math.random() > 0.5 ? 0xffc300 : 0xff6a3d, 0.7, -2, 0.8);
+        };
+        // Roteiro: ignição (0–1.4) → subida (1.4–4.6) → lá no alto (4.6–5.4) → descida com retrofoguete (5.4–7.8) → pouso
+        if (t < 1.4) {
+          spaceRocket.rotation.z = Math.sin(t * 60) * 0.03 * (t / 1.4);
+          if (t > 0.6) flame(-3, 2);
+        } else if (t < 4.6) {
+          const k = (t - 1.4) / 3.2;
+          y += k * k * 75;
           spaceRocket.rotation.z = 0;
-          for (let i = 0; i < 3; i++) spawnFx(spaceRocket.position.x + (Math.random() - 0.5), y, spaceRocket.position.z + (Math.random() - 0.5), (Math.random() - 0.5) * 3, -6 - Math.random() * 4, (Math.random() - 0.5) * 3, Math.random() > 0.5 ? 0xffc300 : 0xff6a3d, 0.6, -2, 0.8);
-        } else if (t < 4.2) y += 70;
-        else if (t < 6.6) {
-          const k = (t - 4.2) / 2.4;
-          y += 70 * (1 - (1 - Math.pow(1 - k, 2)));
-          spaceRocket.rotation.y += dt * 2;
+          flame(-6, 3);
+        } else if (t < 5.4) {
+          y += 75 + Math.sin((t - 4.6) * 4) * 0.6;
+          spaceRocket.rotation.y += dt * 1.5;
+        } else if (t < 7.8) {
+          const k = (t - 5.4) / 2.4;
+          y += 75 * Math.pow(1 - k, 2); // desacelera ao se aproximar do chão
+          spaceRocket.rotation.y += dt * 2 * (1 - k);
+          if (k > 0.45) flame(-4, 2);
         } else {
           rocketLaunch = null;
+          rocketCamFovRestore = CAMERA_FOV_DEFAULT;
+          islands.forEach((isl) => { if (isl.label) isl.label.visible = true; });
           spaceRocket.rotation.set(0, 0, 0);
-          confettiBurst(spaceRocket.position.x, y + 2, spaceRocket.position.z, 30);
+          confettiBurst(rx, y + 2, rz, 30);
         }
         spaceRocket.position.y = y;
       }
@@ -5845,11 +5967,15 @@
       // Bolas rolam visualmente ao serem empurradas
       dynamicObstacles.forEach((o) => {
         if (!o.group || !o.group.userData.rolls) return;
-        const speed = Math.hypot(o.vx, o.vz);
-        if (speed < 1e-4) return;
+        // Rola pela distância realmente percorrida (sem escorregar, em qualquer taxa de quadros)
+        const last = o._rollLast || (o._rollLast = { x: o.x, z: o.z });
+        const mx = o.x - last.x, mz = o.z - last.z;
+        last.x = o.x; last.z = o.z;
+        const dist = Math.hypot(mx, mz);
+        if (dist < 1e-4 || dist > 20) return;
         const inner = o.group.children[0];
-        const axis = new THREE.Vector3(o.vz, 0, -o.vx).normalize();
-        inner.rotateOnWorldAxis(axis, speed / Math.max(0.5, o.r));
+        const axis = new THREE.Vector3(mz, 0, -mx).normalize();
+        inner.rotateOnWorldAxis(axis, dist / Math.max(0.5, o.r));
       });
     }
 
@@ -6144,8 +6270,9 @@
       group.userData.rolls = true;
       scene.add(group);
       const obs = registerDynamicObstacle({ obs: { x: BOWLING.x, z: BOWLING.zStart + 5, r: 1.5, h: 3, name: 'BOLA DE BOLICHE' }, group, mass: 1.3, canTopple: false });
+      // Bola de boliche: pesada (quase a massa do carrinho), pouco elástica, rola longe e quase não quica
       obs.ball = true;
-      obs.friction = 0.993;
+      obs.mass = 1.5; obs.restitution = 0.22; obs.friction = 0.994; obs.bounce = 0.2; obs.wallE = 0.35; obs.lift = 0.04;
       return obs;
     })();
     function resetBowling() {
@@ -6725,7 +6852,9 @@
     let modalRequiresReset = false;
 
     function inputBlocked() {
-      return introActive || menuOpen || !!modalsOpen || isModalOpen || raceState === 'countdown';
+      // Durante a decolagem do foguete o carrinho espera (câmera exclusiva do lançamento)
+      return introActive || menuOpen || !!modalsOpen || isModalOpen || raceState === 'countdown' ||
+        !!rocketLaunch;
     }
 
     // ---------- Notificações (toasts .notifications .notification) ----------
@@ -8470,8 +8599,9 @@
 
     // Placa do apoio de pés (centro x 4, z -10; 15 x 11; inclinada 0.38 rad subindo para +z)
     const FOOTREST = { x0: -3.5, x1: 11.5, z0: -15.4, z1: -4.6 };
+    // Topo exato da placa girada: centro 2.5 + meia espessura (0.55·cos) e deslocamento do eixo (0.55·sin)
     function footrestTopAt(z) {
-      return 2.5 + 0.51 + (z + 10) * Math.tan(0.38);
+      return 2.5 + 0.55 / Math.cos(0.38) + (z + 10) * Math.tan(0.38);
     }
 
     // Altura do chão sob o carrinho levando em conta o nível atual (mesa, rampa ou quarto)
@@ -8789,7 +8919,7 @@
           const relApproach = -((velX - obs.vx) * nx + (velZ - obs.vz) * nz);
           if (relApproach > 0) {
             const strong = relApproach > 0.2;
-            const restitution = obs.ball ? 0.55 : strong ? 0.45 : 0.25;
+            const restitution = obs.ball ? (obs.restitution || 0.5) : strong ? 0.45 : 0.25;
             const j = relApproach * (1 + restitution) / (1 / CAR_MASS + 1 / mass);
             obs.vx -= nx * (j / mass);
             obs.vz -= nz * (j / mass);
@@ -8797,10 +8927,11 @@
             // O carrinho recebe a reação ao longo da direção em que anda
             carSpeed += (nx * Math.sin(carAngle) + nz * Math.cos(carAngle)) * (j / CAR_MASS);
             if (obs.ball) {
-              // Bola: ganha parte do embalo na direção do carrinho e quica para a frente
-              obs.vx += Math.sin(carAngle) * relApproach * 0.35;
-              obs.vz += Math.cos(carAngle) * relApproach * 0.35;
-              obs.hopV = Math.max(obs.hopV || 0, Math.min(0.45, relApproach * 1.1));
+              // Bola: sai na direção da normal do contato (batida de raspão desvia para o lado),
+              // com a velocidade da colisão real (massa + restituição). Bola leve quica um pouco
+              // porque o para-choque bate abaixo do centro dela; bola pesada só rola.
+              obs.hopV = Math.max(obs.hopV || 0, Math.min(0.3, relApproach * (obs.lift || 0)));
+              obs.vRotY = 0;
             } else if (strong && !obs.pin && !(obs.stackOffset > 0)) {
               // Batida forte: o objeto dá um pulinho e gira
               obs.hopV = Math.max(obs.hopV || 0, Math.min(0.32, (relApproach - 0.15) * 1.2) * (1.2 / Math.max(0.6, mass)));
@@ -9134,7 +9265,7 @@
 
         // Paredes do quarto também seguram os objetos (bola quica com mais energia)
         if (obs.level === 'floor') {
-          const r = obs.box ? Math.max(obs.box.hx, obs.box.hz) : obs.r, e = obs.ball ? 0.75 : 0.4;
+          const r = obs.box ? Math.max(obs.box.hx, obs.box.hz) : obs.r, e = obs.wallE || (obs.ball ? 0.75 : 0.4);
           if (obs.x < -167 + r) { obs.x = -167 + r; obs.vx = Math.abs(obs.vx) * e; }
           if (obs.x > 122 - r) { obs.x = 122 - r; obs.vx = -Math.abs(obs.vx) * e; }
           if (obs.z < -72 + r) { obs.z = -72 + r; obs.vz = Math.abs(obs.vz) * e; }
@@ -9150,7 +9281,7 @@
             obs.hop += obs.hopV;
             if (obs.hop <= 0) {
               obs.hop = 0;
-              obs.hopV = obs.hopV < -0.06 ? -obs.hopV * 0.5 : 0;
+              obs.hopV = obs.hopV < -0.06 ? -obs.hopV * (obs.bounce || 0.5) : 0;
             }
             grp.position.y = baseY + obs.hop;
           }
@@ -9199,7 +9330,7 @@
           b.z += nz * overlap * ma / (ma + mb);
           const closing = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz;
           if (closing > 0) {
-            const e = (a.ball || b.ball) ? 0.6 : 0.3;
+            const e = (a.ball || b.ball) ? Math.max(a.restitution || 0.3, b.restitution || 0.3) : 0.3;
             const j2 = (1 + e) * closing / (1 / ma + 1 / mb);
             a.vx -= (j2 / ma) * nx; a.vz -= (j2 / ma) * nz;
             b.vx += (j2 / mb) * nx; b.vz += (j2 / mb) * nz;
@@ -9223,7 +9354,7 @@
           a.x = s.x + nx * minD;
           a.z = s.z + nz * minD;
           const vn = a.vx * nx + a.vz * nz;
-          const e = a.ball ? 1.7 : 1.4;
+          const e = 1 + (a.wallE || (a.ball ? 0.7 : 0.4));
           if (vn < 0) { a.vx -= e * vn * nx; a.vz -= e * vn * nz; }
           if (a.group) { a.group.position.x = a.x; a.group.position.z = a.z; }
         }
@@ -9249,9 +9380,9 @@
         }
         const vn = o.vx * nx + o.vz * nz;
         if (vn < 0) {
-          const e = o.ball ? 1.6 : 1.3;
+          const e = 1 + (o.ball ? (o.restitution || 0.5) : 0.3);
           o.vx -= e * vn * nx; o.vz -= e * vn * nz;
-          if (o.ball && -vn > 0.15) o.hopV = Math.max(o.hopV || 0, -vn * 0.6);
+          if (o.ball && -vn > 0.15) o.hopV = Math.max(o.hopV || 0, Math.min(0.3, -vn * (o.lift || 0)));
           playImpactSound(o, -vn, o.mass || 1);
         }
         if (o.group) { o.group.position.x = o.x; o.group.position.z = o.z; }
@@ -9561,7 +9692,38 @@
 
       if (isFreeCameraActive) {
         freeOrbitControls.update();
+      } else if (rocketLaunch && spaceRocket) {
+        // Câmera exclusiva da decolagem: rente ao gramado da ilha, olhando de baixo para cima
+        const rp = spaceRocket.position;
+        if (!rocketLaunch.camPos) {
+          let ax = vp.x - rp.x, az = vp.z - rp.z;
+          const al = Math.hypot(ax, az) || 1;
+          ax /= al; az /= al;
+          rocketLaunch.camPos = new THREE.Vector3(rp.x + ax * 9 - az * 4, ISLAND_Y + 1.1, rp.z + az * 9 + ax * 4);
+          rocketLaunch.look = new THREE.Vector3(rp.x, rp.y + 6, rp.z);
+          rocketLaunch.fov = camera.fov;
+        }
+        const t = rocketLaunch.t;
+        // Leve aproximação no começo, tremor na ignição e no pouso
+        const shake = (t < 1.4 || (t > 7.2 && t < 7.8)) ? 0.12 : (t < 4.6 ? 0.05 : 0);
+        camera.position.lerp(rocketLaunch.camPos, 1 - Math.exp(-dt * 6));
+        camera.position.x += (Math.random() - 0.5) * shake;
+        camera.position.y += (Math.random() - 0.5) * shake;
+        rocketLaunch.look.lerp(new THREE.Vector3(rp.x, rp.y + 6, rp.z), 1 - Math.exp(-dt * 4));
+        camera.lookAt(rocketLaunch.look);
+        // Placa da ilha some durante o voo (não tapa o foguete)
+        islands.forEach((isl) => { if (isl.label) isl.label.visible = isl.id !== 'space'; });
+        // Aberta na ignição, fecha o zoom quando o foguete está lá no alto
+        const altitude = clamp((rp.y - rocketLaunch.baseY) / 75, 0, 1);
+        const fovTarget = 62 - altitude * 26;
+        if (Math.abs(camera.fov - fovTarget) > 0.05) { camera.fov += (fovTarget - camera.fov) * (1 - Math.exp(-dt * 3)); camera.updateProjectionMatrix(); }
+        camFollowTarget.copy(lookTarget);
       } else {
+        if (rocketCamFovRestore !== null) {
+          camera.fov += (rocketCamFovRestore - camera.fov) * (1 - Math.exp(-dt * 4));
+          if (Math.abs(camera.fov - rocketCamFovRestore) < 0.05) { camera.fov = rocketCamFovRestore; rocketCamFovRestore = null; }
+          camera.updateProjectionMatrix();
+        }
         // Suavização independente da taxa de quadros (equivale a 0.09 por quadro a 60 Hz)
         // Alvo suavizado uma única vez e câmera presa a ele: posição e direção andam juntas
         const followRate = (camMode === 'close' || camMode === 'fps') ? 9 : 5.6;
