@@ -1021,6 +1021,7 @@
   </div>
 
   <script>
+    const clamp = THREE.MathUtils.clamp;
     const canvas = document.querySelector('canvas.webgl');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xd5cfc7);
@@ -2052,6 +2053,49 @@
       return new THREE.CanvasTexture(c);
     }
 
+    function createShortcutCardboardTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#b88958';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.strokeStyle = 'rgba(90, 55, 25, 0.18)';
+      ctx.lineWidth = 3;
+      for (let y = 0; y < 512; y += 8) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+      }
+      // Fita adesiva kraft com texto de atalho
+      ctx.fillStyle = 'rgba(215, 195, 160, 0.85)';
+      ctx.fillRect(0, 36, 512, 52);
+      ctx.fillStyle = '#2b1b0e';
+      ctx.font = 'bold 28px "Nunito", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚡ ATALHO SOB A MESA · STUNT ⚡', 256, 230);
+      ctx.font = 'bold 22px monospace';
+      ctx.fillStyle = '#d84315';
+      ctx.fillText('⬍ RAMPA BIDIRECIONAL ⬍', 256, 275);
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createCautionTapeTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 64;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffbe0b';
+      ctx.fillRect(0, 0, 256, 64);
+      ctx.fillStyle = '#1e2025';
+      for (let x = -64; x < 320; x += 32) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0); ctx.lineTo(x + 22, 0); ctx.lineTo(x + 8, 64); ctx.lineTo(x - 14, 64);
+        ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(6, 1);
+      return tex;
+    }
+
     // ============================================================================
     // MESA DE TRABALHO EXPANDIDA 3X (180 x 108 UNIDADES!)
     // ============================================================================
@@ -2165,6 +2209,8 @@
     const rampGroup = new THREE.Group();
     const rampMat = new THREE.MeshStandardMaterial({ map: createCardboardTexture(), roughness: 0.85 });
     const returnRampMat = new THREE.MeshStandardMaterial({ map: createReturnCardboardTexture(), roughness: 0.85 });
+    const shortcutRampMat = new THREE.MeshStandardMaterial({ map: createShortcutCardboardTexture(), roughness: 0.85 });
+    const cautionTapeMat = new THREE.MeshStandardMaterial({ map: createCautionTapeTexture(), roughness: 0.5, metalness: 0.1 });
 
     // Dimensões exatas da rampa: de x = -90 (mesa, y = 0) até x = -135 (chão, y = -35.85)
     // Comprimento da diagonal: sqrt(45^2 + 35.85^2) ≈ 57.53 unidades! Ângulo: 0.673 rad.
@@ -2407,30 +2453,113 @@
     elementsChairGroup.traverse(m => { if (m.isMesh) occluderMeshes.push(m); });
     obstacles.push({ x: -18, z: 82, r: 7.2, name: 'CADEIRA GAMER ELEMENTS', isStatic: true, level: 'floor' });
 
-    // 5. APOIO PARA PÉS DE ESCRITÓRIO SOB A MESA (Funciona como MINI RAMPA DE SALTO!)
+    // 5. APOIO PARA PÉS DE ESCRITÓRIO SOB A MESA / STUNT RAMP BIDIRECIONAL COMPLETA
     const footrestGroup = new THREE.Group();
     footrestGroup.position.set(4, -36.0, -10);
-    const footTubeMat = new THREE.MeshStandardMaterial({ color: 0x1e2025, metalness: 0.6, roughness: 0.35 });
-    // Apoio de pés de PAPELÃO (mesmo material da rampa de descida): base de caixa achatada + placa inclinada
+
     const footCardboardDark = rampMat.clone();
-    footCardboardDark.color = new THREE.Color(0xb08560);
-    const footFrame = new THREE.Mesh(new THREE.BoxGeometry(17, 0.6, 13), footCardboardDark);
-    footFrame.position.y = 0.3;
-    const footPlate = new THREE.Mesh(new THREE.BoxGeometry(15, 1.1, 11), rampMat);
-    // Calços de papelão dobrado sustentando a placa (no lugar do tubo de metal)
-    [[-6.2, -3.4], [6.2, -3.4], [-6.2, 3.4], [6.2, 3.4]].forEach(([sx, sz]) => {
-      const h = 2.5 + sz * Math.tan(0.38) - 0.3;
-      const prop = new THREE.Mesh(new THREE.BoxGeometry(1.6, Math.max(0.6, h), 1.6), footCardboardDark);
-      prop.position.set(sx, Math.max(0.6, h) / 2 + 0.3, sz);
-      prop.castShadow = true;
-      footrestGroup.add(prop);
+    footCardboardDark.color = new THREE.Color(0xa67c52);
+
+    // Estrutura de base no chão sustentando toda a extensão (z de -24.0 a 4.5, total 28.5 unidades)
+    const footBase = new THREE.Mesh(new THREE.BoxGeometry(17.2, 0.4, 28.5), footCardboardDark);
+    footBase.position.set(0, 0.2, -0.25);
+    footBase.receiveShadow = true;
+    footrestGroup.add(footBase);
+
+    // Pilares / costelas de papelão reforçado sob a rampa
+    [
+      [-6.5, -9.6, 0.7], [6.5, -9.6, 0.7],
+      [-6.5, -3.5, 2.5], [6.5, -3.5, 2.5],
+      [-6.5, 2.5, 4.4], [6.5, 2.5, 4.4],
+      [-6.5, 8.5, 2.0], [6.5, 8.5, 2.0]
+    ].forEach(([px, pz, ph]) => {
+      const col = new THREE.Mesh(new THREE.BoxGeometry(1.6, ph, 1.8), footCardboardDark);
+      col.position.set(px, ph / 2 + 0.2, pz);
+      col.castShadow = true;
+      footrestGroup.add(col);
     });
-    footPlate.rotation.x = -0.38; // Inclinação de 22° virada para o usuário (rampinha!)
-    footPlate.position.set(0, 2.5, 0);
-    footPlate.castShadow = true;
-    footrestGroup.add(footFrame, footPlate);
+
+    const RAMP_W = 16.2;
+    const RAIL_H = 1.8;
+    const RAIL_THICK = 0.35;
+
+    // SEÇÃO 1: Rampa Traseira de Entrada (sobe suavemente de z: -24.0 a -15.2, altura 0 a 1.17)
+    const lenA = 8.88, angA = 0.1318;
+    const rampA = new THREE.Mesh(new THREE.BoxGeometry(RAMP_W, 0.45, lenA), shortcutRampMat);
+    rampA.rotation.x = -angA;
+    rampA.position.set(0, 0.585, -9.6);
+    rampA.castShadow = true; rampA.receiveShadow = true;
+    footrestGroup.add(rampA);
+
+    // Lip traseiro chanfrado ao nível do chão
+    const lipA = new THREE.Mesh(new THREE.BoxGeometry(RAMP_W, 0.2, 1.4), shortcutRampMat);
+    lipA.position.set(0, 0.1, -14.2);
+    lipA.receiveShadow = true;
+    footrestGroup.add(lipA);
+
+    // SEÇÃO 2: Placa Central Inclinada do Apoio de Pés (z: -15.2 a -5.2, altura 1.17 a 5.16)
+    const lenMid = 10.77, angMid = 0.38;
+    const rampMid = new THREE.Mesh(new THREE.BoxGeometry(RAMP_W, 0.5, lenMid), shortcutRampMat);
+    rampMid.rotation.x = -angMid;
+    rampMid.position.set(0, 3.165, -0.2);
+    rampMid.castShadow = true; rampMid.receiveShadow = true;
+    footrestGroup.add(rampMid);
+
+    // SEÇÃO 3: Rampa Frontal de Saída Suave (desce suavemente de z: -5.2 a 4.5, altura 5.16 a 0)
+    const lenB = 10.99, angB = 0.488;
+    const rampB = new THREE.Mesh(new THREE.BoxGeometry(RAMP_W, 0.45, lenB), shortcutRampMat);
+    rampB.rotation.x = angB;
+    rampB.position.set(0, 2.58, 9.65);
+    rampB.castShadow = true; rampB.receiveShadow = true;
+    footrestGroup.add(rampB);
+
+    // Lip frontal chanfrado ao nível do chão
+    const lipB = new THREE.Mesh(new THREE.BoxGeometry(RAMP_W, 0.2, 1.4), shortcutRampMat);
+    lipB.position.set(0, 0.1, 14.7);
+    lipB.receiveShadow = true;
+    footrestGroup.add(lipB);
+
+    // GUARDRAILS / ABAS LATERAIS CONTÍNUAS DE PAPELÃO COM FAIXA ZEBRADA
+    [-RAMP_W / 2, RAMP_W / 2].forEach((sideX) => {
+      // Aba da Seção 1
+      const railA = new THREE.Mesh(new THREE.BoxGeometry(RAIL_THICK, RAIL_H, lenA), rampMat);
+      railA.rotation.x = -angA;
+      railA.position.set(sideX, 0.585 + RAIL_H / 2 - 0.2, -9.6);
+      railA.castShadow = true;
+      footrestGroup.add(railA);
+
+      const tapeA = new THREE.Mesh(new THREE.BoxGeometry(RAIL_THICK + 0.05, 0.35, lenA), cautionTapeMat);
+      tapeA.rotation.x = -angA;
+      tapeA.position.set(sideX, 0.585 + RAIL_H - 0.2, -9.6);
+      footrestGroup.add(tapeA);
+
+      // Aba da Seção 2
+      const railMid = new THREE.Mesh(new THREE.BoxGeometry(RAIL_THICK, RAIL_H, lenMid), rampMat);
+      railMid.rotation.x = -angMid;
+      railMid.position.set(sideX, 3.165 + RAIL_H / 2 - 0.2, -0.2);
+      railMid.castShadow = true;
+      footrestGroup.add(railMid);
+
+      const tapeMid = new THREE.Mesh(new THREE.BoxGeometry(RAIL_THICK + 0.05, 0.35, lenMid), cautionTapeMat);
+      tapeMid.rotation.x = -angMid;
+      tapeMid.position.set(sideX, 3.165 + RAIL_H - 0.2, -0.2);
+      footrestGroup.add(tapeMid);
+
+      // Aba da Seção 3
+      const railB = new THREE.Mesh(new THREE.BoxGeometry(RAIL_THICK, RAIL_H, lenB), rampMat);
+      railB.rotation.x = angB;
+      railB.position.set(sideX, 2.58 + RAIL_H / 2 - 0.2, 9.65);
+      railB.castShadow = true;
+      footrestGroup.add(railB);
+
+      const tapeB = new THREE.Mesh(new THREE.BoxGeometry(RAIL_THICK + 0.05, 0.35, lenB), cautionTapeMat);
+      tapeB.rotation.x = angB;
+      tapeB.position.set(sideX, 2.58 + RAIL_H - 0.2, 9.65);
+      footrestGroup.add(tapeB);
+    });
+
     bedroomWorld.add(footrestGroup);
-    // Registra como obstáculo suave / rampa jogável no chão
+    footrestGroup.traverse(m => { if (m.isMesh) occluderMeshes.push(m); });
 
     // 6. GRANDE VASO OVAL COM DRACENA / YUCCA E ARGILA EXPANDIDA (Ao Lado Direito da Mesa!)
     const bigPlantGroup = new THREE.Group();
@@ -3931,32 +4060,27 @@
       return mesh;
     }
     (function createHiddenShortcut() {
-      const FY = -35.815, ramp = (z) => -36 + footrestTopAt(z) + 0.06;
-      buildTrackRibbon([[0, FY, -37.5], [2, FY, -30], [4, FY, -25], [4, FY, -23.5]], 7);
-      // Rampinha de acesso: sobe suavemente do chão até a borda baixa da placa
-      const yA = FY, yB = ramp(-15.25);
-      buildTrackRibbon([[4, yA, -23.5], [4, (yA * 2 + yB) / 3, -19.5], [4, yB, -15.25]], 7);
-      (function accessWedge() {
-        const dZ = 8.25;
-        const len = Math.hypot(dZ, yB - yA), ang = Math.atan2(yB - yA, dZ);
-        // Rampinha larga cobrindo todo o apoio de pés (16.2 de largura) com chanfro suave na entrada
-        const wedge = new THREE.Mesh(new THREE.BoxGeometry(16.2, 0.45, len + 0.4), rampMat);
-        wedge.rotation.x = -ang;
-        wedge.position.set(4, (yA + yB) / 2 - 0.22, -19.38);
-        wedge.castShadow = true; wedge.receiveShadow = true;
-        scene.add(wedge);
-        // Abas laterais chanfradas da rampa de papelão
-        [-8.2, 8.2].forEach((dx) => {
-          const flap = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.9, len), rampMat);
-          flap.rotation.x = -ang;
-          flap.position.set(4 + dx, (yA + yB) / 2 + 0.22, -19.38);
-          scene.add(flap);
-        });
-      })();
-      // Trecho sobre a placa: reta exata no plano inclinado (sem curva Catmull que afunda no meio)
-      const rampRibbon = buildTrackRibbon([[4, ramp(-15.2), -15.2], [4, ramp(-10.15), -10.15], [4, ramp(-5.1), -5.1]], 7);
-      rampRibbon.renderOrder = 2;
-      buildTrackRibbon([[4, FY, 4], [5, FY, 11], [7, FY, 19], [9, FY, 25], [11, FY, 28.5]], 7);
+      const FY = -35.815;
+      const rampH = (z) => {
+        if (z < -15.2) {
+          const t = clamp((z - (-24.0)) / 8.8, 0, 1);
+          return FY + t * (footrestTopAt(-15.2) + 0.15) + 0.05;
+        } else if (z <= -5.2) {
+          return -36 + footrestTopAt(z) + 0.20;
+        } else {
+          const t = clamp((4.5 - z) / 9.7, 0, 1);
+          return FY + t * (footrestTopAt(-5.2) + 0.15) + 0.05;
+        }
+      };
+      // Pista contínua de aproximação, subida, travessia central e descida em direção à frente da mesa
+      const shortcutRibbon = buildTrackRibbon([
+        [0, FY, -37.5], [2, FY, -30], [4, FY, -25], [4, FY, -24.0],
+        [4, rampH(-19.6), -19.6], [4, rampH(-15.2), -15.2],
+        [4, rampH(-10.2), -10.2], [4, rampH(-5.2), -5.2],
+        [4, rampH(-0.35), -0.35], [4, FY, 4.5],
+        [5, FY, 11], [7, FY, 19], [9, FY, 25], [11, FY, 28.5]
+      ], 7);
+      shortcutRibbon.renderOrder = 2;
     })();
 
     // Faixa quadriculada de largada
@@ -8901,7 +9025,6 @@
     window.addEventListener('touchstart', () => setInputMode(true), { passive: true });
     window.addEventListener('keydown', () => { if (htmlEl.classList.contains('is-mode-touch')) setInputMode(false); });
 
-    const clamp = THREE.MathUtils.clamp;
     let introActive = true;
     let menuOpen = false;
     let modalsOpen = null;     // 'map' | 'reset' | null
@@ -11257,6 +11380,7 @@
     let carAirStartedOnDesk = false;
     let carOnRamp = false;
     let lastGroundWasFootrest = false;
+    let wasOnFootrest = false;
     let carPitch = 0, carRoll = 0;
     let pencilDrawTime = 0;
     let hasDescendedToRoom = false;
@@ -11309,9 +11433,8 @@
       return CAR_DESK_Y - progress * 35.85;
     }
 
-    // Placa do apoio de pés (centro x 4, z -10; 15 x 11; inclinada 0.38 rad subindo para +z)
-    const FOOTREST = { x0: -3.5, x1: 11.5, z0: -15.4, z1: -4.6 };
-    // Topo exato da placa girada: centro 2.5 + meia espessura (0.55·cos) e deslocamento do eixo (0.55·sin)
+    // Placa do apoio de pés e rampa contínua sob a mesa (centro x = 4; largura 16.2; extensão z de -24.0 a 4.5)
+    const FOOTREST = { x0: -4.1, x1: 12.1, z0: -15.2, z1: -5.2, zStart: -24.0, zEnd: 4.5 };
     function footrestTopAt(z) {
       return 2.5 + 0.55 / Math.cos(0.38) + (z + 10) * Math.tan(0.38);
     }
@@ -11326,19 +11449,26 @@
       if (curY > -15 && Math.abs(x) <= DESK_HALF_W + 1.2 && Math.abs(z) <= DESK_HALF_D + 1.2) {
         return { y: CAR_DESK_Y, ramp: null, level: 'desk' };
       }
-      // Rampinha de acesso ao apoio de pés (chão → borda baixa da placa), suave e cobrindo a largura inteira
-      if (x >= FOOTREST.x0 - 0.8 && x <= FOOTREST.x1 + 0.8 && z >= -23.5 && z < FOOTREST.z0) {
-        const tA = clamp((z + 23.5) / (FOOTREST.z0 + 23.5), 0, 1);
-        const rampY = FLOOR_CAR_Y + tA * (FLOOR_SURFACE_Y + footrestTopAt(FOOTREST.z0) + 0.15 - FLOOR_CAR_Y);
-        return { y: rampY, ramp: null, level: 'floor', footrest: true };
-      }
-      // Apoio de pés sob a mesa = rampa do atalho escondido (sobe em direção à frente da mesa, +z)
-      if (x >= FOOTREST.x0 - 0.8 && x <= FOOTREST.x1 + 0.8 && z >= FOOTREST.z0 && z <= FOOTREST.z1 + 0.8) {
-        const clampZ = Math.min(z, FOOTREST.z1);
-        const rampY = FLOOR_SURFACE_Y + footrestTopAt(clampZ) + 0.15;
-        if (curY > rampY - 1.8) return { y: rampY, ramp: null, level: 'floor', footrest: true };
-        // Chegando por baixo (lado ou frente alta): é uma parede, não um teleporte para cima
-        return { y: FLOOR_CAR_Y, ramp: null, level: 'floor', wall: true };
+      // Rampa contínua bidirecional de papelão sob a mesa (Apoio de pés / Atalho completo com subida, platô e descida)
+      if (x >= FOOTREST.x0 - 0.8 && x <= FOOTREST.x1 + 0.8 && z >= FOOTREST.zStart - 0.6 && z <= FOOTREST.zEnd + 0.6) {
+        let rampY = FLOOR_CAR_Y;
+        if (z < FOOTREST.z0) {
+          // 1. Rampa traseira (sobe suavemente do chão até o apoio de pés)
+          const t = clamp((z - FOOTREST.zStart) / (FOOTREST.z0 - FOOTREST.zStart), 0, 1);
+          const topA = FLOOR_SURFACE_Y + footrestTopAt(FOOTREST.z0) + 0.15;
+          rampY = FLOOR_CAR_Y + t * (topA - FLOOR_CAR_Y);
+        } else if (z <= FOOTREST.z1) {
+          // 2. Placa central do apoio de pés (inclinada)
+          rampY = FLOOR_SURFACE_Y + footrestTopAt(z) + 0.15;
+        } else {
+          // 3. Rampa frontal de saída (desce suavemente até o chão em frente à mesa)
+          const t = clamp((FOOTREST.zEnd - z) / (FOOTREST.zEnd - FOOTREST.z1), 0, 1);
+          const topB = FLOOR_SURFACE_Y + footrestTopAt(FOOTREST.z1) + 0.15;
+          rampY = FLOOR_CAR_Y + t * (topB - FLOOR_CAR_Y);
+        }
+        if (curY > rampY - 2.4) {
+          return { y: rampY, ramp: 'shortcut', level: 'floor', footrest: true };
+        }
       }
       // Setor Baja Rally (ponte de madeira, riacho, poças de lama, troncos e pedrinhas)
       const rally = bajaRallyGround(x, z, curY);
@@ -12004,7 +12134,7 @@
         y += (groundY - y) * 0.35;
       }
       lastGroundWasFootrest = !!g.footrest && !carAirborne;
-      carOnRamp = !!g.ramp && !carAirborne;
+      carOnRamp = (!!g.ramp || !!g.footrest) && !carAirborne;
 
       vehicle.position.set(nextX, y, nextZ);
 
@@ -12020,6 +12150,13 @@
         showCarSpeech('Voltando pra mesa!', 2600);
         logInteractionEvent('🏎️ Ravi voltou para a mesa!');
       }
+      if (g.footrest && !wasOnFootrest && Math.abs(carSpeed) > 0.05) {
+        showCarSpeech('⚡ Atalho da mesa!', 2000);
+        logInteractionEvent('⚡ Ravi pegou o atalho sob a mesa!');
+        playTone(523, 0, 0.08, 'triangle', 0.04);
+        playTone(659, 0.08, 0.1, 'triangle', 0.04);
+      }
+      wasOnFootrest = !!g.footrest && !carAirborne;
 
       // Objeto seguro é arrastado atrás do carrinho
       if (heldItem) {
@@ -12048,6 +12185,18 @@
       if (carOnRamp && nextX < -DESK_HALF_W && nextX > -DESK_HALF_W - 45) {
         targetPitch = -Math.atan(RAMP_SLOPE * Math.sin(carAngle));
         targetRoll = Math.atan(RAMP_SLOPE * Math.cos(carAngle));
+      } else if (g.footrest && !carAirborne) {
+        // Inclinação realista na rampa sob a mesa conforme a seção atual (subida, meio e descida)
+        let slopeZ = 0;
+        if (nextZ < FOOTREST.z0) {
+          slopeZ = (footrestTopAt(FOOTREST.z0) + 0.15) / (FOOTREST.z0 - FOOTREST.zStart);
+        } else if (nextZ <= FOOTREST.z1) {
+          slopeZ = Math.tan(0.38);
+        } else {
+          slopeZ = -(footrestTopAt(FOOTREST.z1) + 0.15) / (FOOTREST.zEnd - FOOTREST.z1);
+        }
+        targetPitch = -Math.atan(slopeZ * Math.cos(carAngle));
+        targetRoll = -Math.atan(slopeZ * Math.sin(carAngle));
       } else if (carAirborne && !isSomersaulting) {
         targetPitch = clamp(-fallVelocityY * 1.1, -0.35, 0.55);
       }
