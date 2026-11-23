@@ -49,6 +49,16 @@ Os GLBs em `models/` vêm sem materiais; o jogo os encaixa pelo bounding box rea
 - Regras do Firestore com negação por padrão e validação de todos os campos: [`firestore.rules`](firestore.rules).
 - Content-Security-Policy, restrição de chave por domínio e App Check: passo a passo em [`docs/FIREBASE.md`](docs/FIREBASE.md).
 
+## 🚪 Cenários (uma página por ambiente)
+
+| Página | Cenário | Como chegar |
+| --- | --- | --- |
+| `index.html` | Quarto + mesa (circuito, ilhas, caminhãozinho do Ravi) | Página inicial |
+| `quintal.html` | Quintal: rally do Baja 13, Ilha do Baja, Ilha da Fogueira, montanha da cachoeira | Porta na parede leste do quarto |
+| — | Sala (em reforma) | Porta da frente do quarto |
+
+As duas páginas usam o mesmo motor (`assets/js/world.js`); cada uma define `window.DESK_SCENE` e só constrói/simula o próprio cenário. O `quintal.html` é gerado a partir do `index.html`: depois de mudar a interface do `index.html`, rode `node scripts/gerar-quintal.mjs`.
+
 ## 🙏 Inspiração e créditos
 
 - **Inspiração:** [Bruno Simon](https://bruno-simon.com/): o portfólio interativo em 3D dele inspirou este mundo e o design system da interface.

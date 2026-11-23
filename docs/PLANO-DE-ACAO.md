@@ -355,6 +355,13 @@ Esforço: P = pequeno · M = médio · G = grande.
 - [x] Rastro de pneu na terra e na lama do rally (marcas instanciadas, 700 no anel)
 - [x] Névoa leve na cena e nos shaders próprios (grama, folhas, água, lama, cachoeira)
 
+### Cenários em páginas separadas (feito em 22/11/2026)
+- [x] Script principal extraído para `assets/js/world.js`. `index.html` (quarto) e `quintal.html` (quintal) definem `window.DESK_SCENE`, e cada página só constrói e simula o próprio cenário.
+- [x] Quintal (`quintal.html`): rally do Baja, Ilha do Baja, Ilha da Fogueira e montanha da cachoeira, com gramado, céu aberto, cerca de madeira Kenney e fachada da casa com a porta de volta. O Baja nasce na largada. Medido: ~1.200 malhas, 440 chamadas de desenho e física em 0,1 ms.
+- [x] Quarto: volta a ir até x = 240. A porta da frente está aberta, com ramal da pista e popup "Sala em reforma"; a porta leste tem popup "Ir para o quintal".
+- [x] Correções: colisores enterrados do túnel da montanha (a "parede invisível") e postes de luz afastados da pista
+- [ ] Próximo cenário: Sala (hoje "em reforma")
+
 ### Fase 4: recursos novos (contínuo)
 - [x] Destravar (tecla U ou Opções: volta à posição segura de ~2 s atrás) e Respawn (ponto de viagem mais próximo)
 - [ ] Modal de fim de volta para o rally (ranking próprio)
