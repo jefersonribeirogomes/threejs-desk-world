@@ -673,6 +673,73 @@
       .menu.notebook .previews { width: auto; height: 30%; }
       .menu.notebook .contents { width: auto; height: 70%; }
     }
+
+    /* ==========================================================================
+       TELA INICIAL E MURAL DE CARREIRA NO "CADERNO DO RAVI"
+       ========================================================================== */
+    .intro {
+      --ds-text-soft: #4a4558; --ds-peach: #d62839; --ds-reveal: #d62839; --ds-success: #2a9d3f;
+      color: #2e2a3a; padding-left: 74px;
+      background-color: #fffdf4;
+      background-image: linear-gradient(90deg, transparent 58px, #f4a3a3 58px 60px, transparent 60px),
+        repeating-linear-gradient(180deg, transparent 0 31px, #d3e3f6 31px 32px);
+    }
+    .intro::before { /* espiral do caderno */
+      content: ""; position: fixed; left: 10px; top: 16px; bottom: 16px; width: 30px; pointer-events: none;
+      background: radial-gradient(circle at 15px 16px, #3b3a44 0 6px, #9a9aa6 7px 8px, transparent 9px) 0 0 / 30px 34px repeat-y;
+    }
+    .intro .title { font-family: 'Amatic SC', cursive; font-weight: 700; color: #d62839; transform: rotate(-1deg); }
+    .intro .title .accent { color: #e76f00; }
+    .intro .intro-welcome { color: #3b3648; }
+    .intro .intro-welcome strong { color: #d62839; }
+    .intro .intro-welcome .intro-soon { font-family: 'Amatic SC', cursive; font-weight: 700; color: #2a6fdb; transform: rotate(-1.5deg); }
+    .intro .text { color: #5b566a; }
+    /* Foto colada no caderno: moldura branca, fita adesiva e anel de carregamento em "caneta vermelha" */
+    .intro .ring-wrap::after {
+      content: ""; position: absolute; top: -6px; left: 50%; width: 120px; height: 30px; transform: translateX(-50%) rotate(-4deg); z-index: 2;
+      background: repeating-linear-gradient(45deg, rgba(255,214,102,.9) 0 9px, rgba(255,196,64,.9) 9px 18px); box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .intro .intro-photo { box-shadow: 0 0 0 8px #fff, 0 10px 26px rgba(0,0,0,.25); }
+    .intro .ring .track { stroke: #2e2a3a1f; }
+    .intro .ring .progress { stroke: #d62839; stroke-width: 4; }
+    .intro .button { color: #2e2a3a; border: 2px solid #2e2a3a; background: #fff; font-weight: 800; box-shadow: 3px 4px 0 #2e2a3a33; }
+    html:not(.is-mode-touch) .intro .button:not(.is-disabled):hover { color: #fff; border-color: #d62839; background: #d62839; }
+    .intro .button.is-disabled { opacity: .5; }
+    .intro .intro-account-status { color: #2a9d3f; }
+    @media (max-width: 600px) { .intro { padding-left: 52px; background-image: linear-gradient(90deg, transparent 42px, #f4a3a3 42px 44px, transparent 44px), repeating-linear-gradient(180deg, transparent 0 31px, #d3e3f6 31px 32px); } .intro::before { left: 4px; } }
+
+    /* Mural de carreira: folha do caderno com post-its */
+    .modals .modal.career .content.career-board {
+      color: #2e2a3a; border: none; border-radius: 6px 16px 16px 6px; padding: 22px 22px 22px 58px;
+      background-color: #fffdf4;
+      background-image: linear-gradient(90deg, transparent 46px, #f4a3a3 46px 48px, transparent 48px),
+        repeating-linear-gradient(180deg, transparent 0 31px, #d3e3f6 31px 32px);
+      box-shadow: 0 22px 50px rgba(0,0,0,.5), inset 0 0 0 1px #e9e1c8;
+    }
+    .modals .modal.career .content.career-board::before {
+      content: ""; position: absolute; left: 8px; top: 16px; bottom: 16px; width: 28px; pointer-events: none;
+      background: radial-gradient(circle at 14px 14px, #3b3a44 0 5px, #9a9aa6 6px 7px, transparent 8px) 0 0 / 28px 32px repeat-y;
+    }
+    .career-board .close { background: #d62839; box-shadow: 0 3px 0 #8e1622; }
+    .career-sign { background: none; box-shadow: none; padding: 4px 16px 26px; }
+    .career-title { font-family: 'Amatic SC', cursive; font-weight: 700; color: #d62839; text-shadow: none; transform: rotate(-1deg); }
+    .career-pill { background: #ffd166; color: #2e2a3a; box-shadow: 2px 3px 0 #2e2a3a33; border-radius: 3px; transform: translateX(-50%) rotate(-1.5deg); font-family: 'Amatic SC', cursive; }
+    .career-arrow { background: #ffd166; color: #2e2a3a; box-shadow: 2px 4px 0 #2e2a3a33; border-radius: 4px; }
+    .career-arrow:hover, .career-arrow.gp-focus { background: #ffc94d; }
+    .career-screen { background: #fff; border: 2px dashed #2e2a3a33; box-shadow: 0 6px 16px rgba(0,0,0,.12); transform: rotate(-.4deg); }
+    .career-art { box-shadow: 0 0 0 6px #fff, 0 6px 14px rgba(0,0,0,.25); transform: rotate(-1.5deg); }
+    .career-portal { background: #fffdf4; color: #2e2a3a; font-family: 'Amatic SC', cursive; }
+    .career-role { color: #e76f00; font-family: 'Amatic SC', cursive; }
+    .career-meta { color: #5b566a; opacity: 1; }
+    .career-intro { color: #3b3648; }
+    .career-bullets { color: #2e2a3a; }
+    .career-tags span { background: #fff4c2; border: 1px solid #e9cf7a; color: #2e2a3a; transform: rotate(var(--tilt, 0deg)); }
+    .career-tags span:nth-child(2n) { --tilt: -2deg; } .career-tags span:nth-child(3n) { --tilt: 1.5deg; }
+    .career-thumb { border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,.2); border-radius: 4px; }
+    .career-thumb:nth-child(2n) { transform: rotate(1.5deg); } .career-thumb:nth-child(2n+1) { transform: rotate(-1.5deg); }
+    .career-thumb .lbl { background: #fffdf4; color: #2e2a3a; box-shadow: 1px 2px 0 #2e2a3a33; font-family: 'Amatic SC', cursive; }
+    .career-thumb.is-active { border-color: #d62839; transform: scale(1.05) rotate(0deg); }
+    @media (max-height: 520px), (max-width: 760px) { .modals .modal.career .content.career-board { padding-left: 44px; } }
     /* Botões flutuantes de menu e mapa: post-its colados na borda da tela (mesma linguagem do Caderno do Ravi) */
     .menu-trigger, .map-trigger { width: 58px; height: 58px; right: 0; filter: drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
     .menu-trigger { top: 18px; transform: rotate(-3deg); }

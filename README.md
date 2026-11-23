@@ -26,7 +26,7 @@ Controle (DualSense/Xbox): L2 acelera, R2 ré, analógico esquerdo dirige, ○ b
 
 - Pista original que contorna a mesa, desce a rampa de papelão, cruza o quarto embaixo da mesa e sobe de volta, com 6 portais. A passagem pelos portais é livre (sem popups).
 - **Corridas só pela Ilha de Largada** (quarto) e pela **Largada do Rally** (quintal): o cronômetro só começa depois de escolher *Correr*. Ficar mais de 5 s fora da pista cancela a corrida.
-- **Ilha da Carreira** (lado leste do quarto): os 6 marcos profissionais juntos, cada um com o seu mural. O ranking global do circuito aparece na tela do notebook da mesa.
+- **Ilha da Carreira** (lado leste do quarto): uma super ilha com pista circular exclusiva passando por 6 ilhotas, uma para cada fase da carreira (objeto, placa e mural). O ranking global do circuito aparece na tela do notebook da mesa.
 - Ilhas no quarto (Posto do Bombeiro, Espacial, Música, Brinquedos e Lago) com grama, folhagem e água em shader.
 - Rádio da mesa toca o canal oficial no YouTube Music; o notebook mostra LinkedIn e Trailhead no monitor.
 - Os cadernos da mesa listam conquistas, recordes e pinturas; alimentos e plantinhas quebram com batidas; a caixinha de clipes derruba clipes ao ser arrastada.

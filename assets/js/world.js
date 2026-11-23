@@ -3297,7 +3297,8 @@
       });
     }
     // Ilha da Carreira: os 6 marcos em roda, de frente para fora (antes ficavam espalhados nos portais da pista)
-    const CAREER_ISLAND = { x: 178, z: 2, r: 20 };
+    const CAREER_ISLAND = { x: 180, z: -2, r: 35, track: 15, trackW: 7, pad: 25, padR: 6.5 };
+    const careerAngle = (i) => Math.PI + i * (Math.PI * 2 / 6); // ordem dos marcos no sentido da pista
     const RALLY_START_ISLAND = { x: 198, z: -42, r: 10 }; // quintal: único miolo livre grande o bastante perto da pista
     function addCareerSign(m, a, h) {
       const c = document.createElement('canvas'); c.width = 512; c.height = 256;
@@ -3317,14 +3318,14 @@
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.6, 8), new THREE.MeshStandardMaterial({ color: 0x2b2e35 }));
       post.position.y = 1.3;
       g.add(board, post);
-      const sa = a + 0.34, R = 16.4;
-      g.position.set(CAREER_ISLAND.x + Math.sin(sa) * R, FLOOR_SURFACE_Y + 0.5, CAREER_ISLAND.z + Math.cos(sa) * R);
-      g.rotation.y = sa;
+      const sa = a + 0.2, R = CAREER_ISLAND.pad - 3.6;
+      g.position.set(CAREER_ISLAND.x + Math.sin(sa) * R, FLOOR_SURFACE_Y + 0.8, CAREER_ISLAND.z + Math.cos(sa) * R);
+      g.rotation.y = sa + Math.PI; // de frente para a pista
       g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
       scene.add(g);
       // Brilho na cor do marco: some de dia, acende à noite
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: softGlowTexture, color: new THREE.Color(m.color), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
-      glow.position.set(CAREER_ISLAND.x + Math.sin(a) * 12, FLOOR_SURFACE_Y + h + 1.5, CAREER_ISLAND.z + Math.cos(a) * 12);
+      glow.position.set(CAREER_ISLAND.x + Math.sin(a) * (CAREER_ISLAND.pad + 1.5), FLOOR_SURFACE_Y + h + 1.5, CAREER_ISLAND.z + Math.cos(a) * (CAREER_ISLAND.pad + 1.5));
       glow.scale.setScalar(9);
       const pool = new THREE.Mesh(new THREE.CircleGeometry(6, 24), new THREE.MeshBasicMaterial({ map: softGlowTexture, color: new THREE.Color(m.color), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
       pool.rotation.x = -Math.PI / 2; pool.position.set(glow.position.x, FLOOR_SURFACE_Y + 0.62, glow.position.z);
@@ -3547,12 +3548,14 @@
 
       const builders = [piggyBank, bigBattery, armoredTruck, giantMug, waterJug, orangeDoor];
       CAREER_MILESTONES.forEach((m, i) => {
-        const a = Math.PI + i * (Math.PI * 2 / CAREER_MILESTONES.length); // começa do lado da porta do quarto e gira
-        const ox = CAREER_ISLAND.x + Math.sin(a) * 12, oz = CAREER_ISLAND.z + Math.cos(a) * 12;
-        const spot = { level: 'floor', rotY: a, pin: [CAREER_ISLAND.x + Math.sin(a) * 17.5, CAREER_ISLAND.z + Math.cos(a) * 17.5] };
+        // Cada marco fica na sua ilhota, de frente para a pista; o ponto de interação fica na beira da pista
+        const a = careerAngle(i), C = CAREER_ISLAND;
+        const ox = C.x + Math.sin(a) * (C.pad + 1.5), oz = C.z + Math.cos(a) * (C.pad + 1.5);
+        const spot = { level: 'floor', rotY: a + Math.PI, pin: [C.x + Math.sin(a) * (C.track + C.trackW / 2 + 1.5), C.z + Math.cos(a) * (C.track + C.trackW / 2 + 1.5)] };
         const built = builders[i]();
-        built.g.position.set(ox, FLOOR_SURFACE_Y + 0.5, oz); // em cima da ilha (ISLAND_TOP)
+        built.g.position.set(ox, FLOOR_SURFACE_Y + 0.8, oz); // em cima da ilhota (ilha + 0.3)
         built.g.rotation.y = spot.rotY;
+        built.g.scale.setScalar(0.85); // cabe na ilhota
         built.g.name = `Marco ${m.portal}: ${m.company}`;
         built.g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
         setTimeout(() => addCareerSign(m, a, built.h || 10), 0); // placa com empresa e período + brilho à noite
@@ -5945,10 +5948,11 @@
 
       // Grama densa
       const pts = [];
-      const blades = Math.round(isl.r * isl.r * 9);
+      const blades = Math.round(isl.r * isl.r * 9 * (isl.grass !== undefined ? isl.grass : 1));
       for (let i = 0; i < blades; i++) {
         const a = Math.random() * Math.PI * 2;
         const rr = Math.sqrt(Math.random()) * isl.r * islandRadiusFactor(isl, a) * 0.97;
+        if (isl.grassFilter && !isl.grassFilter(isl.x + Math.cos(a) * rr, isl.z + Math.sin(a) * rr)) continue;
         pts.push({ x: isl.x + Math.cos(a) * rr, y: ISLAND_Y, z: isl.z + Math.sin(a) * rr, h: 0.55 + Math.random() * 0.9 });
       }
       buildHere = !!isl.here; createGrassPatch(pts); buildHere = false;
@@ -5977,11 +5981,43 @@
     }
 
     // Ilha da Carreira (todos os marcos profissionais juntos) e Ilha de Largada do circuito
+    const C_ = CAREER_ISLAND;
+    const onCareerTrack = (x, z) => Math.abs(Math.hypot(x - C_.x, z - C_.z) - C_.track) < C_.trackW / 2 + 0.8;
+    const onCareerPad = (x, z) => [0, 1, 2, 3, 4, 5].some((i) => Math.hypot(x - (C_.x + Math.sin(careerAngle(i)) * C_.pad), z - (C_.z + Math.cos(careerAngle(i)) * C_.pad)) < C_.padR + 0.6);
     const careerIsland = !IS_QUINTAL && createIsland({
-      id: 'careerHub', name: 'Ilha da Carreira', here: true, x: CAREER_ISLAND.x, z: CAREER_ISLAND.z, r: CAREER_ISLAND.r, point: [CAREER_ISLAND.x, CAREER_ISLAND.z - 2], labelHeight: 22,
-      text: 'A trajetória profissional do Jeferson numa volta só: seis marcos, do primeiro banco digital à próxima porta. Chegue perto de cada objeto e aperte Interagir para ler a história.',
+      id: 'careerHub', name: 'Ilha da Carreira', here: true, x: C_.x, z: C_.z, r: C_.r, point: [C_.x, C_.z], labelHeight: 24,
+      grass: 0.3, grassFilter: (x, z) => !onCareerTrack(x, z) && !onCareerPad(x, z),
+      text: 'A super ilha da trajetória profissional do Jeferson: uma pista só dela passa por seis ilhotas, uma para cada fase da carreira, do primeiro banco digital à próxima porta. Dirija pela pista e, em cada ilhota, aperte Interagir para ler a história.',
       actions: [{ label: '📜 Ver a linha do tempo', run: () => openCareerBoard(0) }]
     });
+    !IS_QUINTAL && (function buildCareerSuperIsland() {
+      const Y = FLOOR_SURFACE_Y + 0.5;
+      // Pista exclusiva: anel em volta do centro, passando na frente de cada ilhota
+      const ring = [];
+      for (let k = 0; k <= 48; k++) { const t = (k / 48) * Math.PI * 2; ring.push([C_.x + Math.sin(t) * C_.track, Y - 0.12, C_.z + Math.cos(t) * C_.track]); }
+      buildTrackRibbon(ring, C_.trackW);
+      // Linha de largada quadriculada da linha do tempo (antes do marco 1)
+      const chk = document.createElement('canvas'); chk.width = 64; chk.height = 16;
+      const cx2 = chk.getContext('2d'); for (let i = 0; i < 16; i++) for (let j = 0; j < 4; j++) { cx2.fillStyle = (i + j) % 2 ? '#fff' : '#222'; cx2.fillRect(i * 4, j * 4, 4, 4); }
+      const chkTex = new THREE.CanvasTexture(chk); chkTex.magFilter = THREE.NearestFilter;
+      const line = new THREE.Mesh(new THREE.PlaneGeometry(C_.trackW, 1.6), new THREE.MeshBasicMaterial({ map: chkTex }));
+      const la = careerAngle(0) - 0.32;
+      line.rotation.set(-Math.PI / 2, 0, la + Math.PI / 2);
+      line.position.set(C_.x + Math.sin(la) * C_.track, Y + 0.08, C_.z + Math.cos(la) * C_.track);
+      scene.add(line);
+      // Ilhotas: um disco mais alto com borda na cor da empresa, flores e grama baixa
+      CAREER_MILESTONES.forEach((m, i) => {
+        const a = careerAngle(i), px = C_.x + Math.sin(a) * C_.pad, pz = C_.z + Math.cos(a) * C_.pad;
+        const geo = new THREE.CylinderGeometry(C_.padR, C_.padR * 1.06, 0.5, 40);
+        const top = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x8fd16a, roughness: 0.9 }));
+        top.position.set(px, Y + 0.05, pz); top.receiveShadow = true; scene.add(top);
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(C_.padR + 0.1, 0.32, 8, 48), new THREE.MeshStandardMaterial({ color: new THREE.Color(m.color), roughness: 0.5 }));
+        rim.rotation.x = Math.PI / 2; rim.position.set(px, Y + 0.3, pz); scene.add(rim);
+        const pts = [];
+        for (let n = 0; n < 160; n++) { const aa = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * (C_.padR - 0.6); pts.push({ x: px + Math.cos(aa) * rr, y: Y + 0.3, z: pz + Math.sin(aa) * rr, h: 0.3 + Math.random() * 0.4 }); }
+        buildHere = true; createGrassPatch(pts); buildHere = false;
+      });
+    })();
     const startIsland = !IS_QUINTAL && createIsland({
       id: 'raceStart', name: 'Ilha de Largada', here: true, x: 150, z: 62, r: 12, point: [150, 52],
       text: 'Daqui sai a volta cronometrada do Circuito do Ravi: mesa, rampa de papelão, chão e volta. Passe pelos 6 portais na ordem. Se sair da pista por mais de 5 segundos, a corrida é cancelada. O ranking global fica na tela do notebook da mesa.',
@@ -11536,7 +11572,7 @@
       { name: 'Montanha da Cachoeira', x: rallySamples[RALLY_CROSSINGS[1].under - 24].x, z: rallySamples[RALLY_CROSSINGS[1].under - 24].z, angle: Math.atan2(rallySamples[RALLY_CROSSINGS[1].under - 24].tx, rallySamples[RALLY_CROSSINGS[1].under - 24].tz), floor: true },
       { name: 'Ilha do Baja (Thiago Ribeiro)', x: 185, z: 56, angle: -Math.PI / 2, floor: true },
       { name: 'Ilha da Fogueira', x: 160, z: 62, angle: -2.4, floor: true },
-      { name: 'Ilha da Carreira', x: 178, z: -24, angle: 0, floor: true, scene: 'quarto' },
+      { name: 'Ilha da Carreira', x: 165, z: -2, angle: 0, floor: true, scene: 'quarto' },
       { name: 'Ilha de Largada', x: 150, z: 44, angle: 0, floor: true, scene: 'quarto' },
       { name: 'Ilha do 86', x: 150, z: 40, angle: -2.2, floor: true, scene: 'quintal' },
       { name: 'Ilha de Largada do Rally', x: 198, z: -36, angle: Math.PI, floor: true, scene: 'quintal' }
@@ -15400,8 +15436,8 @@
           });
         } });
       // Brinquedos grandes no quarto: caminhão de bombeiro (Ivan Klus, CC-BY) e viatura de polícia (Quaternius, CC0)
-      placeGLB('./models/polypizza/fire-truck.glb', { scene: 'quarto', x: 160, z: -22, rotY: 0.5, length: 16,
-        collider: { r: 8, box: { hx: 3.4, hz: 8 }, boxRot: 0.5, h: 8 }, name: 'CAMINHÃO DE BOMBEIRO' });
+      placeGLB('./models/polypizza/fire-truck.glb', { scene: 'quarto', x: 140, z: -54, rotY: 1.1, length: 16,
+        collider: { r: 8, box: { hx: 3.4, hz: 8 }, boxRot: 1.1, h: 8 }, name: 'CAMINHÃO DE BOMBEIRO' });
       placeGLB('./models/quaternius/police-car.glb', { scene: 'quarto', x: 198, z: 44, rotY: -0.7, length: 11,
         collider: { r: 6, box: { hx: 2.8, hz: 5.5 }, boxRot: -0.7, h: 5 }, name: 'VIATURA' });
     }
