@@ -2169,7 +2169,7 @@
     // Teclas de verdade no notebook (teclado ABNT com teclas individuais + barra de espaço)
     (function addLaptopKeycaps() {
       const capGeo = new THREE.BoxGeometry(0.66, 0.1, 0.56);
-      const capMat = new THREE.MeshStandardMaterial({ color: 0x2a2e36, roughness: 0.55 });
+      const capMat = new THREE.MeshStandardMaterial({ color: 0x2a2e36, roughness: 0.55, emissive: 0x2a6cff, emissiveIntensity: 0.22 }); // luz do teclado
       const cols = 15, rows = 5;
       const caps = new THREE.InstancedMesh(capGeo, capMat, cols * rows);
       const m = new THREE.Object3D();
@@ -6793,6 +6793,29 @@
         bedroomWorld.add(gantry);
       }
 
+      // 5b. Placa amarela "TÚNEL 13" antes da passagem por dentro da montanha
+      {
+        const cM = RALLY_CROSSINGS[1];
+        const sT = rallySamples[(cM.under - 26 + RALLY_N) % RALLY_N];
+        const nx = -sT.tz, nz = sT.tx, side = 1, L = RALLY_SIDE + 2.4;
+        const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+        const x = c.getContext('2d');
+        x.fillStyle = '#ffd23f'; x.fillRect(0, 0, 256, 256);
+        for (let i = -256; i < 512; i += 40) { x.fillStyle = '#1b1b1b'; x.beginPath(); x.moveTo(i, 0); x.lineTo(i + 20, 0); x.lineTo(i + 20 - 40, 40); x.lineTo(i - 40, 40); x.fill(); x.beginPath(); x.moveTo(i, 216); x.lineTo(i + 20, 216); x.lineTo(i - 20, 256); x.lineTo(i - 40, 256); x.fill(); }
+        x.fillStyle = '#1b1b1b'; x.font = 'bold 44px Nunito, sans-serif'; x.textAlign = 'center'; x.fillText('TÚNEL', 128, 98);
+        x.font = 'bold 96px Nunito, sans-serif'; x.fillText('13', 128, 190);
+        const sg = new THREE.Group();
+        const board = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 2.8), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), roughness: 0.6, side: THREE.DoubleSide }));
+        board.position.y = 3.6; board.rotation.z = Math.PI / 4; // losango de sinalização
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 3.6, 8), new THREE.MeshStandardMaterial({ color: 0x8a8f98, metalness: 0.5, roughness: 0.4 }));
+        leg.position.y = 1.8;
+        sg.add(board, leg);
+        sg.position.set(sT.x + nx * side * L, Y0 + rallyHeightAt(sT.x + nx * side * L, sT.z + nz * side * L), sT.z + nz * side * L);
+        sg.rotation.y = Math.atan2(sT.tx, sT.tz) + Math.PI; // de frente para quem chega
+        bedroomWorld.add(sg);
+        obstacles.push({ x: sg.position.x, z: sg.position.z, r: 0.4, h: 4, isStatic: true, level: 'floor', name: 'PLACA DO TÚNEL' });
+      }
+
       // 6. Pneus de proteção: pilhas soltas e PESADAS (o carrinho só consegue tirar do lugar com turbo/nitro)
       const nearTunnel = (t) => RALLY_TUNNELS.some((tn) => Math.abs(tn.t - t) < 0.035);
       const tireRed = new THREE.MeshStandardMaterial({ color: 0xc8102e, roughness: 0.8 });
@@ -7047,6 +7070,34 @@
         fall.rotation.y = Math.PI / 2;
         fall.renderOrder = 5;
         scene.add(fall);
+        // Segunda camada de água, mais estreita e mais rápida, na frente da primeira (dá volume)
+        const fallMat2 = fallMat.clone();
+        fallMat2.uniforms.uTime = { get value() { return worldUniforms.uTime.value * 1.6 + 3.7; } };
+        const fall2 = new THREE.Mesh(new THREE.PlaneGeometry(3.2, W.lip * 0.98, 6, 14), fallMat2);
+        fall2.position.set(W.x + 0.55, Y0 + W.lip / 2, W.z + 0.2);
+        fall2.rotation.y = Math.PI / 2;
+        fall2.renderOrder = 6;
+        scene.add(fall2);
+        // Espuma na base: bolinhas brancas que sobem e estouram (atualizadas junto com a névoa)
+        const foamMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.32, 8, 6), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, transparent: true, opacity: 0.85 }), 26);
+        foamMesh.frustumCulled = false;
+        scene.add(foamMesh);
+        rallyFx.foam = { mesh: foamMesh, p: Array.from({ length: 26 }, () => ({ a: Math.random() * 6.28, r: Math.random() * 2.2, t: Math.random() })) };
+        // Arco-íris na névoa (só de dia)
+        {
+          const c = document.createElement('canvas'); c.width = 256; c.height = 128;
+          const x = c.getContext('2d');
+          ['#ff3b3b', '#ff9f1c', '#ffe14d', '#3ddc84', '#3a86ff', '#8338ec'].forEach((col, i) => {
+            x.strokeStyle = col; x.lineWidth = 7; x.globalAlpha = 0.85;
+            x.beginPath(); x.arc(128, 128, 110 - i * 7, Math.PI, 0); x.stroke();
+          });
+          const mat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
+          const rainbow = new THREE.Mesh(new THREE.PlaneGeometry(12, 6), mat);
+          rainbow.position.set(W.pool.x + 2.5, Y0 + 3.2, W.pool.z);
+          rainbow.rotation.y = Math.PI / 2;
+          scene.add(rainbow);
+          nightGlows.push({ mat, day: 0.32, night: 0 });
+        }
         const pool = new THREE.Mesh(createBlobGeometry((a) => 1 + 0.12 * Math.sin(a * 3) + 0.05 * Math.sin(a * 7), 8, 48), createWaterMaterial({ shallow: 0x8fe6ee, deep: 0x1f6f8b, scale: 1.8 }));
         pool.scale.set(W.pool.r, 1, W.pool.r * 1.15);
         pool.position.set(W.pool.x, Y0 + 0.08, W.pool.z);
@@ -7088,6 +7139,8 @@
         const dp = [], di = [];
         const lowerNear = (x, z) => rallySamples.some((s) => s.y < 0.3 && Math.abs(s.i - cB.under) < 40 && Math.hypot(s.x - x, s.z - z) < RALLY_SIDE + 1.6);
         let row = 0;
+        const ropeTops = { '-1': [], '1': [] };
+        let signSpot = null;
         for (let k = -n; k <= n; k++) {
           const s = rallySamples[(cB.over + k + RALLY_N) % RALLY_N];
           const nx = -s.tz, nz = s.tx, y = Y0 + 0.05 + s.y, L = RALLY_SIDE;
@@ -7103,6 +7156,8 @@
               const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.3, 0.22), postMat);
               post.position.set(px, y + 0.65, pz);
               bedroomWorld.add(post);
+              ropeTops[side].push(new THREE.Vector3(px, y + 1.22, pz));
+              if (!signSpot && side === 1) signSpot = { x: s.x + nx * (L + 1.6), z: s.z + nz * (L + 1.6), y: Y0 + s.y, yaw: Math.atan2(s.tx, s.tz) };
               obstacles.push({ x: s.x + nx * side * (L + 0.7), z: s.z + nz * side * (L + 0.7), r: 0.7, y0: s.y - 0.4, h: s.y + 1.4, name: 'GUARDA-CORPO DA PONTE', isStatic: true, level: 'floor' });
             });
           }
@@ -7117,6 +7172,32 @@
               obstacles.push({ x: px, z: pz, r: 0.7, h: s.y - 0.9, name: 'PILAR DA PONTE', isStatic: true, level: 'floor' });
             });
           }
+        }
+        // Cordas do guarda-corpo (duas alturas) passando pelo topo dos postes
+        const ropeMat = new THREE.MeshStandardMaterial({ color: 0xd8c39a, roughness: 0.95 });
+        Object.values(ropeTops).forEach((pts) => {
+          if (pts.length < 2) return;
+          [0, -0.55].forEach((dy) => {
+            const curve = new THREE.CatmullRomCurve3(pts.map((v) => v.clone().add(new THREE.Vector3(0, dy, 0))));
+            bedroomWorld.add(new THREE.Mesh(new THREE.TubeGeometry(curve, pts.length * 6, 0.07, 6, false), ropeMat));
+          });
+        });
+        // Placa "PONTE" na cabeceira
+        if (signSpot) {
+          const c = document.createElement('canvas'); c.width = 256; c.height = 128;
+          const x = c.getContext('2d');
+          x.fillStyle = '#8a5a32'; x.fillRect(0, 0, 256, 128);
+          x.strokeStyle = '#5a3a1e'; x.lineWidth = 8; x.strokeRect(4, 4, 248, 120);
+          for (let i = 1; i < 4; i++) { x.fillStyle = '#7a4e2a'; x.fillRect(0, i * 32, 256, 2); }
+          x.fillStyle = '#fff4d6'; x.font = 'bold 54px "Amatic SC", Nunito, sans-serif'; x.textAlign = 'center'; x.fillText('PONTE', 128, 70);
+          x.font = 'bold 24px Nunito, sans-serif'; x.fillText('passagem do Baja 13', 128, 104);
+          const sg = new THREE.Group();
+          const board = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.6, 0.15), [0, 0, 0, 0, 1, 1].map((f) => f ? new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), roughness: 0.8 }) : postMat));
+          board.position.y = 2.6;
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.22, 2.2, 0.22), postMat); leg.position.y = 1.1;
+          sg.add(board, leg);
+          sg.position.set(signSpot.x, signSpot.y, signSpot.z); sg.rotation.y = signSpot.yaw + Math.PI;
+          bedroomWorld.add(sg);
         }
         const deckGeo = new THREE.BufferGeometry();
         deckGeo.setAttribute('position', new THREE.Float32BufferAttribute(dp, 3));
@@ -7429,6 +7510,20 @@
         o.label.material.opacity = a;
       });
       const near = Math.hypot(vehicle.position.x - WATERFALL.x, vehicle.position.z - WATERFALL.z) < 160 && vehicle.position.y < -15;
+      if (rallyFx.foam) {
+        const F = rallyFx.foam, m4 = new THREE.Matrix4();
+        F.mesh.visible = near;
+        if (near) {
+          F.p.forEach((b, i) => {
+            b.t += dt * (0.6 + (i % 5) * 0.12);
+            if (b.t > 1) { b.t = 0; b.a = Math.random() * 6.28; b.r = Math.random() * 2.2; }
+            const sc = Math.sin(b.t * Math.PI) * (0.6 + (i % 3) * 0.3);
+            m4.makeScale(sc, sc * 0.7, sc).setPosition(WATERFALL.x + 1.4 + Math.cos(b.a) * b.r, FLOOR_SURFACE_Y + 0.15 + b.t * 0.5, WATERFALL.z + Math.sin(b.a) * b.r * 1.3);
+            F.mesh.setMatrixAt(i, m4);
+          });
+          F.mesh.instanceMatrix.needsUpdate = true;
+        }
+      }
       rallyFx.mist.forEach((m, i) => {
         m.sp.visible = near;
         if (!near) return;
@@ -8611,6 +8706,7 @@
     // MÓVEIS DO QUARTO (cama, janela, porta, estante, cômoda, TV, quadros, postes)
     // ============================================================================
     // Cama do Ravi (procedural) encostada na parede direita
+    let kidBedPillow = null;
     const kidBed = (() => {
       const g = new THREE.Group();
       g.position.set(109, FLOOR_SURFACE_Y, 15);
@@ -8639,12 +8735,31 @@
         bctx.fill();
       }
       bctx.fillStyle = '#ffffff'; bctx.fillRect(0, 0, 256, 26);
-      const blanket = new THREE.Mesh(new THREE.BoxGeometry(25, 1.2, 36), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(blanketCanvas), roughness: 0.95 }));
-      blanket.position.set(0, 9.4, 7.5);
+      // Trama do tecido por cima da estampa (linhas finas cruzadas)
+      bctx.globalAlpha = 0.08; bctx.fillStyle = '#000';
+      for (let i = 0; i < 512; i += 4) bctx.fillRect(0, i, 256, 1);
+      for (let i = 0; i < 256; i += 4) bctx.fillRect(i, 0, 1, 512);
+      bctx.globalAlpha = 1;
+      // Costura pespontada na borda
+      bctx.strokeStyle = '#ffffff'; bctx.setLineDash([8, 6]); bctx.lineWidth = 3; bctx.strokeRect(10, 34, 236, 468); bctx.setLineDash([]);
+      // Cobertor de tecido: dobras suaves por cima e caimento pelas laterais da cama
+      const blanketGeo = new THREE.PlaneGeometry(31, 37, 46, 54);
+      blanketGeo.rotateX(-Math.PI / 2);
+      const bp = blanketGeo.attributes.position;
+      for (let i = 0; i < bp.count; i++) {
+        const x = bp.getX(i), z = bp.getZ(i), ax = Math.abs(x);
+        let y = 0.12 * Math.sin(x * 0.7 + z * 0.25) + 0.08 * Math.sin(z * 0.9 + x * 0.2) + 0.18 * Math.exp(-((z - 6) ** 2) / 20) * Math.sin(x * 0.5); // dobras
+        if (ax > 12.2) { const d = ax - 12.2; y -= d * 1.25; bp.setX(i, Math.sign(x) * (12.2 + d * 0.28)); } // cai pela lateral
+        bp.setY(i, y);
+      }
+      blanketGeo.computeVertexNormals();
+      const blanket = new THREE.Mesh(blanketGeo, new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(blanketCanvas), roughness: 0.95, side: THREE.DoubleSide }));
+      blanket.position.set(0, 9.6, 7.5);
       const pillow = new THREE.Mesh(new THREE.BoxGeometry(16, 2.6, 7), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 }));
       pillow.position.set(0, 10.2, -21);
       [frame, head, foot, mattress, blanket, pillow].forEach((m) => { m.castShadow = true; m.receiveShadow = true; g.add(m); });
       scene.add(g);
+      kidBedPillow = pillow;
       g.traverse((m) => { if (m.isMesh) occluderMeshes.push(m); });
       obstacles.push({ x: 109, z: 15, r: 12, box: { hx: 13.2, hz: 28 }, boxRot: 0, h: 11, name: 'CAMA DO RAVI', isStatic: true, level: 'floor' });
       return g;
@@ -8654,6 +8769,7 @@
     placeModel('desk_lamp', { x: 113, z: -19, y: FLOOR_SURFACE_Y + 16, rotY: -2, physics: false, name: 'Abajur' });
 
     // Janela com céu, nuvens e cortinas (parede direita)
+    const curtainRigs = [];
     (function createWindow() {
       const g = new THREE.Group();
       g.position.set(237.9, -4, -30); // na parede leste (antes ficava solta no meio do quarto expandido)
@@ -8682,13 +8798,14 @@
       });
       const curtainMat = new THREE.MeshStandardMaterial({ color: 0x8ecae6, roughness: 0.9, side: THREE.DoubleSide });
       [-1, 1].forEach((side) => {
-        const cg = new THREE.PlaneGeometry(9, 28, 12, 1);
+        const cg = new THREE.PlaneGeometry(9, 28, 12, 10);
         const cp = cg.attributes.position;
         for (let i = 0; i < cp.count; i++) cp.setZ(i, Math.sin(cp.getX(i) * 1.6) * 0.6);
         cg.computeVertexNormals();
         const curtain = new THREE.Mesh(cg, curtainMat);
         curtain.position.set(side * 18.5, -1, 1.2);
         g.add(curtain);
+        curtainRigs.push({ geo: cg, base: Float32Array.from(cg.attributes.position.array), side });
       });
       const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 46, 10), new THREE.MeshStandardMaterial({ color: 0x2b2e35, metalness: 0.5, roughness: 0.4 }));
       rod.rotation.z = Math.PI / 2;
@@ -15437,6 +15554,26 @@
     const _wheelQ = new THREE.Quaternion(), _wheelAxis = new THREE.Vector3(0, 0, 1); // eixo lateral (z local do nó "Car")
     // Rodas do AE86 giram quando o carrinho passa rápido por perto; balanço segue o vento
     function updateYardToys(dt, time) {
+      // Cortinas: balançam com o vento (mais embaixo do que em cima)
+      if (curtainRigs.length && !IS_QUINTAL) {
+        const gust = (windState.strength || 0.5) + (windState.gustBoost || 0);
+        curtainRigs.forEach((c) => {
+          const pos = c.geo.attributes.position, b = c.base;
+          for (let i = 0; i < pos.count; i++) {
+            const x = b[i * 3], y = b[i * 3 + 1];
+            const k = (14 - y) / 28; // 0 no varão, 1 na barra
+            pos.setZ(i, b[i * 3 + 2] + Math.sin(time * 1.4 + x * 0.7 + c.side) * 0.55 * k * gust + Math.sin(time * 2.3 + y * 0.3) * 0.18 * k);
+          }
+          pos.needsUpdate = true;
+        });
+      }
+      // Travesseiro afunda quando o carrinho sobe nele
+      if (kidBedPillow) {
+        const p = vehicle.position, on = Math.abs(p.x - 109) < 8.5 && Math.abs(p.z - (15 - 21)) < 4.5 && p.y > FLOOR_SURFACE_Y + 8;
+        const target = on ? 0.55 : 1;
+        kidBedPillow.scale.y += (target - kidBedPillow.scale.y) * Math.min(1, dt * 8);
+        kidBedPillow.position.y = 10.2 - (1 - kidBedPillow.scale.y) * 1.3;
+      }
       if (ae86Rig) {
         const d = Math.hypot(vehicle.position.x - ae86Rig.x, vehicle.position.z - ae86Rig.z);
         const target = d < 18 ? Math.min(1, Math.abs(carSpeed) / baseMaxSpeed) * 9 : 0;

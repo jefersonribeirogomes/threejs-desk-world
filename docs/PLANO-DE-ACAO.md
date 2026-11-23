@@ -333,7 +333,8 @@ Esforço: P = pequeno · M = médio · G = grande.
 - [ ] Paleta em textura e folhagem SDF
 - [x] Névoa (o bloom depende da atualização do Three.js: os arquivos de pós-processamento não estão no projeto)
 - [x] Prévias do menu com capturas do Desk World (Caderno do Ravi, fotos polaroide da cena)
-- [ ] Refinamentos de modelos da seção 4 (prioridade: Baja, ponte, cachoeira, cama)
+- [x] Refinamentos da seção 4 (23/11/2026): ponte com cordas de guarda-corpo e placa "PONTE"; placa "TÚNEL 13" na montanha; cachoeira com 2ª camada mais rápida, espuma na base e arco-íris na névoa; cobertor de tecido com dobras, costura e caimento; travesseiro que afunda; cortinas ao vento; luz no teclado do notebook
+- [ ] Seção 4, restante: chamas do monitor com o shader da fogueira, gotículas no copo, bolhas no aquário, cacto com flor, ponta do lápis gastando, tapete de ruas no quarto
 
 ### Fase 3: som e atmosfera (2 semanas)
 - [x] Sistema de som com pacotes Kenney CC0. São 68 sons em `assets/sfx`, com variação de tom, limite de 24 vozes e volume geral. Há botão **Áudio** em Opções (salvo no aparelho), e o som sintetizado fica de reserva para navegadores sem OGG. Eventos com som novo:
