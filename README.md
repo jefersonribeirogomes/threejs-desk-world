@@ -48,6 +48,11 @@ Os GLBs em `models/` vêm sem materiais; o jogo os encaixa pelo bounding box rea
 - Regras do Firestore com negação por padrão e validação de todos os campos: [`firestore.rules`](firestore.rules).
 - Content-Security-Policy, restrição de chave por domínio e App Check: passo a passo em [`docs/FIREBASE.md`](docs/FIREBASE.md).
 
+## 🙏 Inspiração e créditos
+
+- **Inspiração:** [Bruno Simon](https://bruno-simon.com/): o portfólio interativo em 3D dele inspirou este mundo e o design system da interface.
+- **Modelos e referências:** [Kenney](https://kenney.nl/): pacotes de modelos 3D e sons em domínio público (CC0), referência e primeira opção para os assets do projeto.
+
 ## 🚀 Como rodar localmente
 
 ```bash
