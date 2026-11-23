@@ -668,6 +668,30 @@
       .menu.notebook .previews { width: auto; height: 30%; }
       .menu.notebook .contents { width: auto; height: 70%; }
     }
+    /* Botões flutuantes de menu e mapa: post-its colados na borda da tela (mesma linguagem do Caderno do Ravi) */
+    .menu-trigger, .map-trigger { width: 58px; height: 58px; right: 0; filter: drop-shadow(0 4px 6px rgba(0,0,0,.35)); }
+    .menu-trigger { top: 18px; transform: rotate(-3deg); }
+    .map-trigger { top: 88px; transform: rotate(2.5deg); }
+    .menu-trigger .button-inner, .map-trigger .button-inner { border-radius: 10px 0 0 10px; }
+    .menu-trigger .button-inner { background: linear-gradient(160deg, #ffe08a, #ffc94d); }
+    .map-trigger .button-inner { background: linear-gradient(160deg, #c3e8c4, #8fd193); }
+    .menu-trigger .button-inner:after, .map-trigger .button-inner:after { border: 2px dashed #2e2a3a; border-right: none; opacity: .28; border-radius: 8px 0 0 8px; }
+    .menu-trigger .button-inner::before, .map-trigger .button-inner::before { /* fita adesiva (some junto quando o post-it recolhe) */
+      content: ""; position: absolute; z-index: 2; top: -7px; left: 10px; width: 34px; height: 13px; transform: rotate(-8deg);
+      background: rgba(255,255,255,.55); box-shadow: 0 1px 1px rgba(0,0,0,.12); pointer-events: none;
+    }
+    .menu-trigger .button-inner .icon-container .icon { width: 26px; height: 20px; }
+    .menu-trigger .button-inner .icon-container .icon .line { background: #2e2a3a; height: 3px; border-radius: 2px; }
+    .menu-trigger .button-inner .icon-container .icon::before { /* margem vermelha da folha */
+      content: ""; position: absolute; left: 5px; top: -4px; bottom: -4px; width: 2px; background: #d62839; z-index: 1;
+    }
+    .map-trigger .button-inner .icon-container .map-icon { width: 28px; height: 28px; filter: invert(1) brightness(.2); }
+    .menu-trigger .trigger-label, .map-trigger .trigger-label {
+      position: absolute; z-index: 1; left: 3px; right: 0; bottom: 2px; text-align: center; pointer-events: none;
+      font: 700 15px/1 'Amatic SC', cursive; color: #2e2a3a;
+    }
+    .menu-trigger .button-inner .icon-container, .map-trigger .button-inner .icon-container { bottom: 10px; }
+    html.is-mode-touch .radio-player { right: 76px; }
     /* Ajustes do touch: tamanho do analógico e modo canhoto */
     html.stick-s .touch-stick { width: 112px; height: 112px; } html.stick-l .touch-stick { width: 164px; height: 164px; }
     html.stick-s .stick-knob { width: 54px; height: 54px; margin: -27px 0 0 -27px; } html.stick-l .stick-knob { width: 76px; height: 76px; margin: -38px 0 0 -38px; }
@@ -750,16 +774,18 @@
   </div>
 
   <!-- ===== TRIGGERS FLUTUANTES (menu + mapa) ===== -->
-  <button class="menu-trigger js-menu-trigger" id="menu-trigger" type="button" aria-label="Abrir menu">
+  <button class="menu-trigger js-menu-trigger" id="menu-trigger" type="button" aria-label="Abrir o Caderno do Ravi (menu)">
     <div class="button-inner">
       <div class="icon-container">
         <div class="icon"><div class="line"></div><div class="line"></div><div class="line"></div></div>
       </div>
+      <span class="trigger-label">caderno</span>
     </div>
   </button>
   <button class="map-trigger js-map-trigger" id="map-trigger" type="button" aria-label="Abrir mapa">
     <div class="button-inner">
       <div class="icon-container"><img class="map-icon" src="./assets/ui/map.svg" alt=""></div>
+      <span class="trigger-label">mapa</span>
     </div>
   </button>
 

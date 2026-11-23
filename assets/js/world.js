@@ -7285,7 +7285,7 @@
     IS_QUINTAL && (function rallyGreenery() {
       const blocked = (x, z, pad) => {
         if (rallyNearest(x, z).dist < RALLY_SIDE + 3 + pad) return true;
-        if (Math.hypot(x - 185, z - 64) < 15 + pad || Math.hypot(x - 152, z - 70) < 14 + pad) return true;
+        if (Math.hypot(x - 185, z - 64) < 15 + pad || Math.hypot(x - 152, z - 70) < 14 + pad || Math.hypot(x - 133, z - 47) < 14 + pad) return true; // ilhas (Baja, Fogueira, 86)
         if (Math.hypot(x - MOUNTAIN.x, z - MOUNTAIN.z) < MOUNTAIN.r + pad) return true;   // montanha (decorada à parte)
         if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 3 + pad) return true;            // lago do miolo
         if (RALLY_CROSSINGS.some((c) => Math.hypot(x - c.x, z - c.z) < 14 + pad)) return true;
@@ -7459,12 +7459,34 @@
         const p = at(t, -(RALLY_SIDE + 4.5));
         if (!clear(p.x, p.z, 3.6)) continue;
         placeKenney(K, 'lightPostLarge', { x: p.x, z: p.z, rotY: yawOf(p.s) + Math.PI / 2, scale: 10,
-          collider: { r: 0.7, h: 8, name: 'POSTE DE LUZ' },
-          onLoad: () => {
+          onLoad: (m) => {
+            // A origem do modelo da Kenney não fica no pé do poste: acha o pé (vértices de baixo) e a luminária
+            // (vértices de cima), encaixa o pé no ponto pedido e afasta o poste até a luminária ficar na beira da pista
+            const lo = { x: 0, z: 0, n: 0 }, hi = { x: 0, z: 0, n: 0 }, v = new THREE.Vector3();
+            const bb = new THREE.Box3().setFromObject(m), H = bb.max.y - bb.min.y;
+            m.updateMatrixWorld(true);
+            m.traverse((o) => {
+              if (!o.isMesh) return;
+              const pos = o.geometry.attributes.position;
+              for (let i = 0; i < pos.count; i++) {
+                v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+                if (v.y < bb.min.y + H * 0.15) { lo.x += v.x; lo.z += v.z; lo.n++; }
+                else if (v.y > bb.max.y - H * 0.2) { hi.x += v.x; hi.z += v.z; hi.n++; }
+              }
+            });
+            if (!lo.n || !hi.n) return;
+            lo.x /= lo.n; lo.z /= lo.n; hi.x /= hi.n; hi.z /= hi.n;
+            const nx = p.x - p.s.x, nz = p.z - p.s.z, nl = Math.hypot(nx, nz) || 1; // direção "para fora" da pista
+            let bx = p.x, bz = p.z;
+            const headDist = rallyNearest(bx + (hi.x - lo.x), bz + (hi.z - lo.z)).dist;
+            if (headDist < RALLY_SIDE + 1) { const push = RALLY_SIDE + 1 - headDist; bx += (nx / nl) * push; bz += (nz / nl) * push; }
+            m.position.x += bx - lo.x; m.position.z += bz - lo.z;
+            obstacles.push({ x: bx, z: bz, r: 0.8, h: 8, isStatic: true, level: 'floor', name: 'POSTE DE LUZ' });
+            const hx = bx + (hi.x - lo.x), hz = bz + (hi.z - lo.z);
             const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: softGlowTexture, color: 0xffe2a8, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
-            glow.position.set(p.x, FLOOR_SURFACE_Y + 7.6, p.z); glow.scale.setScalar(6);
+            glow.position.set(hx, bb.max.y - 0.6, hz); glow.scale.setScalar(6);
             const pool = new THREE.Mesh(new THREE.CircleGeometry(7, 20), new THREE.MeshBasicMaterial({ map: softGlowTexture, color: 0xffe2a8, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
-            pool.rotation.x = -Math.PI / 2; pool.position.set(p.x, FLOOR_SURFACE_Y + 0.15, p.z);
+            pool.rotation.x = -Math.PI / 2; pool.position.set(hx, FLOOR_SURFACE_Y + 0.15, hz);
             bedroomWorld.add(glow, pool);
             nightGlows.push({ mat: glow.material, day: 0, night: 0.9 }, { mat: pool.material, day: 0, night: 0.35 });
           } });
@@ -14925,7 +14947,7 @@
       const free = (x, z, r) => x > 127 && x < 336 && z > -76 && z < 96 &&
         rallyNearest(x, z).dist > RALLY_SIDE + r + 2 && mountainH(x, z) < 0.05 &&
         Math.hypot(x - 185, z - 64) > 16 + r && Math.hypot(x - 152, z - 70) > 15 + r &&
-        Math.hypot(x - POND.x, z - POND.z) > POND.r + 3 + r && Math.hypot(x - 122, z - 20) > 14 && Math.hypot(x - 134, z - 46) > 9 &&
+        Math.hypot(x - POND.x, z - POND.z) > POND.r + 3 + r && Math.hypot(x - 122, z - 20) > 14 && Math.hypot(x - 133, z - 47) > 15 + r &&
         used.every((u) => Math.hypot(x - u[0], z - u[1]) > u[2] + r);
       const scatter = (names, count, height, r, collide) => {
         const spots = names.map(() => []);
@@ -14941,13 +14963,57 @@
       scatter(['BirchTree_1', 'BirchTree_2', 'DeadTree_1'], 8, 18, 3.5, 0.9);
       scatter(['Bush', 'Bush_Flowers', 'Bush_Large_Flowers', 'Bush_Small_Flowers'], 26, 3.6, 2.2, 0);
       scatter(['Flower_1_Clump', 'Flower_3_Clump', 'Flower_4_Clump'], 45, 1.6, 0.9, 0);
-      // Toyota AE86 estacionado ao lado da casa ("Toyota AE86" por IvOfficial, poly.pizza, CC-BY 3.0)
+      // Ilha do 86: Toyota AE86 ("Toyota AE86" por IvOfficial, poly.pizza, CC-BY 3.0) + painel sobre Initial D + Shiba
+      const AE86 = { x: 133, z: 47 };
+      createIsland({
+        id: 'ae86', name: 'Ilha do 86 · Hachi-Roku', label: 'Ilha do 86', x: AE86.x, z: AE86.z, r: 12, point: [142, 38],
+        text: 'O Toyota AE86 Sprinter Trueno, apelidado de Hachi-Roku ("oito-seis" em japonês), é o carro de Takumi Fujiwara em Initial D, mangá de Shuichi Shigeno (1995) que virou anime. ' +
+          'Branco e preto como um panda, ele entregava tofu de madrugada descendo o monte Akina e virou lenda vencendo carros muito mais potentes nas curvas fechadas, no drift. ' +
+          'O Shiba Inu toma conta do 86 por aqui. Modelo 3D low poly de IvOfficial (CC BY 3.0, Poly Pizza).',
+        actions: [
+          { label: '📯 Buzinar com o 86', run: () => { playHonk(); setTimeout(playHonk, 260); showCarSpeech('Bi-biii! 🚗💨', 1800); } },
+          { label: '🐕 Fazer carinho no Shiba', run: () => { const d = critters.find((c) => c.isAe86Dog); if (d) { d.state = 'idle'; d.timer = 3; play(d, 'eat'); } showCarSpeech('Au au! 🐕', 1800); } }
+        ]
+      });
       loadGLB('./models/polypizza/toyota-ae86.glb').then((proto) => {
         const car = fitToSize(proto.clone(true), { length: 11 });
-        car.position.set(134, FLOOR_SURFACE_Y, 46); car.rotation.y = Math.PI * 0.08;
+        car.position.set(AE86.x - 1, ISLAND_Y, AE86.z + 2); car.rotation.y = Math.PI * 0.08;
         scene.add(car);
-        obstacles.push({ x: 134, z: 46, r: 6, box: { hx: 2.6, hz: 5.6 }, boxRot: car.rotation.y, h: 4, isStatic: true, level: 'floor', name: 'TOYOTA AE86' });
+        obstacles.push({ x: AE86.x - 1, z: AE86.z + 2, r: 6, box: { hx: 2.6, hz: 5.6 }, boxRot: car.rotation.y, h: 4 + ISLAND_TOP, isStatic: true, level: 'floor', name: 'TOYOTA AE86' });
       }).catch((e) => console.warn('[ae86]', e));
+      // Painel informativo com arte própria (estrada de montanha à noite, curvas em "U" e o 86 panda)
+      {
+        const c = document.createElement('canvas'); c.width = 512; c.height = 320;
+        const x = c.getContext('2d');
+        const sky = x.createLinearGradient(0, 0, 0, 320); sky.addColorStop(0, '#0d1b3d'); sky.addColorStop(1, '#3c2a5e');
+        x.fillStyle = sky; x.fillRect(0, 0, 512, 320);
+        x.fillStyle = '#fff'; for (let i = 0; i < 60; i++) x.fillRect((i * 97) % 512, (i * 53) % 150, 2, 2);
+        x.fillStyle = '#f4e9c1'; x.beginPath(); x.arc(420, 60, 26, 0, 7); x.fill();
+        x.fillStyle = '#1b2a1f'; x.beginPath(); x.moveTo(0, 320); x.lineTo(0, 190); x.lineTo(130, 120); x.lineTo(250, 70); x.lineTo(360, 130); x.lineTo(512, 170); x.lineTo(512, 320); x.fill();
+        x.strokeStyle = '#d9d2b6'; x.lineWidth = 7; x.lineJoin = 'round'; x.beginPath();
+        x.moveTo(40, 300); x.lineTo(300, 270); x.quadraticCurveTo(350, 262, 300, 240); x.lineTo(150, 225); x.quadraticCurveTo(100, 215, 150, 200);
+        x.lineTo(280, 180); x.quadraticCurveTo(330, 172, 290, 155); x.lineTo(230, 140); x.stroke();
+        // 86 panda em perfil
+        x.save(); x.translate(300, 285);
+        x.fillStyle = '#111'; x.fillRect(-60, -20, 120, 16);
+        x.fillStyle = '#f5f5f5'; x.beginPath(); x.moveTo(-62, -20); x.lineTo(-50, -34); x.lineTo(-12, -48); x.lineTo(30, -48); x.lineTo(52, -34); x.lineTo(64, -30); x.lineTo(64, -20); x.fill();
+        x.fillStyle = '#6fb7e6'; x.fillRect(-8, -44, 34, 11);
+        x.fillStyle = '#ffd35a'; x.fillRect(58, -28, 6, 5);
+        x.fillStyle = '#222'; [-36, 40].forEach((wx) => { x.beginPath(); x.arc(wx, -4, 11, 0, 7); x.fill(); });
+        x.restore();
+        x.fillStyle = '#ffd166'; x.font = 'bold 40px Nunito, sans-serif'; x.fillText('HACHI-ROKU', 22, 52);
+        x.fillStyle = '#fff'; x.font = 'bold 20px Nunito, sans-serif'; x.fillText('AE86 · monte Akina · drift', 24, 82);
+        const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+        const board = new THREE.Group();
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(9, 5.6, 0.3), [0, 0, 0, 0, 0, 0].map((_, i) => i === 4 ? new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }) : new THREE.MeshStandardMaterial({ color: 0x2b2e35, roughness: 0.6 })));
+        panel.position.y = 5.2; panel.castShadow = true;
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.6, 8), new THREE.MeshStandardMaterial({ color: 0x2b2e35 }));
+        [-3.2, 3.2].forEach((lx) => { const l = leg.clone(); l.position.set(lx, 1.3, 0); board.add(l); });
+        board.add(panel);
+        board.position.set(AE86.x - 8.5, ISLAND_Y, AE86.z + 2); board.rotation.y = Math.PI / 2; // atrás do carro, de frente para a pista
+        scene.add(board);
+        obstacles.push({ x: AE86.x - 8.5, z: AE86.z + 2, r: 1.2, box: { hx: 4.5, hz: 0.4 }, boxRot: board.rotation.y, h: 8, isStatic: true, level: 'floor', name: 'PAINEL DO 86' });
+      }
     }
 
     // ============================================================================
@@ -14976,6 +15042,7 @@
         const c = { obj, mixer, acts, cur: null, home: { x: opts.x, z: opts.z }, radius: opts.radius || 10,
           walk: opts.walk || 3, run: opts.run || 9, fleeR: opts.fleeR || 0, kind: opts.kind || 'walker',
           state: 'idle', timer: 1 + Math.random() * 3, tx: opts.x, tz: opts.z, y0: obj.position.y, vy: 0, canGo: opts.canGo || (() => true) };
+        if (opts.tag) c[opts.tag] = true;
         play(c, 'idle');
         mixer.update(Math.random() * 2);
         critters.push(c);
@@ -15053,12 +15120,17 @@
     }
     {
       const inYard = (x, z) => x > 126 && x < 336 && z > -76 && z < 96 && mountainH(x, z) < 0.05 && Math.hypot(x - POND.x, z - POND.z) > POND.r + 2 &&
-        Math.hypot(x - 185, z - 64) > 17 && Math.hypot(x - 152, z - 70) > 16 && Math.hypot(x - 134, z - 46) > 7 &&
+        Math.hypot(x - 185, z - 64) > 17 && Math.hypot(x - 152, z - 70) > 16 && Math.hypot(x - 133, z - 47) > 14 &&
         (!IS_QUINTAL || rallyNearest(x, z).dist > RALLY_SIDE + 1.5); // bichos não passeiam na pista nem nas ilhas
       const QQ = 'quintal';
       // Shiba Inu do quintal: passeia perto da casa e corre quando o carrinho chega perto
-      addCritter('./models/quaternius/animals/shiba-inu.glb', { scene: QQ, x: 133, z: 24, height: 5, radius: 26, walk: 4, run: 13, fleeR: 11,
-        clips: { idle: /^Idle$/, walk: /^Walk$/, run: /^Gallop$/, eat: /^Eating$/ }, canGo: inYard });
+      const onAe86Island = (x, z) => {
+        const dx = x - 132, dz = z - 49, c = Math.cos(-Math.PI * 0.08), s = Math.sin(-Math.PI * 0.08);
+        const lx = dx * c - dz * s, lz = dx * s + dz * c; // coordenadas no eixo do carro
+        return Math.hypot(x - 133, z - 47) < 9.5 && !(Math.abs(lx) < 3.6 && Math.abs(lz) < 6.6) && Math.abs(x - 124.5) > 1.2;
+      };
+      addCritter('./models/quaternius/animals/shiba-inu.glb', { scene: QQ, x: 126, z: 41, y: ISLAND_Y, height: 4.5, radius: 9, walk: 3, run: 7, fleeR: 6,
+        clips: { idle: /^Idle$/, walk: /^Walk$/, run: /^Gallop$/, eat: /^Eating$/ }, canGo: onAe86Island, tag: 'isAe86Dog' });
       // Pombos no gramado: levantam voo quando o carrinho passa rápido
       [[170, 84], [176, 86], [300, -60], [306, -57]].forEach(([x, z]) => addCritter('./models/quaternius/animals/pigeon.glb', {
         scene: QQ, kind: 'bird', x, z, height: 1.8, radius: 4, walk: 1.2, fleeR: 12,

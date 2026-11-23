@@ -67,7 +67,7 @@ Os GLBs em `models/` vêm sem materiais; o jogo os encaixa pelo bounding box rea
 | Página | Cenário | Como chegar |
 | --- | --- | --- |
 | `index.html` | Quarto + mesa (circuito, ilhas, caminhãozinho do Ravi) | Página inicial |
-| `quintal.html` | Quintal: rally do Baja 13, Ilha do Baja, Ilha da Fogueira, montanha da cachoeira | Porta na parede leste do quarto |
+| `quintal.html` | Quintal: rally do Baja 13, Ilha do Baja, Ilha da Fogueira, Ilha do 86 (AE86 + Shiba), montanha da cachoeira | Porta na parede leste do quarto |
 | — | Sala (em reforma) | Porta da frente do quarto |
 
 As duas páginas usam o mesmo motor (`assets/js/world.js`); cada uma define `window.DESK_SCENE` e só constrói/simula o próprio cenário. O `quintal.html` é gerado a partir do `index.html`: depois de mudar a interface do `index.html`, rode `node scripts/gerar-quintal.mjs`.
