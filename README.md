@@ -67,6 +67,9 @@ As duas páginas usam o mesmo motor (`assets/js/world.js`); cada uma define `win
 - **Props do quarto:** [Kay Lousberg / KayKit](https://kaylousberg.itch.io/), Mixed Bag 2 (CC0).
 - **Carro estacionado no quintal:** "[Toyota AE86](https://poly.pizza/m/ZEFWmOPSgh)" por [IvOfficial](https://poly.pizza/u/IvOfficial), licenciado em [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) (via Poly Pizza; textura e formato originais).
 
+- **Mais modelos:** Quaternius via Poly Pizza (Shiba Inu, pombo, hidrante, viatura; CC0), Kenney Cube Pets (gato e pintinhos; CC0), "[Fire Truck](https://poly.pizza/m/7iHJ519SwxG)" por Ivan Klus e "[Swing set](https://poly.pizza/m/e-IJdcqZH4p)" por Poly by Google ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)).
+- **Sons do Freesound:** "[Night time crickets call](https://freesound.org/people/Clearwavsound/sounds/523439/)" por Clearwavsound ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)) e "[Tires on Gravel Road 1](https://freesound.org/people/OBXJohn/sounds/251661/)" por OBXJohn (CC0).
+
 Lista completa de modelos e onde aparecem: [`models/CREDITS.md`](models/CREDITS.md) e [`models/kenney/CREDITS.md`](models/kenney/CREDITS.md).
 
 ## 🚀 Como rodar localmente

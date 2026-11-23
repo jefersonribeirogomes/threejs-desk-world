@@ -8754,7 +8754,8 @@
       release: ['drop_002'],
       sparkle: ['glass_001', 'bong_001'],
       mud: ['impactSoft_medium_000', 'impactSoft_medium_002'],
-      grass: ['footstep_grass_000', 'footstep_grass_001']
+      grass: ['footstep_grass_000', 'footstep_grass_001'],
+      flap: ['scratch_001', 'scratch_002']
     };
     const sfxState = { buffers: new Map(), loading: false, enabled: true, master: null, voices: 0 };
     try { sfxState.enabled = localStorage.getItem('audioEnabled') !== '0'; } catch (e) { /* sem storage */ }
@@ -14098,6 +14099,13 @@
           setStatusBanner(`⚡ Recarga do Baja: ${Math.round(carBattery)}%`, '#d5ff95');
         }
       }
+      // Hidrante do Posto do Bombeiro: encostou, encheu
+      if (hydrantObj && curY < -15 && Math.hypot(nextX - HYDRANT.x, nextZ - HYDRANT.z) < HYDRANT.r && totalWater() < waterCapacity()) {
+          addWater(dt * 45);
+          updateWaterHUD();
+          setStatusBanner(`🚒 Enchendo no hidrante: ${Math.round(totalWater())}%`, '#35e0ff');
+          if (Math.random() < 0.3) splashAt(HYDRANT.x + (Math.random() - 0.5), FLOOR_SURFACE_Y + 4, HYDRANT.z + (Math.random() - 0.5), 1, 0.5);
+      }
       if (g.island) {
         const isl = islandAt(nextX, nextZ);
         if (isl && !isl.visited) {
@@ -14868,6 +14876,171 @@
         obstacles.push({ x: 134, z: 46, r: 6, box: { hx: 2.6, hz: 5.6 }, boxRot: car.rotation.y, h: 4, isStatic: true, level: 'floor', name: 'TOYOTA AE86' });
       }).catch((e) => console.warn('[ae86]', e));
     }
+
+    // ============================================================================
+    // BICHOS, BRINQUEDOS GRANDES E HIDRANTE (Quaternius, Kenney Cube Pets, Poly Pizza)
+    // Bichos passeiam perto de "casa", fogem do carrinho; pombos levantam voo. Hidrante enche o tanque.
+    // ============================================================================
+    const critters = [];
+    // Modelos animados (com esqueleto) precisam de uma cópia própria: carrega o arquivo de novo (o navegador já tem em cache)
+    function loadAnimated(url) {
+      return new Promise((resolve, reject) => gltfLoader.load(url, (g) => {
+        g.scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+        resolve(g);
+      }, undefined, reject));
+    }
+    function addCritter(url, opts) {
+      if (opts.scene !== SCENE) return;
+      loadAnimated(url).then((g) => {
+        const obj = fitToSize(g.scene, { height: opts.height });
+        obj.position.set(opts.x, opts.y !== undefined ? opts.y : FLOOR_SURFACE_Y, opts.z);
+        obj.rotation.y = Math.random() * Math.PI * 2;
+        scene.add(obj);
+        const mixer = new THREE.AnimationMixer(g.scene);
+        const clip = (re) => g.animations.find((a) => re.test(a.name));
+        const acts = {};
+        Object.entries(opts.clips).forEach(([k, re]) => { const c = clip(re); if (c) acts[k] = mixer.clipAction(c); });
+        const c = { obj, mixer, acts, cur: null, home: { x: opts.x, z: opts.z }, radius: opts.radius || 10,
+          walk: opts.walk || 3, run: opts.run || 9, fleeR: opts.fleeR || 0, kind: opts.kind || 'walker',
+          state: 'idle', timer: 1 + Math.random() * 3, tx: opts.x, tz: opts.z, y0: obj.position.y, vy: 0, canGo: opts.canGo || (() => true) };
+        play(c, 'idle');
+        mixer.update(Math.random() * 2);
+        critters.push(c);
+      }).catch((e) => console.warn('[bicho]', url, e));
+    }
+    function play(c, name) {
+      const a = c.acts[name] || c.acts.idle;
+      if (!a || c.cur === a) return;
+      a.reset().fadeIn(0.25).play();
+      if (c.cur) c.cur.fadeOut(0.25);
+      c.cur = a;
+    }
+    function updateCritters(dt) {
+      if (!critters.length) return;
+      const cx = vehicle.position.x, cz = vehicle.position.z;
+      const carFast = Math.abs(carSpeed) > 0.05;
+      for (let i = 0; i < critters.length; i++) {
+        const c = critters[i], o = c.obj;
+        c.mixer.update(dt);
+        const dCar = Math.hypot(o.position.x - cx, o.position.z - cz);
+        if (c.kind === 'bird') {
+          if (c.state === 'fly') {
+            c.vy = Math.min(c.vy + dt * 6, 9);
+            o.position.y += c.vy * dt;
+            o.position.x += Math.sin(o.rotation.y) * 10 * dt; o.position.z += Math.cos(o.rotation.y) * 10 * dt;
+            c.timer -= dt;
+            if (c.timer <= 0) { o.visible = false; c.state = 'away'; c.timer = 8 + Math.random() * 8; }
+            continue;
+          }
+          if (c.state === 'away') {
+            c.timer -= dt;
+            if (c.timer <= 0 && Math.hypot(c.home.x - cx, c.home.z - cz) > 25) {
+              o.position.set(c.home.x + (Math.random() - 0.5) * 6, c.y0, c.home.z + (Math.random() - 0.5) * 6);
+              o.visible = true; c.state = 'idle'; c.timer = 2; play(c, 'idle');
+            }
+            continue;
+          }
+          if (dCar < c.fleeR && carFast) {
+            c.state = 'fly'; c.vy = 2; c.timer = 3;
+            o.rotation.y = Math.atan2(o.position.x - cx, o.position.z - cz);
+            play(c, 'fly');
+            if (!sfx('flap', { vol: 0.35, rate: 1.4 })) playTone(900, 0, 0.05, 'triangle', 0.02);
+            continue;
+          }
+        } else if (c.fleeR && dCar < c.fleeR) {
+          // Foge na direção oposta ao carrinho
+          const ax = o.position.x - cx, az = o.position.z - cz, d = Math.hypot(ax, az) || 1;
+          c.state = 'flee'; c.tx = o.position.x + (ax / d) * 18; c.tz = o.position.z + (az / d) * 18; c.timer = 1.2;
+        }
+        if (c.state === 'idle') {
+          play(c, c.acts.eat && Math.random() < 0.002 ? 'eat' : (c.cur === c.acts.eat ? 'eat' : 'idle'));
+          c.timer -= dt;
+          if (c.timer <= 0) {
+            for (let t = 0; t < 8; t++) {
+              const a = Math.random() * Math.PI * 2, r = c.radius * Math.sqrt(Math.random());
+              const tx = c.home.x + Math.cos(a) * r, tz = c.home.z + Math.sin(a) * r;
+              if (c.canGo(tx, tz)) { c.tx = tx; c.tz = tz; c.state = 'walk'; break; }
+            }
+            c.timer = 2 + Math.random() * 4;
+          }
+        } else {
+          const run = c.state === 'flee';
+          const dx = c.tx - o.position.x, dz = c.tz - o.position.z, d = Math.hypot(dx, dz);
+          if (d < 0.6 || (run && (c.timer -= dt) <= 0 && dCar > c.fleeR)) { c.state = 'idle'; c.timer = 1.5 + Math.random() * 3; play(c, 'idle'); continue; }
+          const sp = (run ? c.run : c.walk) * dt;
+          const nx = o.position.x + (dx / d) * Math.min(sp, d), nz = o.position.z + (dz / d) * Math.min(sp, d);
+          if (!c.canGo(nx, nz)) { c.state = 'idle'; c.timer = 0.5; play(c, 'idle'); continue; }
+          o.position.x = nx; o.position.z = nz;
+          const want = Math.atan2(dx, dz);
+          let dr = want - o.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr));
+          o.rotation.y += dr * Math.min(1, dt * 8);
+          play(c, run ? 'run' : 'walk');
+        }
+      }
+    }
+    {
+      const inYard = (x, z) => x > 126 && x < 336 && z > -76 && z < 96 && mountainH(x, z) < 0.05 && Math.hypot(x - POND.x, z - POND.z) > POND.r + 2 &&
+        Math.hypot(x - 185, z - 64) > 17 && Math.hypot(x - 152, z - 70) > 16 && Math.hypot(x - 134, z - 46) > 7 &&
+        (!IS_QUINTAL || rallyNearest(x, z).dist > RALLY_SIDE + 1.5); // bichos não passeiam na pista nem nas ilhas
+      const QQ = 'quintal';
+      // Shiba Inu do quintal: passeia perto da casa e corre quando o carrinho chega perto
+      addCritter('./models/quaternius/animals/shiba-inu.glb', { scene: QQ, x: 133, z: 24, height: 5, radius: 26, walk: 4, run: 13, fleeR: 11,
+        clips: { idle: /^Idle$/, walk: /^Walk$/, run: /^Gallop$/, eat: /^Eating$/ }, canGo: inYard });
+      // Pombos no gramado: levantam voo quando o carrinho passa rápido
+      [[170, 84], [176, 86], [300, -60], [306, -57]].forEach(([x, z]) => addCritter('./models/quaternius/animals/pigeon.glb', {
+        scene: QQ, kind: 'bird', x, z, height: 1.8, radius: 4, walk: 1.2, fleeR: 12,
+        clips: { idle: /\|Idle$/, walk: /\|Walk$/, fly: /\|Jump$/ }, canGo: inYard }));
+      // Pintinhos (Kenney Cube Pets) perto do balanço
+      [[136, -48], [139, -45], [134, -43]].forEach(([x, z]) => addCritter('./models/kenney/cube-pets/animal-chick.glb', {
+        scene: QQ, x, z, height: 1.6, radius: 9, walk: 2, run: 7, fleeR: 7,
+        clips: { idle: /^idle$/, walk: /^walk$/, run: /^run$/, eat: /^eat$/ }, canGo: inYard }));
+      // Gato na cama do Ravi (quarto)
+      addCritter('./models/kenney/cube-pets/animal-cat.glb', { scene: 'quarto', x: 120, z: 10, y: FLOOR_SURFACE_Y + 11, height: 3.6, radius: 0.1,
+        clips: { idle: /^idle$/, walk: /^idle$/, eat: /^eat$/ } });
+      // Balanço do quintal ("Swing set", Poly by Google, CC-BY)
+      placeGLB('./models/polypizza/swing-set.glb', { scene: QQ, x: 140, z: -62, rotY: 0.3, height: 16,
+        collider: { r: 9, box: { hx: 9, hz: 4 }, boxRot: 0.3, h: 16 }, name: 'BALANÇO' });
+      // Brinquedos grandes no quarto: caminhão de bombeiro (Ivan Klus, CC-BY) e viatura de polícia (Quaternius, CC0)
+      placeGLB('./models/polypizza/fire-truck.glb', { scene: 'quarto', x: 160, z: -22, rotY: 0.5, length: 16,
+        collider: { r: 8, box: { hx: 3.4, hz: 8 }, boxRot: 0.5, h: 8 }, name: 'CAMINHÃO DE BOMBEIRO' });
+      placeGLB('./models/quaternius/police-car.glb', { scene: 'quarto', x: 198, z: 44, rotY: -0.7, length: 11,
+        collider: { r: 6, box: { hx: 2.8, hz: 5.5 }, boxRot: -0.7, h: 5 }, name: 'VIATURA' });
+    }
+    // Hidrante ao lado do Posto do Bombeiro: encosta nele e o tanque d'água enche
+    const HYDRANT = { x: -110, z: 67, r: 6.5 };
+    let hydrantObj = null;
+    placeGLB('./models/quaternius/fire-hydrant.glb', { scene: 'quarto', x: HYDRANT.x, z: HYDRANT.z, rotY: 0.6, height: 5.5,
+      collider: { r: 1.4, h: 5.5 }, name: 'HIDRANTE', onLoad: (m) => { hydrantObj = m; } });
+
+    // Sons ambientes em loop: grilos à noite e pneu no cascalho do quintal
+    const ambientLoops = { started: false, list: [] };
+    function updateAmbientAudio() {
+      if (!audioCtx) return;
+      if (!ambientLoops.started) {
+        ambientLoops.started = true;
+        [['crickets', './assets/sfx/loops/crickets-night.wav'], ['gravel', './assets/sfx/loops/tires-gravel.mp3']].forEach(([name, url]) => {
+          fetch(url).then((r) => r.arrayBuffer()).then((b) => new Promise((res, rej) => audioCtx.decodeAudioData(b, res, rej))).then((buf) => {
+            const src = audioCtx.createBufferSource(); src.buffer = buf; src.loop = true;
+            const g = audioCtx.createGain(); g.gain.value = 0;
+            src.connect(g).connect(audioOut(audioCtx)); src.start();
+            ambientLoops.list.push({ name, src, g });
+          }).catch(() => { /* sem o som ambiente */ });
+        });
+      }
+      const t = audioCtx.currentTime;
+      for (const L of ambientLoops.list) {
+        let v = 0, rate = 1;
+        if (L.name === 'crickets') v = (dayCycle.night || 0) * (IS_QUINTAL ? 0.32 : 0.08);
+        else if (L.name === 'gravel') {
+          const k = Math.min(1, Math.abs(carSpeed) / baseMaxSpeed);
+          v = IS_QUINTAL && !carAirborne && !isFallingOff && vehicle.position.y < -15 ? k * 0.4 : 0;
+          rate = 0.75 + 0.45 * k;
+        }
+        L.g.gain.setTargetAtTime(v, t, 0.15);
+        L.src.playbackRate.setTargetAtTime(rate, t, 0.2);
+      }
+    }
+
     // Retira do quintal tudo o que pertence ao quarto (o motor é o mesmo; aqui ele só não desenha nem simula)
     function cullOtherScene() {
       if (!IS_QUINTAL) return;
@@ -15091,6 +15264,8 @@
       updateFloatingProps(elapsedTime);
       updateShadowFollow();
       updateDayCycle(dt);
+      updateCritters(Math.min(dt, 0.1));
+      updateAmbientAudio();
       updateWorldEffects(elapsedTime, dt);
       updateGateGlow(elapsedTime);
       updateSiren(elapsedTime);

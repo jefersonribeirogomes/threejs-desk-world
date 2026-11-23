@@ -9,6 +9,7 @@ Modelos de [Kenney](https://kenney.nl), em domínio público ([CC0 1.0](https://
 | Toy Car Kit | https://kenney.nl/assets/toy-car-kit | `item-coin-gold`, `item-coin-silver`, `item-coin-bronze` | 40 moedas colecionáveis (mesa, quarto e rally) |
 | Food Kit | https://kenney.nl/assets/food-kit | `donut-sprinkles`, `cupcake`, `cookie-chocolate`, `popsicle`, `soda-can`, `fries` | Lanches da mesa (empurráveis, quebram) |
 | Minigolf Kit | https://kenney.nl/assets/minigolf-kit | `structure-windmill`, `castle`, `flag-large-red` | Ilha dos Brinquedos (moinho com pás girando) |
+| Cube Pets | https://kenney.nl/assets/cube-pets | `animal-cat`, `animal-chick` | Gato na cama do Ravi e pintinhos no quintal (animados) |
 | Furniture Kit | https://kenney.nl/assets/furniture-kit | `bear` | Ursinho na cama do Ravi |
 
 O carregamento fica em `index.html` (`loadKenney` / `placeKenney`). Os modelos mantêm as cores originais de material; o outdoor recebe uma arte própria (Piratas do Vale) no lugar da marca fictícia "Tankco".
