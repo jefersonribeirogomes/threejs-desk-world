@@ -12,6 +12,7 @@ Um mundo 3D interativo em **Three.js (r128)** inspirado em Bruno Simon: o cenár
 | `E` | Pegar / soltar objeto |
 | `V` | Trocar câmera |
 | `M` | Mapa (fast travel) |
+| `U` | Destravar (volta à última posição segura) |
 | `Esc` | Menu |
 | `F2` | Modo dev (mover, girar, inserir e excluir objetos) |
 | Scroll | Zoom |

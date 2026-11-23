@@ -740,6 +740,15 @@
                     <td><button class="button is-small has-tooltip" id="btn-toggle-dev" type="button"><div class="tooltip">Mover, girar, inserir e excluir objetos [F2]</div><span>Modo dev</span></button></td>
                   </tr>
                   <tr>
+                    <td>Carrinho</td>
+                    <td class="button-row"><button class="button is-small has-tooltip" id="opt-unstuck" type="button"><div class="tooltip">Volta para a última posição segura [U]</div><span>Destravar</span></button>
+                      <button class="button is-small has-tooltip" id="opt-respawn" type="button"><div class="tooltip">Leva ao ponto de viagem mais próximo</div><span>Respawn</span></button></td>
+                  </tr>
+                  <tr>
+                    <td>Dia e noite</td>
+                    <td><button class="button is-small has-tooltip" id="opt-daycycle" type="button"><div class="tooltip">Automático (ciclo de 8 min) · Dia · Noite</div><span>Automático</span></button></td>
+                  </tr>
+                  <tr>
                     <td>Partida</td>
                     <td><button class="button is-small has-tooltip" id="opt-reset" type="button"><div class="tooltip">Restaura todos os objetos e o carrinho</div><span>Reiniciar</span></button></td>
                   </tr>
@@ -1031,6 +1040,21 @@
     const canvas = document.querySelector('canvas.webgl');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xd5cfc7);
+    // Névoa leve: dá profundidade ao quarto grande (a cor acompanha o ciclo dia/noite)
+    scene.fog = new THREE.Fog(0xd5cfc7, 230, 680);
+    // Os shaders próprios (grama, folhas, água, lama, cachoeira) não recebem névoa sozinhos: este helper injeta
+    function withFog(mat) {
+      mat.fog = true;
+      Object.assign(mat.uniforms, { fogColor: { value: new THREE.Color() }, fogNear: { value: 1e5 }, fogFar: { value: 2e5 }, fogDensity: { value: 0 } });
+      const lastBrace = (src) => src.lastIndexOf('}');
+      let vs = mat.vertexShader, fs = mat.fragmentShader;
+      vs = 'varying float vFogD;\n' + vs;
+      vs = vs.slice(0, lastBrace(vs)) + '  vFogD = -(viewMatrix * modelMatrix * vec4(position, 1.0)).z;\n}' + vs.slice(lastBrace(vs) + 1);
+      fs = 'uniform vec3 fogColor;\nuniform float fogNear;\nuniform float fogFar;\nvarying float vFogD;\n' + fs;
+      fs = fs.slice(0, lastBrace(fs)) + '  gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(fogNear, fogFar, vFogD));\n}' + fs.slice(lastBrace(fs) + 1);
+      mat.vertexShader = vs; mat.fragmentShader = fs;
+      return mat;
+    }
 
     const decorLights = []; // luzes decorativas controladas pela qualidade
     // Textura de brilho radial suave (sprites de luz falsa no lugar de PointLights)
@@ -1148,6 +1172,46 @@
     scene.add(mainLight);
     scene.add(mainLight.target);
     const SHADOW_OFFSET = new THREE.Vector3(25, 65, 42);
+    // ============================================================================
+    // CICLO DIA/NOITE (como os dayCycles do DS): manhã → tarde → pôr do sol → noite → amanhecer.
+    // Interpola céu, névoa, luz ambiente e "sol"; à noite acendem postes, abajur e brilhos.
+    // Modo em Opções: Automático (8 min por ciclo) · Dia · Noite.
+    // ============================================================================
+    const DAY_KEYS = [
+      { p: 0.00, bg: 0xd5cfc7, amb: 0.85, ambC: 0xfff8f0, sun: 1.15, sunC: 0xfffdf8, night: 0 },
+      { p: 0.42, bg: 0xd5cfc7, amb: 0.85, ambC: 0xfff8f0, sun: 1.15, sunC: 0xfffdf8, night: 0 },
+      { p: 0.52, bg: 0xe2b392, amb: 0.62, ambC: 0xffd2b0, sun: 0.85, sunC: 0xffa86a, night: 0.3 },
+      { p: 0.62, bg: 0x2c2742, amb: 0.34, ambC: 0x8a96d8, sun: 0.28, sunC: 0x93a9ff, night: 1 },
+      { p: 0.86, bg: 0x2c2742, amb: 0.34, ambC: 0x8a96d8, sun: 0.28, sunC: 0x93a9ff, night: 1 },
+      { p: 0.94, bg: 0xf0c6b0, amb: 0.62, ambC: 0xffe0d0, sun: 0.85, sunC: 0xffcfa8, night: 0.3 },
+      { p: 1.00, bg: 0xd5cfc7, amb: 0.85, ambC: 0xfff8f0, sun: 1.15, sunC: 0xfffdf8, night: 0 }
+    ];
+    const dayCycle = { mode: 'auto', duration: 480, progress: 0.15, night: 0 };
+    try { dayCycle.mode = localStorage.getItem('dayCycleMode') || 'auto'; } catch (e) { /* sem storage */ }
+    const nightGlows = []; // { mat, day, night } — opacidade dos brilhos falsos conforme a noite
+    const _c1 = new THREE.Color(), _c2 = new THREE.Color();
+    function updateDayCycle(dt) {
+      if (dayCycle.mode === 'auto') dayCycle.progress = (dayCycle.progress + dt / dayCycle.duration) % 1;
+      const target = dayCycle.mode === 'day' ? 0.2 : dayCycle.mode === 'night' ? 0.74 : dayCycle.progress;
+      if (dayCycle.mode !== 'auto') dayCycle.progress += (target - dayCycle.progress) * Math.min(1, dt * 1.5);
+      const p = dayCycle.progress;
+      let i = 0;
+      while (i < DAY_KEYS.length - 2 && p > DAY_KEYS[i + 1].p) i++;
+      const A = DAY_KEYS[i], B = DAY_KEYS[i + 1];
+      const k = THREE.MathUtils.smoothstep(p, A.p, B.p);
+      const lerp = (a, b) => a + (b - a) * k;
+      _c1.setHex(A.bg).lerp(_c2.setHex(B.bg), k);
+      scene.background.copy(_c1);
+      if (scene.fog) scene.fog.color.copy(_c1);
+      ambientLight.intensity = lerp(A.amb, B.amb);
+      ambientLight.color.setHex(A.ambC).lerp(_c2.setHex(B.ambC), k);
+      mainLight.intensity = lerp(A.sun, B.sun);
+      mainLight.color.setHex(A.sunC).lerp(_c2.setHex(B.sunC), k);
+      const night = lerp(A.night, B.night);
+      dayCycle.night = night;
+      nightGlows.forEach((g) => { g.mat.opacity = g.day + (g.night - g.day) * night; });
+      screenGlowLight.intensity = 0.65 + night * 0.6;
+    }
     function updateShadowFollow() {
       const texel = (2 * sd) / mainLight.shadow.mapSize.width;
       const tx = Math.round(vehicle.position.x / texel) * texel;
@@ -6285,7 +6349,7 @@
 
     // ---------- Água estilizada (gradiente de profundidade, espuma na borda e brilhos) ----------
     function createWaterMaterial(opts = {}) {
-      return new THREE.ShaderMaterial({
+      return withFog(new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: false,
         uniforms: {
@@ -6327,7 +6391,7 @@
             col = mix(col, uFoam, foam);
             gl_FragColor = vec4(col, mix(0.82, 1.0, foam));
           }`
-      });
+      }));
     }
 
     // Geometria de "blob" em anéis concêntricos com aEdge (0 = centro, 1 = margem)
@@ -6446,6 +6510,7 @@
           gl_FragColor = vec4(c, 1.0);
         }`
     });
+    withFog(grassMaterial);
 
     // Grama em lote: as chamadas juntam pontos e, no fim do lote, vira UMA malha por região de 80×80
     // (antes cada moita/ilha criava a sua malha: 117 chamadas de desenho só de grama)
@@ -6509,7 +6574,7 @@
     // Folhagem fluida: cada folha tremula em torno do próprio centro, a copa verga com o vento
     // (mais no topo, aHeight), rajadas viajam pelo mundo e o carrinho abre caminho ao passar.
     function createFoliageMaterial(colorA, colorB) {
-      return new THREE.ShaderMaterial({
+      return withFog(new THREE.ShaderMaterial({
         side: THREE.DoubleSide,
         uniforms: {
           uTime: worldUniforms.uTime,
@@ -6567,7 +6632,7 @@
             if (t.a < 0.5) discard;
             gl_FragColor = vec4(mix(uColorA, uColorB, vShade) * (0.78 + 0.22 * t.r), 1.0);
           }`
-      });
+      }));
     }
     // Plantinhas em vaso (criadas antes deste shader) ganham agora as folhas com vento
     {
@@ -7404,6 +7469,7 @@
             gl_FragColor = vec4(col, 1.0);
           }`
       });
+      withFog(mudMat);
       RALLY_MUD.forEach(([t0, t1]) => {
         const i0 = Math.round(t0 * RALLY_N), i1 = Math.round(t1 * RALLY_N);
         const mp = [], muv = [], mi = [];
@@ -7825,6 +7891,7 @@
               gl_FragColor = vec4(col, clamp((0.62 + 0.38 * streak) * edge + foam * 0.3, 0.0, 0.95));
             }`
         });
+        withFog(fallMat);
         const fall = new THREE.Mesh(new THREE.PlaneGeometry(4.6, W.lip, 6, 14), fallMat);
         fall.position.set(W.x + 0.2, Y0 + W.lip / 2, W.z);
         fall.rotation.y = Math.PI / 2;
@@ -8144,6 +8211,40 @@
       }
       if (Math.random() < 0.6 * power) spawnDust(x - fx * 1.6, FLOOR_SURFACE_Y + 0.8, z - fz * 1.6, (Math.random() - 0.5) * 3 - fx * sp * 0.1, (Math.random() - 0.5) * 3 - fz * sp * 0.1, 1.3, 0x5a3a22);
     }
+    // Rastro de pneu: marcas instanciadas (anel de 700) deixadas pelas rodas traseiras na terra e na lama
+    const TRACK_MARKS = 700;
+    const trackMarkTex = (() => {
+      const c = document.createElement('canvas'); c.width = 32; c.height = 64;
+      const x = c.getContext('2d');
+      x.fillStyle = 'rgba(255,255,255,0.0)'; x.fillRect(0, 0, 32, 64);
+      x.fillStyle = '#fff';
+      for (let y = 2; y < 64; y += 10) { x.fillRect(4, y, 10, 6); x.fillRect(18, y + 5, 10, 6); } // cravos do pneu
+      return new THREE.CanvasTexture(c);
+    })();
+    const trackMarkMesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.75, 1.1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: trackMarkTex, color: 0xffffff, transparent: true, opacity: 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -8, polygonOffsetUnits: -8 }), TRACK_MARKS);
+    trackMarkMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(TRACK_MARKS * 3).fill(1), 3);
+    trackMarkMesh.count = 0;
+    trackMarkMesh.frustumCulled = false;
+    trackMarkMesh.renderOrder = 2;
+    scene.add(trackMarkMesh);
+    let trackMarkNext = 0, trackMarkDist = 0;
+    const _tmObj = new THREE.Object3D(), _tmCol = new THREE.Color();
+    function addTireTracks(x, groundY, z, angle, mud) {
+      const fx = Math.sin(angle), fz = Math.cos(angle), rx = Math.cos(angle), rz = -Math.sin(angle);
+      _tmCol.setHex(mud ? 0x2a170b : 0x7a4423);
+      [-1.15, 1.15].forEach((side) => {
+        const i = trackMarkNext;
+        _tmObj.position.set(x - fx * 1.3 + rx * side, groundY, z - fz * 1.3 + rz * side);
+        _tmObj.rotation.set(0, angle, 0);
+        _tmObj.updateMatrix();
+        trackMarkMesh.setMatrixAt(i, _tmObj.matrix);
+        trackMarkMesh.instanceColor.setXYZ(i, _tmCol.r, _tmCol.g, _tmCol.b);
+        trackMarkNext = (trackMarkNext + 1) % TRACK_MARKS;
+        trackMarkMesh.count = Math.max(trackMarkMesh.count, i + 1);
+      });
+      trackMarkMesh.instanceMatrix.needsUpdate = true;
+      trackMarkMesh.instanceColor.needsUpdate = true;
+    }
     function spawnDust(x, y, z, vx, vz, size = 1, color = null) {
       const p = rallyFx.dust.find((d) => d.life <= 0);
       if (!p) return;
@@ -8313,7 +8414,15 @@
         const p = at(t, -(RALLY_SIDE + 2.4));
         if (!clear(p.x, p.z, 1.6)) continue;
         placeKenney(K, 'lightPostLarge', { x: p.x, z: p.z, rotY: yawOf(p.s) + Math.PI / 2, scale: 10,
-          collider: { r: 0.7, h: 8, name: 'POSTE DE LUZ' } });
+          collider: { r: 0.7, h: 8, name: 'POSTE DE LUZ' },
+          onLoad: () => {
+            const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: softGlowTexture, color: 0xffe2a8, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+            glow.position.set(p.x, FLOOR_SURFACE_Y + 7.6, p.z); glow.scale.setScalar(6);
+            const pool = new THREE.Mesh(new THREE.CircleGeometry(7, 20), new THREE.MeshBasicMaterial({ map: softGlowTexture, color: 0xffe2a8, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+            pool.rotation.x = -Math.PI / 2; pool.position.set(p.x, FLOOR_SURFACE_Y + 0.15, p.z);
+            bedroomWorld.add(glow, pool);
+            nightGlows.push({ mat: glow.material, day: 0, night: 0.9 }, { mat: pool.material, day: 0, night: 0.35 });
+          } });
       }
       // 5. Box (tendas) e torre de cronometragem ao lado da Ilha do Baja
       [[204, 72, 0.3, 'tent'], [212, 66, -0.2, 'tentClosed'], [206, 82, 0.5, 'tentClosed']].forEach(([x, z, r, n]) => {
@@ -9485,10 +9594,12 @@
           glow.position.set(0, post.userData.dims.h * 0.92, 0);
           glow.scale.setScalar(7);
           post.add(glow);
+          nightGlows.push({ mat: glow.material, day: 0.3, night: 0.95 });
           const pool = new THREE.Mesh(new THREE.CircleGeometry(9, 24), new THREE.MeshBasicMaterial({ map: softGlowTexture, color: 0xffd49a, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false }));
           pool.rotation.x = -Math.PI / 2;
           pool.position.y = 0.08;
           post.add(pool);
+          nightGlows.push({ mat: pool.material, day: 0.08, night: 0.45 });
         }
       });
     });
@@ -11995,6 +12106,17 @@
       if (sfxState.enabled) sfx('uiToggle', { vol: 0.5 });
     });
     syncAudioButton();
+    document.getElementById('opt-unstuck').addEventListener('click', () => { closeMenu(); unstuckCar(); });
+    document.getElementById('opt-respawn').addEventListener('click', () => { closeMenu(); respawnClosest(); });
+    const optDayEl = document.getElementById('opt-daycycle');
+    const DAY_MODES = ['auto', 'day', 'night'], DAY_LABELS = { auto: 'Automático', day: 'Dia', night: 'Noite' };
+    const syncDayButton = () => { optDayEl.querySelector('span').textContent = DAY_LABELS[dayCycle.mode] || 'Automático'; };
+    optDayEl.addEventListener('click', () => {
+      dayCycle.mode = DAY_MODES[(DAY_MODES.indexOf(dayCycle.mode) + 1) % DAY_MODES.length];
+      try { localStorage.setItem('dayCycleMode', dayCycle.mode); } catch (e) { /* sem storage */ }
+      syncDayButton();
+    });
+    syncDayButton();
     // Clique em qualquer botão da interface: "clique" discreto (como no DS)
     document.addEventListener('click', (e) => {
       const b = e.target.closest && e.target.closest('button, .button');
@@ -12811,6 +12933,7 @@
       if (e.code === 'Enter') { e.preventDefault(); interactWithNearest(); }
       if (e.code === 'KeyH') playHonk();
       if (e.code === 'KeyR' && !devModeActive) respawnAtStart();
+      if (e.code === 'KeyU' && !devModeActive) unstuckCar();
       if (e.code === 'KeyE') toggleGrabItem();
       if (e.code === 'KeyV') cycleCameraMode();
       if (e.code === 'KeyF') handleJumpPress();
@@ -13783,6 +13906,29 @@
     }
 
     // Tecla R / Select: volta para o ponto de largada
+    // Destravar: volta para uma posição segura de ~2 s atrás (DS: botão "Unstuck")
+    function unstuckCar() {
+      if (introActive || isModalOpen) return;
+      const spot = safeSpots.length > 3 ? safeSpots[safeSpots.length - 4] : safeSpots[0];
+      if (!spot) { respawnAtStart(); return; }
+      if (heldItem) releaseHeldItem();
+      teleportVehicle({ name: 'Destravar', x: spot.x, z: spot.z, angle: spot.angle, floor: spot.floor, silent: true });
+      bajaFlip.active = false; bajaBodyGroup.rotation.set(0, 0, 0); bajaBodyGroup.position.set(0, 0, 0);
+      safeSpots.length = 0;
+      showCarSpeech('Desvirado! 🔧', 1500);
+      setStatusBanner('🔧 Destravado: de volta à última posição segura [U]', '#35e0ff');
+    }
+    // Respawn: leva ao ponto de viagem rápida mais próximo (DS: "Teleports you to the closest respawn")
+    function respawnClosest() {
+      if (introActive || isModalOpen) return;
+      const p = vehicle.position;
+      let best = null, bd = Infinity;
+      MAP_LOCATIONS.forEach((l) => { if (l.x === undefined) return; const d = Math.hypot(l.x - p.x, l.z - p.z); if (d < bd) { bd = d; best = l; } });
+      if (!best) return;
+      if (heldItem) releaseHeldItem();
+      teleportVehicle(Object.assign({}, best, { silent: true }));
+      showCarSpeech(`Respawn: ${best.name}`, 1600);
+    }
     function respawnAtStart() {
       if (introActive || isModalOpen) return;
       if (raceState !== 'idle') endRace(true);
@@ -14076,7 +14222,9 @@
     let wasInLake = false;
     let wasInMud = false;
     let carHeavyPush = false;
-    let bajaSideTilt = 0; // turbo/nitro ligado: consegue empurrar objetos pesados (pilhas de pneus)
+    let bajaSideTilt = 0;
+    let lastSafeAt = -10;
+    const safeSpots = []; // turbo/nitro ligado: consegue empurrar objetos pesados (pilhas de pneus)
     let lastRallyBlockSpeech = -10, lastMudSpeech = -10, lastGroundRise = 0, lastDirtApplied = 0;
 
     // Mini-turbo das pilhas palito
@@ -14878,6 +15026,17 @@
       carOnRamp = (!!g.ramp || !!g.footrest) && !carAirborne;
 
       lastGroundRise = carAirborne ? 0 : y - curY;
+      // Rastro de pneu na terra/lama do rally (uma marca a cada ~0,9 de distância)
+      if (g.rally && !carAirborne && !g.elevated && Math.abs(carSpeed) > 0.04) {
+        trackMarkDist += Math.abs(carSpeed);
+        if (trackMarkDist > 0.9) { trackMarkDist = 0; addTireTracks(nextX, y - FLOOR_CAR_Y + FLOOR_SURFACE_Y + 0.13, nextZ, carAngle, !!g.mud); }
+      }
+      // Última posição segura (para o botão Destravar): no chão, fora d'água, parado ou andando normalmente
+      if (!carAirborne && !isSomersaulting && !g.lake && !g.wall && time - lastSafeAt > 0.5) {
+        lastSafeAt = time;
+        safeSpots.push({ x: nextX, z: nextZ, angle: carAngle, floor: y < -15 });
+        if (safeSpots.length > 8) safeSpots.shift();
+      }
       vehicle.position.set(nextX, y, nextZ);
       if (g.rally && g.rallyT !== undefined) updateRallyLap(g.rallyT, time);
 
@@ -15599,6 +15758,7 @@
 
       updateFloatingProps(elapsedTime);
       updateShadowFollow();
+      updateDayCycle(dt);
       updateWorldEffects(elapsedTime, dt);
       updateGateGlow(elapsedTime);
       updateSiren(elapsedTime);

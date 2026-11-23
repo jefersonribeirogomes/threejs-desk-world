@@ -313,7 +313,7 @@ Esforço: P = pequeno · M = médio · G = grande.
 - [x] Sombra só para peças com raio de 0,8 ou mais (o carrinho sempre faz sombra)
 - [x] Objetos repetidos do rally (barris, fardos, caixotes) viraram 1 malha cada, com cor por vértice; total de malhas da cena caiu de 2.814 para 2.620.
 - [x] Área de sombra de ±85 para ±60 em volta do carrinho: o passe de sombra tinha 387 chamadas, e a largada foi de 933 para 814 chamadas. A sombra também ficou mais nítida.
-- [ ] Cache de materiais (1.731 duplicados) e malhas com vários materiais (o passe principal ainda tem cerca de 575 chamadas)
+- [x] ~~Cache de materiais~~: **descartado**. Compartilhar material faria a transparência de um móvel que tapa o carrinho valer para todos os objetos com o mesmo material, e não reduz chamadas de desenho.
 - [ ] Medidor de performance em `localhost` (já existe `window.__step(n)` para testes de física)
 - [x] Extra: link do projeto do Thiago corrigido (piratasdovalepcp.netlify.app) e posto de recarga na Ilha do Baja
 - [x] Kenney Racing Kit no rally: pórtico de largada com luzes, bandeiras quadriculadas, 2 arquibancadas cobertas, 6 torres de banner, 16 postes de luz (prontos para o modo noite), 3 tendas de box, torre de cronometragem e outdoor com arte própria. Créditos em `models/kenney/CREDITS.md`.
@@ -331,7 +331,7 @@ Esforço: P = pequeno · M = médio · G = grande.
 - [x] Pilha de pneus = 1 malha (antes 3): −100 chamadas de desenho
 - [x] Bug: teleporte não zerava o cronômetro do rally (dava recorde falso). Corrigido; volta real medida: 37,5 s.
 - [ ] Paleta em textura e folhagem SDF
-- [ ] Névoa + bloom leve (qualidade alta)
+- [x] Névoa (o bloom depende da atualização do Three.js: os arquivos de pós-processamento não estão no projeto)
 - [ ] Prévias do menu com capturas do Desk World (substituir as imagens do mundo do Bruno)
 - [ ] Refinamentos de modelos da seção 4 (prioridade: Baja, ponte, cachoeira, cama)
 
@@ -350,12 +350,13 @@ Esforço: P = pequeno · M = médio · G = grande.
 - [x] Moedas colecionáveis (Toy Car Kit). São 40 moedas em posições fixas entre sessões: 10 na mesa e 30 entre o quarto e o rally, inclusive na ponte e no cume. Bronze vale 1, prata 2 e ouro 5. A coleta fica salva no aparelho e alimenta a conquista nova **Cofrinho do Ravi**; o visual são 3 InstancedMesh.
 - [x] Lanches na mesa (Food Kit): donut, cupcake, cookie, picolé, refrigerante e batata frita. Dá para empurrar e pegar, e eles quebram com batidas.
 - [x] Ilha dos Brinquedos (Minigolf Kit): moinho com pás que giram conforme o vento, castelo e bandeira. Ursinho na cama do Ravi (Furniture Kit).
-- [ ] Ciclo dia/noite com luzes noturnas
+- [x] Ciclo dia/noite: Automático (8 min), Dia ou Noite, em Opções. Interpola céu, névoa, luz ambiente e sol; à noite acendem os postes do quarto e do rally e a tela do monitor brilha mais.
 - [ ] Chuva de brinquedo + trovão
-- [ ] Rastro de pneu na lama, na terra e na areia
+- [x] Rastro de pneu na terra e na lama do rally (marcas instanciadas, 700 no anel)
+- [x] Névoa leve na cena e nos shaders próprios (grama, folhas, água, lama, cachoeira)
 
 ### Fase 4: recursos novos (contínuo)
-- [ ] Respawn / Destravar (fazer antes de tudo nesta fase)
+- [x] Destravar (tecla U ou Opções: volta à posição segura de ~2 s atrás) e Respawn (ponto de viagem mais próximo)
 - [ ] Modal de fim de volta para o rally (ranking próprio)
 - [ ] Recados do Ravi (Whispers próprio)
 - [ ] Ventania, fantasma da melhor volta, modo foto
