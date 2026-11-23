@@ -10,6 +10,7 @@
     // Limites físicos de cada cenário (paredes do quarto / cerca do quintal)
     const BOUNDS = IS_QUINTAL ? { minX: 121, maxX: 338, minZ: -78, maxZ: 98 } : { minX: -165, maxX: 235, minZ: -70, maxZ: 90 };
     const QUINTAL_MIN_X = 118; // no quintal, o que estiver a oeste disso pertence ao quarto (não é construído/desenhado)
+    let buildHere = false; // true enquanto constrói algo explicitamente deste cenário (ignora o filtro por x acima)
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xd5cfc7);
     // Névoa leve: dá profundidade ao quarto grande (a cor acompanha o ciclo dia/noite)
@@ -321,8 +322,34 @@
     const laptopScreenTexture = new THREE.CanvasTexture(laptopScreenCanvas);
     laptopScreenTexture.encoding = THREE.sRGBEncoding;
     function mirrorMonitorToLaptop() {
+      let showRanking = false;
+      try { showRanking = monitorState === 'normal' && !monitorProfileMode; } catch (e) { /* ainda iniciando */ }
+      if (showRanking && drawLaptopRanking()) return;
       laptopScreenCtx.drawImage(monitorCanvas, 172, 0, 680, 420, 0, 0, 512, 316);
       laptopScreenTexture.needsUpdate = true;
+    }
+    // Ranking global do circuito na tela do notebook (some quando o monitor mostra perfil ou pega fogo)
+    function drawLaptopRanking() {
+      let board;
+      try { board = lapBoard(); } catch (e) { return false; }
+      const c = laptopScreenCtx, W = 512, H = 316;
+      const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#251f2b'); g.addColorStop(1, '#46123b');
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+      c.fillStyle = '#ffceca'; c.font = 'bold 30px Nunito, sans-serif'; c.fillText('🏆 Ranking do Circuito', 22, 46);
+      c.fillStyle = '#ffffffaa'; c.font = '16px Nunito, sans-serif';
+      c.fillText((globalLaps && globalLaps.length ? '🌎 global' : '📱 deste aparelho') + ' · corra pela Ilha de Largada', 24, 72);
+      const rows = board.slice(0, 6);
+      if (!rows.length) { c.fillStyle = '#fff'; c.font = 'bold 22px Nunito, sans-serif'; c.fillText('Nenhuma volta ainda. Seja o primeiro!', 24, 150); }
+      rows.forEach((e, i) => {
+        const y = 110 + i * 34;
+        c.fillStyle = i % 2 ? '#ffffff10' : '#ffffff1c'; c.fillRect(18, y - 24, W - 36, 30);
+        c.fillStyle = ['#ffd166', '#e0e0e0', '#e3a06b'][i] || '#fff'; c.font = 'bold 20px Nunito, sans-serif';
+        c.fillText(`${i + 1}º`, 28, y);
+        c.fillStyle = '#fff'; c.fillText(String(e.name || '---').slice(0, 3).toUpperCase(), 80, y);
+        c.textAlign = 'right'; c.fillText(formatRaceTime(e.time), W - 30, y); c.textAlign = 'left';
+      });
+      laptopScreenTexture.needsUpdate = true;
+      return true;
     }
 
     let typedTextLines = ['> terminal ready...'];
@@ -3258,15 +3285,6 @@
         tags: ['Em breve']
       }
     ];
-    // Posições livres ao lado da pista (calculadas pelos portais): objeto e ponto de evento
-    const CAREER_SPOTS = [
-      { obj: [55, 0], pin: [59.6, 0], level: 'desk', rotY: Math.PI / 2 },
-      { obj: [-39.8, -31], pin: [-39.9, -35.6], level: 'desk', rotY: Math.PI },
-      { obj: [-144, -7.4], pin: [-148.6, -7.7], level: 'floor', rotY: -Math.PI / 2 },
-      { obj: [-40.4, -24.3], pin: [-40.1, -28.9], level: 'floor', rotY: Math.PI },
-      { obj: [-6, 20], pin: [-4.5, 25.4], level: 'floor', rotY: 0 }, // fora da pista do atalho (antes invadia a saída dele)
-      { obj: [-138.4, 49.1], pin: [-139, 53.7], level: 'floor', rotY: 0 }
-    ];
     const careerInteractives = [];
     // Pequenas animações dos objetos dos marcos (moeda do cofrinho, giroflex do carro-forte, porta balançando)
     function updateCareerObjects(time) {
@@ -3278,7 +3296,10 @@
         if (u.water) u.water.position.y = 2.6 + Math.sin(time * 1.7) * 0.06;
       });
     }
-    (function buildCareerObjects() {
+    // Ilha da Carreira: os 6 marcos em roda, de frente para fora (antes ficavam espalhados nos portais da pista)
+    const CAREER_ISLAND = { x: 178, z: 2, r: 20 };
+    const RALLY_START_ISLAND = { x: 198, z: -42, r: 10 }; // quintal: único miolo livre grande o bastante perto da pista
+    !IS_QUINTAL && (function buildCareerObjects() {
       const mat = (color, opts = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.45, flatShading: false }, opts));
       const surfaceY = (lvl) => (lvl === 'desk' ? 0.14 : FLOOR_SURFACE_Y);
 
@@ -3494,10 +3515,11 @@
 
       const builders = [piggyBank, bigBattery, armoredTruck, giantMug, waterJug, orangeDoor];
       CAREER_MILESTONES.forEach((m, i) => {
-        const spot = CAREER_SPOTS[i];
+        const a = Math.PI + i * (Math.PI * 2 / CAREER_MILESTONES.length); // começa do lado da porta do quarto e gira
+        const ox = CAREER_ISLAND.x + Math.sin(a) * 12, oz = CAREER_ISLAND.z + Math.cos(a) * 12;
+        const spot = { level: 'floor', rotY: a, pin: [CAREER_ISLAND.x + Math.sin(a) * 17.5, CAREER_ISLAND.z + Math.cos(a) * 17.5] };
         const built = builders[i]();
-        const [ox, oz] = spot.obj;
-        built.g.position.set(ox, surfaceY(spot.level), oz);
+        built.g.position.set(ox, FLOOR_SURFACE_Y + 0.5, oz); // em cima da ilha (ISLAND_TOP)
         built.g.rotation.y = spot.rotY;
         built.g.name = `Marco ${m.portal}: ${m.company}`;
         built.g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
@@ -3508,7 +3530,7 @@
         careerInteractives.push({
           id: 'career_' + m.portal, careerIndex: i,
           name: `Portal ${m.portal} · ${m.company}`,
-          point: spot.pin, y: surfaceY(spot.level), level: spot.level,
+          point: spot.pin, y: FLOOR_SURFACE_Y + 0.5, level: spot.level,
           object: built.g
         });
       });
@@ -5498,7 +5520,7 @@
     let grassFlushScheduled = false;
     function createGrassPatch(points) {
       points.forEach((pt) => {
-        if ((pt.x >= QUINTAL_MIN_X) !== IS_QUINTAL) return; // grama do outro cenário
+        if (!buildHere && (pt.x >= QUINTAL_MIN_X) !== IS_QUINTAL) return; // grama do outro cenário
         const k = Math.floor(pt.x / GRASS_REGION) + ',' + Math.floor(pt.z / GRASS_REGION) + (pt.y > -15 ? 'd' : 'f');
         let arr = pendingGrass.get(k);
         if (!arr) { arr = []; pendingGrass.set(k, arr); }
@@ -5896,7 +5918,7 @@
         const rr = Math.sqrt(Math.random()) * isl.r * islandRadiusFactor(isl, a) * 0.97;
         pts.push({ x: isl.x + Math.cos(a) * rr, y: ISLAND_Y, z: isl.z + Math.sin(a) * rr, h: 0.55 + Math.random() * 0.9 });
       }
-      createGrassPatch(pts);
+      buildHere = !!isl.here; createGrassPatch(pts); buildHere = false;
 
       // Ponto interativo: anel no chão + diamante flutuante (pin do mapa do DS)
       const [px, pz] = isl.point;
@@ -5920,6 +5942,25 @@
       islands.push(isl);
       return isl;
     }
+
+    // Ilha da Carreira (todos os marcos profissionais juntos) e Ilha de Largada do circuito
+    const careerIsland = !IS_QUINTAL && createIsland({
+      id: 'careerHub', name: 'Ilha da Carreira', here: true, x: CAREER_ISLAND.x, z: CAREER_ISLAND.z, r: CAREER_ISLAND.r, point: [CAREER_ISLAND.x, CAREER_ISLAND.z - 2], labelHeight: 22,
+      text: 'A trajetória profissional do Jeferson numa volta só: seis marcos, do primeiro banco digital à próxima porta. Chegue perto de cada objeto e aperte Interagir para ler a história.',
+      actions: [{ label: '📜 Ver a linha do tempo', run: () => openCareerBoard(0) }]
+    });
+    const startIsland = !IS_QUINTAL && createIsland({
+      id: 'raceStart', name: 'Ilha de Largada', here: true, x: 150, z: 62, r: 12, point: [150, 52],
+      text: 'Daqui sai a volta cronometrada do Circuito do Ravi: mesa, rampa de papelão, chão e volta. Passe pelos 6 portais na ordem. Se sair da pista por mais de 5 segundos, a corrida é cancelada. O ranking global fica na tela do notebook da mesa.',
+      actions: [
+        { label: '🏁 Correr (volta cronometrada)', run: () => startRaceCountdown() },
+        { label: '🏆 Ver o ranking', run: () => openMenu('circuit') }
+      ]
+    });
+    if (startIsland) setTimeout(() => { // depois que o carregador de GLB existir
+      [[-1, 0.3], [1, -0.3]].forEach(([sx, r]) => placeGLB('./models/kenney/racing-kit/flagCheckers.glb', { scene: 'quarto', x: 150 + sx * 6, z: 66, y: FLOOR_SURFACE_Y + 0.5, rotY: r, height: 7 }));
+      placeGLB('./models/kenney/racing-kit/overheadLights.glb', { scene: 'quarto', x: 150, z: 70, y: FLOOR_SURFACE_Y + 0.5, height: 9 });
+    }, 0);
 
     // Placas e posições evitam o circuito do chão e os móveis
     const fireIsland = createIsland({
@@ -7285,7 +7326,8 @@
     IS_QUINTAL && (function rallyGreenery() {
       const blocked = (x, z, pad) => {
         if (rallyNearest(x, z).dist < RALLY_SIDE + 3 + pad) return true;
-        if (Math.hypot(x - 185, z - 64) < 15 + pad || Math.hypot(x - 152, z - 70) < 14 + pad || Math.hypot(x - 133, z - 47) < 14 + pad) return true; // ilhas (Baja, Fogueira, 86)
+        if (Math.hypot(x - 185, z - 64) < 15 + pad || Math.hypot(x - 152, z - 70) < 14 + pad || Math.hypot(x - 133, z - 47) < 14 + pad ||
+          Math.hypot(x - RALLY_START_ISLAND.x, z - RALLY_START_ISLAND.z) < RALLY_START_ISLAND.r + 2 + pad) return true; // ilhas (Baja, Fogueira, 86, Largada)
         if (Math.hypot(x - MOUNTAIN.x, z - MOUNTAIN.z) < MOUNTAIN.r + pad) return true;   // montanha (decorada à parte)
         if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 3 + pad) return true;            // lago do miolo
         if (RALLY_CROSSINGS.some((c) => Math.hypot(x - c.x, z - c.z) < 14 + pad)) return true;
@@ -7520,6 +7562,21 @@
     // (feita para avaliar a física do vento: folhas, gravetos, samambaias, arbustos e grama)
     // ============================================================================
     const CAMPFIRE = { x: 150, z: 72 };
+    // Ilha de Largada do Rally: procura um lugar livre perto da linha de largada
+    const rallyStartIsland = IS_QUINTAL && (() => {
+      const spot = RALLY_START_ISLAND, R = spot.r;
+      const isl = createIsland({
+        id: 'rallyStart', name: 'Largada do Rally', x: spot.x, z: spot.z, r: R, point: [spot.x, spot.z],
+        text: 'Volta cronometrada do Rally do Baja 13: lama, troncos, ponte, túnel e a montanha da cachoeira. O cronômetro só começa depois de escolher Correr. Se sair da pista por mais de 5 segundos, a corrida é cancelada.',
+        actions: [
+          { label: '🏁 Correr com o Baja 13', run: () => startRallyRace() },
+          { label: '🏆 Ver recordes', run: () => openMenu('circuit') }
+        ]
+      });
+      placeKenney('racing-kit', 'flagCheckers', { x: spot.x - 4, z: spot.z + 3, y: FLOOR_SURFACE_Y + 0.5, scale: 7 });
+      placeKenney('racing-kit', 'flagCheckers', { x: spot.x + 4, z: spot.z + 3, y: FLOOR_SURFACE_Y + 0.5, scale: 7, rotY: Math.PI });
+      return isl;
+    })();
     const campfireIsland = IS_QUINTAL && createIsland({
       id: 'campfire', name: 'Ilha da Fogueira', x: 152, z: 70, r: 11, point: [159, 62],
       text: 'Uma fogueira de acampamento com brisa suave. As chamas, as brasas e a fumaça seguem o vento; as folhas, gravetos, samambaias e a grama balançam e se espalham quando o carrinho passa. Bom lugar para ver a física da natureza!',
@@ -10202,7 +10259,6 @@
       if (waterBtn) waterBtn.style.display = baja ? 'none' : '';
       if (baja) {
         teleportVehicle(rallyStartLocation());
-        rallyLap.active = false;
         showCarSpeech('🏁 Baja 13 na largada! Acelera!', 2800);
         setStatusBanner('🏎️ Baja 13: só ele anda na lama e sobe troncos, pedras, morro e pneus. Sem mangueira e sem sirene!', '#ffb703');
         notify({ type: 'success', title: 'Baja 13 · Piratas do Vale', description: 'Largada do Rally! Lama, troncos, rampas, túneis, morro, pedras e pneus. No ar, aperte F para dar cambalhota (com seta: de lado).', duration: 5500 });
@@ -10216,22 +10272,22 @@
       rumble(0.25, 0.5, 140);
     }
     // Cronômetro da volta do rally (só vale com o Baja e passando pela metade da pista)
-    const rallyLap = { active: false, start: 0, half: false, lastT: 0, best: (() => { try { return Number(localStorage.getItem('rallyBestMs')) || 0; } catch (e) { return 0; } })() };
-    function updateRallyLap(t, time) {
+    const rallyLap = { state: 'idle', startMs: 0, half: false, lastT: 0, best: (() => { try { return Number(localStorage.getItem('rallyBestMs')) || 0; } catch (e) { return 0; } })() };
+    function updateRallyLap(t) {
       const L = rallyLap;
       const crossedStart = L.lastT > 0.9 && t < 0.1;
-      if (t > 0.45 && t < 0.6) L.half = true;
-      if (crossedStart && currentVehicleType === 'baja') {
-        if (L.active && L.half) {
-          const ms = Math.round((time - L.start) * 1000);
+      if (L.state === 'racing' && t > 0.45 && t < 0.6 && !L.half) { L.half = true; raceHudCpEl.textContent = 'Rally · metade ✓ volte à largada'; }
+      if (crossedStart && L.state === 'racing') {
+        if (L.half) {
+          const ms = Math.round(performance.now() - L.startMs);
           const isBest = !L.best || ms < L.best;
           if (isBest) { L.best = ms; try { localStorage.setItem('rallyBestMs', String(ms)); } catch (e) { /* sem storage */ } }
           notify({ type: isBest ? 'success' : 'info', title: isBest ? 'Novo recorde no Rally!' : 'Volta no Rally', description: `${(ms / 1000).toFixed(2)} s${L.best && !isBest ? ` · recorde ${(L.best / 1000).toFixed(2)} s` : ''}`, duration: 4000 });
           sfx('finish', { vol: 0.7, vary: 0 });
           if (isBest) confettiBurst(vehicle.position.x, vehicle.position.y + 3, vehicle.position.z, 60);
+          cancelRallyRace();
+          setStatusBanner('🏁 Volta completa! Para correr de novo, vá à Ilha de Largada do Rally.', '#7ee787');
         }
-        L.active = true; L.start = time; L.half = false;
-        setStatusBanner('🏁 Volta do Rally iniciada! Passe por todos os obstáculos.', '#ffb703');
       }
       L.lastT = t;
     }
@@ -10905,7 +10961,7 @@
       { id: 'islandActions', title: 'Aventureiro', description: 'Faça 5 atividades nas ilhas', total: 5 },
       { id: 'bowling', title: 'Strike!', description: 'Derrube os 10 pinos do boliche', total: 1 },
       { id: 'shortcut', title: 'Atalho secreto', description: 'Salte da rampa escondida embaixo da mesa', total: 1 },
-      { id: 'career', title: 'Linha do tempo', description: 'Visite os 6 marcos de carreira nos portais da pista', total: 6 },
+      { id: 'career', title: 'Linha do tempo', description: 'Visite os 6 marcos na Ilha da Carreira', total: 6 },
       // Secretas: nome e descrição ficam escondidos ("???") até serem desbloqueadas
       { id: 'ballDesk', title: 'Bola de mesa', description: 'Leve uma bola do quarto, pela rampa, até a mesa perto do aquário', total: 1, secret: true },
       { id: 'allIslands', title: 'Explorador das ilhas', description: 'Visite e interaja com todas as ilhas do quarto', total: islands.length, secret: true },
@@ -11431,13 +11487,17 @@
       { name: 'Ponte do Rally', x: rallySamples[RALLY_CROSSINGS[0].over - 22].x, z: rallySamples[RALLY_CROSSINGS[0].over - 22].z, angle: Math.atan2(rallySamples[RALLY_CROSSINGS[0].over - 22].tx, rallySamples[RALLY_CROSSINGS[0].over - 22].tz), floor: true },
       { name: 'Montanha da Cachoeira', x: rallySamples[RALLY_CROSSINGS[1].under - 24].x, z: rallySamples[RALLY_CROSSINGS[1].under - 24].z, angle: Math.atan2(rallySamples[RALLY_CROSSINGS[1].under - 24].tx, rallySamples[RALLY_CROSSINGS[1].under - 24].tz), floor: true },
       { name: 'Ilha do Baja (Thiago Ribeiro)', x: 185, z: 56, angle: -Math.PI / 2, floor: true },
-      { name: 'Ilha da Fogueira', x: 160, z: 62, angle: -2.4, floor: true }
+      { name: 'Ilha da Fogueira', x: 160, z: 62, angle: -2.4, floor: true },
+      { name: 'Ilha da Carreira', x: 178, z: -24, angle: 0, floor: true, scene: 'quarto' },
+      { name: 'Ilha de Largada', x: 150, z: 44, angle: 0, floor: true, scene: 'quarto' },
+      { name: 'Ilha do 86', x: 150, z: 40, angle: -2.2, floor: true, scene: 'quintal' },
+      { name: 'Ilha de Largada do Rally', x: 198, z: -36, angle: Math.PI, floor: true, scene: 'quintal' }
     ];
     // Cada página só mostra os pontos do próprio cenário
     for (let i = MAP_LOCATIONS.length - 1; i >= 0; i--) {
       const l = MAP_LOCATIONS[i];
       const inQuintal = l.x !== undefined && l.x >= QUINTAL_MIN_X;
-      if (l.race ? IS_QUINTAL : inQuintal !== IS_QUINTAL) MAP_LOCATIONS.splice(i, 1);
+      if (l.scene ? l.scene !== SCENE : l.race ? IS_QUINTAL : inQuintal !== IS_QUINTAL) MAP_LOCATIONS.splice(i, 1);
     }
     function worldToMap(x, z) {
       return { left: ((x - MAP_MIN_X) / MAP_W) * 100, top: ((z - MAP_MIN_Z) / MAP_D) * 100 };
@@ -11520,7 +11580,8 @@
       carSpeed = 0;
       carAngle = loc.angle;
       carPitch = 0; carRoll = 0;
-      if (typeof rallyLap !== 'undefined') { rallyLap.active = false; rallyLap.half = false; } // teleporte não vale volta do rally
+      if (typeof rallyLap !== 'undefined' && rallyLap.state === 'racing') cancelRallyRace(); // teleporte não vale volta do rally
+      if (typeof raceState !== 'undefined' && raceState === 'racing' && !loc.silent) endRace(true); // nem do circuito
       const ground = sampleGround(loc.x, loc.z, loc.floor ? FLOOR_CAR_Y : CAR_DESK_Y);
       vehicle.position.set(loc.x, ground.y, loc.z);
       vehicle.rotation.set(0, carAngle, 0);
@@ -12682,8 +12743,85 @@
       const scopeEl = document.getElementById('leaderboard-scope');
       if (scopeEl) scopeEl.textContent = (globalLaps && globalLaps.length) ? '🌎 Ranking global' : '📱 Recordes deste aparelho';
       drawNotebooks();
+      mirrorMonitorToLaptop();
     }
 
+    // Fiscal de pista: fora da pista por mais de 5 s cancela a corrida (o foco é correr, não explorar)
+    const OFFTRACK_LIMIT = 5;
+    const offTrack = { circuit: 0, rally: 0, shown: -1 };
+    let guardTick = 0, lastOnTrack = true;
+    function circuitOnTrack() {
+      if ((guardTick++ % 6) !== 0) return lastOnTrack; // checa 10x por segundo
+      const p = vehicle.position, lim = (TRACK_WIDTH / 2 + 2.5) ** 2;
+      lastOnTrack = trackSamples.some((s) => Math.abs(s.y - p.y) < 4 && (s.x - p.x) ** 2 + (s.z - p.z) ** 2 < lim);
+      return lastOnTrack;
+    }
+    // Devolve true se a corrida foi cancelada
+    function trackGuard(kind, onTrack) {
+      if (onTrack || carAirborne) {
+        if (offTrack[kind] > 0) { offTrack[kind] = 0; offTrack.shown = -1; setStatusBanner('✅ De volta à pista!', '#7ee787'); }
+        return false;
+      }
+      offTrack[kind] += PHYS_STEP;
+      const left = Math.ceil(OFFTRACK_LIMIT - offTrack[kind]);
+      if (left !== offTrack.shown && left > 0) {
+        offTrack.shown = left;
+        setStatusBanner(`⚠️ Fora da pista! Volte em ${left} s ou a corrida será cancelada.`, '#ffb703');
+        if (!sfx('uiError', { vol: 0.35 })) playTone(330, 0, 0.1, 'square', 0.04);
+      }
+      if (offTrack[kind] < OFFTRACK_LIMIT) return false;
+      offTrack[kind] = 0; offTrack.shown = -1;
+      const where = kind === 'rally' ? 'Ilha de Largada do Rally' : 'Ilha de Largada';
+      if (kind === 'rally') cancelRallyRace(); else endRace(true);
+      setStatusBanner(`❌ Corrida cancelada: saiu da pista por mais de ${OFFTRACK_LIMIT} s.`, '#ff5252');
+      notify({ type: 'danger', title: 'Corrida cancelada', description: `Você ficou fora da pista por mais de ${OFFTRACK_LIMIT} segundos. Volte à ${where} e escolha Correr para tentar de novo.`, duration: 5000 });
+      logInteractionEvent('❌ Corrida cancelada (fora da pista por mais de 5 s)');
+      return true;
+    }
+    // Contagem 3-2-1 compartilhada (circuito e rally)
+    function runCountdown(onGo) {
+      ['3', '2', '1', 'Já!'].forEach((label, i) => {
+        countdownTimers.push(setTimeout(() => {
+          raceCountdownEl.textContent = label;
+          raceCountdownEl.classList.remove('is-pop');
+          void raceCountdownEl.offsetWidth;
+          raceCountdownEl.classList.add('is-pop');
+          if (!sfx(i < 3 ? 'countTick' : 'countGo', { vol: 0.6, vary: 0 })) { playTone(i < 3 ? 440 : 880, 0, i < 3 ? 0.18 : 0.4, 'square', 0.06); }
+          if (i === 3) onGo();
+        }, i * 900));
+      });
+      countdownTimers.push(setTimeout(() => { raceCountdownEl.textContent = ''; }, 3 * 900 + 900));
+    }
+    // ---------- Rally do Baja: mesma regra (só cronometra depois de "Correr" na Ilha de Largada do Rally) ----------
+    function startRallyRace() {
+      if (!IS_QUINTAL || introActive) return;
+      if (menuOpen) closeMenu();
+      if (modalsOpen) closeModals();
+      countdownTimers.forEach(clearTimeout); countdownTimers = [];
+      cancelRallyRace(true);
+      if (currentVehicleType !== 'baja') switchVehicleModel('baja'); else teleportVehicle(rallyStartLocation());
+      setCameraMode('close');
+      rallyLap.state = 'countdown';
+      runCountdown(() => {
+        rallyLap.state = 'racing'; rallyLap.startMs = performance.now(); rallyLap.half = false; rallyLap.lastT = 0.012;
+        offTrack.rally = 0;
+        htmlEl.classList.add('is-racing');
+        raceHudCpEl.textContent = 'Rally · rumo à metade';
+        logInteractionEvent('🏁 Volta cronometrada do Rally iniciada!');
+      });
+    }
+    function cancelRallyRace(silent) {
+      if (rallyLap.state === 'idle') return;
+      rallyLap.state = 'idle';
+      if (raceState !== 'racing') htmlEl.classList.remove('is-racing');
+      if (!silent) raceCountdownEl.textContent = '';
+    }
+    function updateRallyRace() {
+      if (rallyLap.state !== 'racing') return;
+      raceHudTimeEl.textContent = formatRaceTime(performance.now() - rallyLap.startMs);
+      if (currentVehicleType !== 'baja') { cancelRallyRace(); return; }
+      trackGuard('rally', rallyNearest(vehicle.position.x, vehicle.position.z).dist < RALLY_SIDE + 2.5);
+    }
     function gateIsNear(gate) {
       const p = vehicle.position;
       return Math.hypot(p.x - gate.x, p.z - gate.z) < TRACK_WIDTH * 0.8 && Math.abs(p.y - gate.y) < 4;
@@ -12727,25 +12865,12 @@
     }
     function updateRace() {
       const start = raceGates[0];
-      if (raceState === 'idle') {
-        // Não começa sozinho: ao passar pela largada pergunta se quer correr (mostra os recordes)
-        if (!gateIsNear(start)) raceStartArmed = true;
-        else if (raceStartArmed && !inputBlocked()) { raceStartArmed = false; openRaceInvite(); }
-        // Fora da corrida, passar por baixo de um portal abre o marco de carreira correspondente
-        // (uma vez por passagem: precisa sair do portal para armar de novo)
-        for (let i = 1; i < raceGates.length; i++) {
-          const g = raceGates[i];
-          if (!gateIsNear(g)) { g.careerArmed = true; continue; }
-          if (g.careerArmed !== false && !inputBlocked() && CAREER_MILESTONES[i - 1]) {
-            g.careerArmed = false;
-            carSpeed *= 0.35;
-            openCareerBoard(i - 1);
-          }
-        }
-        return;
-      }
+      updateRallyRace();
+      // Passagem livre: os portais não abrem mais nada e a largada não convida. A corrida só começa
+      // pela Ilha de Largada (opção "Correr"); os marcos de carreira ficam na Ilha da Carreira.
       if (raceState !== 'racing') return;
       raceHudTimeEl.textContent = formatRaceTime(performance.now() - raceStartMs);
+      if (trackGuard('circuit', circuitOnTrack())) return;
       if (raceNextGate < raceGates.length) {
         if (gateIsNear(raceGates[raceNextGate])) {
           raceNextGate++;
@@ -12770,24 +12895,15 @@
       teleportVehicle({ name: 'Largada', x: f.s.x, z: f.s.z, angle: Math.atan2(f.tx, f.tz), silent: true });
     }
     function startRaceCountdown() {
-      if (introActive) return;
+      if (introActive || IS_QUINTAL) return;
       endRace(true);
       if (menuOpen) closeMenu();
       if (modalsOpen) closeModals();
       placeOnStartGrid();
       setCameraMode('close');
       raceState = 'countdown';
-      ['3', '2', '1', 'Já!'].forEach((label, i) => {
-        countdownTimers.push(setTimeout(() => {
-          raceCountdownEl.textContent = label;
-          raceCountdownEl.classList.remove('is-pop');
-          void raceCountdownEl.offsetWidth;
-          raceCountdownEl.classList.add('is-pop');
-          if (!sfx(i < 3 ? 'countTick' : 'countGo', { vol: 0.6, vary: 0 })) { playTone(i < 3 ? 440 : 880, 0, i < 3 ? 0.18 : 0.4, 'square', 0.06); }
-          if (i === 3) beginRace();
-        }, i * 900));
-      });
-      countdownTimers.push(setTimeout(() => { raceCountdownEl.textContent = ''; }, 3 * 900 + 900));
+      offTrack.circuit = 0;
+      runCountdown(beginRace);
     }
     // ---------- Mural dos marcos de carreira ----------
     let careerIndex = 0;
@@ -14302,7 +14418,7 @@
         if (safeSpots.length > 8) safeSpots.shift();
       }
       vehicle.position.set(nextX, y, nextZ);
-      if (g.rally && g.rallyT !== undefined) updateRallyLap(g.rallyT, time);
+      if (g.rally && g.rallyT !== undefined) updateRallyLap(g.rallyT);
 
       // Avisos de rampa
       if (carOnRamp && g.ramp === 'down' && nextX < -DESK_HALF_W - 3 && !hasDescendedToRoom) {
@@ -14947,7 +15063,7 @@
       const free = (x, z, r) => x > 127 && x < 336 && z > -76 && z < 96 &&
         rallyNearest(x, z).dist > RALLY_SIDE + r + 2 && mountainH(x, z) < 0.05 &&
         Math.hypot(x - 185, z - 64) > 16 + r && Math.hypot(x - 152, z - 70) > 15 + r &&
-        Math.hypot(x - POND.x, z - POND.z) > POND.r + 3 + r && Math.hypot(x - 122, z - 20) > 14 && Math.hypot(x - 133, z - 47) > 15 + r &&
+        Math.hypot(x - POND.x, z - POND.z) > POND.r + 3 + r && Math.hypot(x - 122, z - 20) > 14 && Math.hypot(x - 133, z - 47) > 15 + r && Math.hypot(x - RALLY_START_ISLAND.x, z - RALLY_START_ISLAND.z) > 13 + r &&
         used.every((u) => Math.hypot(x - u[0], z - u[1]) > u[2] + r);
       const scatter = (names, count, height, r, collide) => {
         const spots = names.map(() => []);
@@ -15120,7 +15236,7 @@
     }
     {
       const inYard = (x, z) => x > 126 && x < 336 && z > -76 && z < 96 && mountainH(x, z) < 0.05 && Math.hypot(x - POND.x, z - POND.z) > POND.r + 2 &&
-        Math.hypot(x - 185, z - 64) > 17 && Math.hypot(x - 152, z - 70) > 16 && Math.hypot(x - 133, z - 47) > 14 &&
+        Math.hypot(x - 185, z - 64) > 17 && Math.hypot(x - 152, z - 70) > 16 && Math.hypot(x - 133, z - 47) > 14 && Math.hypot(x - RALLY_START_ISLAND.x, z - RALLY_START_ISLAND.z) > 12 &&
         (!IS_QUINTAL || rallyNearest(x, z).dist > RALLY_SIDE + 1.5); // bichos não passeiam na pista nem nas ilhas
       const QQ = 'quintal';
       // Shiba Inu do quintal: passeia perto da casa e corre quando o carrinho chega perto

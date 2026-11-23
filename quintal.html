@@ -526,7 +526,7 @@
     html.is-mode-touch .pad-trigger::after { border-color: #1b1c22; }
     html.is-mode-touch .pad-trigger.pressed { background: var(--ds-trigger); color: #fff; }
     .pad-btn.pressed, .pad-trigger.pressed { background: var(--ds-trigger); }
-    .touch-pad .triggers { display: flex; gap: 10px; align-items: flex-end; }
+    .touch-pad .triggers { display: none; } /* o analógico (L3) já acelera, dá ré e vira: gatilhos saíram para a tela ficar limpa */
     .pad-trigger { width: 64px; height: 92px; border-radius: 14px 14px 22px 22px; }
     .pad-trigger.is-gas { height: 112px; width: 72px; }
     .pad-trigger.is-hop { height: 64px; width: 56px; }
@@ -729,7 +729,7 @@
     <div class="title">// Jeferson Ribeiro Gomes // <span class="accent">Desk World</span></div>
     <div class="intro-welcome">
       <p><strong>Seja bem-vindo ao meu currículo interativo!</strong> Um pouco do meu dia a dia na visão do pequeno Ravi.</p>
-      <p>Para conhecer minha trajetória profissional é bem simples: siga o circuito do <strong>portal 1 ao portal 6</strong>.</p>
+      <p>Para conhecer minha trajetória profissional é bem simples: visite a <strong>Ilha da Carreira</strong> no quarto.</p>
       <p>Informações sobre mim você encontra perto do computador… mas cuidado para não hackear demais, rsrs.</p>
       <p>No mais, explore este pequeno mundo, descubra os desafios e os mini-games — espero que se divirta!</p>
       <p class="intro-soon">Novidades chegando em breve!!!</p>
@@ -917,7 +917,7 @@
             <div class="content-inner">
               <div class="title">Sobre o Jeferson</div>
               <p class="text">Este mundo é o meu <strong>currículo interativo</strong>: um pouco do meu dia a dia na visão do pequeno Ravi.</p>
-              <p class="text">A trajetória profissional está no circuito da mesa: siga do <strong>portal 1 ao portal 6</strong>. Informações sobre mim ficam perto do computador... mas cuidado para não hackear demais!</p>
+              <p class="text">A trajetória profissional está na <strong>Ilha da Carreira</strong>, no lado leste do quarto: seis marcos, um ao lado do outro. Informações sobre mim ficam perto do computador... mas cuidado para não hackear demais!</p>
               <div class="about-links">
                 <a class="button" href="https://www.linkedin.com/in/jefersonribeirogomes/" target="_blank" rel="noopener">💼 LinkedIn</a>
                 <a class="button" href="https://www.salesforce.com/trailblazer/profile" target="_blank" rel="noopener">☁️ Trailhead</a>
@@ -1031,7 +1031,6 @@
                     <div class="list">
                       <table><tbody>
                         <tr><td><span class="key">Analógico</span></td><td>Toque e arraste na metade esquerda: lados viram, para cima acelera, para baixo dá ré</td></tr>
-                        <tr><td><span class="key">R2 / L2</span></td><td>Acelerar / ré (dá para usar junto com o analógico; R2 duas vezes = turbo)</td></tr>
                         <tr><td><span class="key">Água</span></td><td>Jato d'água</td></tr>
                         <tr><td><span class="key">Pular</span></td><td>Pular</td></tr>
                         <tr><td><span class="key">Pegar</span></td><td>Pegar / soltar objeto</td></tr>
@@ -1069,7 +1068,7 @@
               <div class="title">Corridas</div>
               <div class="records" id="race-records"></div>
               <div class="section-title">Circuito do Ravi</div>
-              <p class="text">Uma volta completa passa pela <strong>mesa</strong>, desce a <strong>rampa de papelão</strong>, cruza o circuito <strong>embaixo da mesa</strong> e sobe de volta pela outra rampa. Passe pelos 6 portais na ordem!</p>
+              <p class="text">Uma volta completa passa pela <strong>mesa</strong>, desce a <strong>rampa de papelão</strong>, cruza o circuito <strong>embaixo da mesa</strong> e sobe de volta. Passe pelos 6 portais na ordem! A corrida começa pela <strong>Ilha de Largada</strong> (ou pelo botão Correr) e é cancelada se você ficar mais de 5 s fora da pista.</p>
               <div class="leaderboard-container" id="leaderboard-container">
                 <p class="leaderboard-scope" id="leaderboard-scope"></p>
                 <table class="leaderboard" id="leaderboard"><tbody></tbody></table>
