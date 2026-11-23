@@ -165,6 +165,8 @@
     }
     const dayCycle = { mode: 'auto', duration: 480, progress: 0.15, night: 0 };
     try { dayCycle.mode = localStorage.getItem('dayCycleMode') || 'auto'; } catch (e) { /* sem storage */ }
+    const weather = { mode: 'auto', rain: 0, target: 0, autoT: 90 + Math.random() * 120, flash: 0, nextBolt: 6, rainDrive: 0, audio: null };
+    try { weather.mode = localStorage.getItem('weatherMode') || 'auto'; } catch (e) { /* sem storage */ }
     const nightGlows = []; // { mat, day, night } — opacidade dos brilhos falsos conforme a noite
     const _c1 = new THREE.Color(), _c2 = new THREE.Color();
     function updateDayCycle(dt) {
@@ -11120,7 +11122,8 @@
       { id: 'acrobat', title: 'Acrobata', description: 'Capote o carrinho', total: 1 },
       { id: 'destroyer', title: 'Destruidor', description: 'Quebre um controle por completo', total: 1 },
       { id: 'jumper', title: 'Pula-pula', description: 'Pule 10 vezes', total: 10 },
-      { id: 'traveler', title: 'Explorador', description: 'Viaje usando o mapa', total: 1 }
+      { id: 'traveler', title: 'Explorador', description: 'Viaje usando o mapa', total: 1 },
+      { id: 'rain', title: 'Banho de chuva', description: 'Dirija 15 s no quintal debaixo da chuva de brinquedo', total: 1 }
     ];
     const REWARDS = [
       { id: 'orange', label: 'Laranja', image: 'orange', unlockAt: 0, color: 0xff4518 },
@@ -11513,6 +11516,17 @@
       syncDayButton();
     });
     syncDayButton();
+    const optWeatherEl = document.getElementById('opt-weather');
+    const W_MODES = ['auto', 'sun', 'rain'], W_LABELS = { auto: 'Automático', sun: 'Sol', rain: 'Chuva' };
+    const syncWeatherButton = () => { optWeatherEl.querySelector('span').textContent = W_LABELS[weather.mode] || 'Automático'; };
+    optWeatherEl.addEventListener('click', () => {
+      weather.mode = W_MODES[(W_MODES.indexOf(weather.mode) + 1) % W_MODES.length];
+      if (weather.mode === 'auto') { weather.target = 0; weather.autoT = 60; }
+      try { localStorage.setItem('weatherMode', weather.mode); } catch (e) { /* sem storage */ }
+      syncWeatherButton();
+      if (!IS_QUINTAL) notify({ type: 'info', title: 'Clima', description: 'A chuva de brinquedo cai no quintal. Passe pela porta leste do quarto!', duration: 3000 });
+    });
+    syncWeatherButton();
     // Clique em qualquer botão da interface: "clique" discreto (como no DS)
     document.addEventListener('click', (e) => {
       const b = e.target.closest && e.target.closest('button, .button');
@@ -14272,7 +14286,7 @@
         const dir = carSpeed < -0.004 || (spAbs <= 0.004 && kB && !kF) ? -1 : 1;
         const spK = Math.min(spAbs / baseMaxSpeed, 1.8);
         const grip = 0.75 + 0.25 * Math.min(1, spK * 3); // bem devagar gira um pouco menos (sem pião no lugar)
-        const rate = (carAirborne ? turnSpeed * 0.35 : turnSpeed * grip * (1 + 0.32 * spK)) * steerSens;
+        const rate = (carAirborne ? turnSpeed * 0.35 : turnSpeed * grip * (1 + 0.32 * spK)) * steerSens * (typeof rainGripFactor === 'function' ? rainGripFactor() : 1);
         carAngle += rate * dir * steer;
         if (!carAirborne && Math.abs(steer) > 0.45 && spK > 0.7) carSpeed *= 1 - 0.006 * Math.abs(steer);
       }
@@ -15628,6 +15642,97 @@
       }
     }
 
+
+    // ============================================================================
+    // CLIMA: CHUVA DE BRINQUEDO (quintal) — gotas instanciadas, respingos, céu fechado, barulho de chuva
+    // gerado no próprio jogo e, à noite, relâmpago + trovão. Ajustes › Clima: Automático · Sol · Chuva
+    // ============================================================================
+    // (estado do clima: `weather`, declarado junto do ciclo dia/noite)
+    const RAIN_MAX = 3200, RAIN_BOX = 56, RAIN_H = 40;
+    const rainDrops = new Float32Array(RAIN_MAX * 3);
+    for (let i = 0; i < RAIN_MAX; i++) { rainDrops[i * 3] = (Math.random() - 0.5) * RAIN_BOX; rainDrops[i * 3 + 1] = Math.random() * RAIN_H; rainDrops[i * 3 + 2] = (Math.random() - 0.5) * RAIN_BOX; }
+    const rainMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.035, 1.3, 0.035), new THREE.MeshBasicMaterial({ color: 0xdbe8ff, transparent: true, opacity: 0.42, depthWrite: false }), RAIN_MAX);
+    rainMesh.frustumCulled = false; rainMesh.count = 0; rainMesh.renderOrder = 3;
+    if (IS_QUINTAL) scene.add(rainMesh);
+    const _rainM = new THREE.Matrix4(), _rainGray = new THREE.Color(0x5d6670);
+    // Barulho de chuva: ruído branco filtrado, em loop (sem arquivo de áudio)
+    function rainAudio() {
+      if (weather.audio || !audioCtx) return weather.audio;
+      const ac = audioCtx, len = ac.sampleRate * 2, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const src = ac.createBufferSource(); src.buffer = buf; src.loop = true;
+      const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2400; bp.Q.value = 0.6;
+      const g = ac.createGain(); g.gain.value = 0;
+      src.connect(bp).connect(g).connect(audioOut(ac)); src.start();
+      weather.audio = { g };
+      return weather.audio;
+    }
+    // Trovão: ruído grave com envelope longo
+    function thunder(delay) {
+      if (!audioCtx || !sfxState.enabled) return;
+      const ac = audioCtx, len = ac.sampleRate * 3, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      let last = 0; for (let i = 0; i < len; i++) { last = last * 0.985 + (Math.random() * 2 - 1) * 0.15; d[i] = last; }
+      const src = ac.createBufferSource(); src.buffer = buf;
+      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 220;
+      const g = ac.createGain(), t0 = ac.currentTime + delay;
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(1.4, t0 + 0.08); g.gain.exponentialRampToValueAtTime(0.001, t0 + 2.8);
+      src.connect(lp).connect(g).connect(audioOut(ac)); src.start(t0);
+    }
+    function updateWeather(dt) {
+      if (!IS_QUINTAL) return;
+      // Alvo da chuva: modo fixo ou ciclos automáticos (chove ~1 min de vez em quando)
+      if (weather.mode === 'rain') weather.target = 1;
+      else if (weather.mode === 'sun') weather.target = 0;
+      else {
+        weather.autoT -= dt;
+        if (weather.autoT <= 0) { weather.target = weather.target > 0 ? 0 : 1; weather.autoT = weather.target ? 50 + Math.random() * 40 : 150 + Math.random() * 150; }
+      }
+      const before = weather.rain;
+      weather.rain += (weather.target - weather.rain) * Math.min(1, dt * 0.35);
+      if (before < 0.15 && weather.rain >= 0.15) notify({ type: 'info', title: 'Chuva de brinquedo 🌧️', description: 'A terra do rally fica mais lisa. Cuidado nas curvas!', duration: 3500 });
+      const r = weather.rain;
+      // Céu fechado: cinza por cima das cores do dia/noite
+      if (r > 0.01) {
+        scene.background.lerp(_rainGray, 0.45 * r);
+        if (scene.fog) scene.fog.color.copy(scene.background);
+        ambientLight.intensity *= 1 - 0.3 * r;
+        mainLight.intensity *= 1 - 0.55 * r;
+      }
+      // Gotas caindo em volta da câmera
+      const n = Math.floor(RAIN_MAX * r);
+      rainMesh.count = n;
+      if (n) {
+        const cx = camera.position.x, cz = camera.position.z, gy = FLOOR_SURFACE_Y;
+        for (let i = 0; i < n; i++) {
+          let y = rainDrops[i * 3 + 1] - dt * 60;
+          if (y < 0) y += RAIN_H;
+          rainDrops[i * 3 + 1] = y;
+          _rainM.makeTranslation(cx + rainDrops[i * 3], gy + y, cz + rainDrops[i * 3 + 2]);
+          rainMesh.setMatrixAt(i, _rainM);
+        }
+        rainMesh.instanceMatrix.needsUpdate = true;
+        // Respingos no chão perto da câmera
+        const splashes = Math.random() < r ? 2 : 0;
+        for (let k = 0; k < splashes; k++) splashAt(cx + (Math.random() - 0.5) * 50, gy + 0.2, cz + (Math.random() - 0.5) * 50, 1, 0.25);
+      }
+      // Barulho da chuva acompanha a intensidade
+      const au = rainAudio();
+      if (au) au.g.gain.setTargetAtTime(0.16 * r, audioCtx.currentTime, 0.3);
+      // Relâmpago + trovão (chuva forte à noite)
+      if (weather.flash > 0) { weather.flash -= dt; ambientLight.intensity += weather.flash > 0.08 ? 1.8 : 0.9; }
+      if (r > 0.7 && (dayCycle.night || 0) > 0.35) {
+        weather.nextBolt -= dt;
+        if (weather.nextBolt <= 0) { weather.flash = 0.2; weather.nextBolt = 9 + Math.random() * 14; thunder(0.5 + Math.random() * 1.4); }
+      }
+      // Conquista: dirigir 15 s debaixo de chuva forte
+      if (r > 0.6 && Math.abs(carSpeed) > 0.08) {
+        weather.rainDrive += dt;
+        if (weather.rainDrive > 15 && !weather.rainAch) { weather.rainAch = true; unlockAchievement('rain'); }
+      }
+    }
+    // Terra molhada: o carrinho escorrega um pouco mais nas curvas do rally
+    function rainGripFactor() { return IS_QUINTAL ? 1 - 0.18 * weather.rain : 1; }
+
     // Retira do quintal tudo o que pertence ao quarto (o motor é o mesmo; aqui ele só não desenha nem simula)
     function cullOtherScene() {
       if (!IS_QUINTAL) return;
@@ -15851,6 +15956,7 @@
       updateFloatingProps(elapsedTime);
       updateShadowFollow();
       updateDayCycle(dt);
+      updateWeather(Math.min(dt, 0.1));
       updateCritters(Math.min(dt, 0.1));
       updateYardToys(Math.min(dt, 0.1), elapsedTime);
       updateAmbientAudio();

@@ -321,7 +321,7 @@ Esforço: P = pequeno · M = médio · G = grande.
 - [x] Rótulo da Ilha do Baja encurtado (estava cortado)
 
 ### Fase 2: acabamento visual e de cenário (2 semanas)
-- [ ] B6: rebarbas do notebook (falta conferir de perto)
+- [x] B6: rebarbas do notebook — conferido de perto em 23/11/2026: a "haste" é o braço 2 do suporte, que passa sob a bandeja e sobe pelo poste até ela (peça intencional, sem sobras)
 - [x] B7: capotamento automático mais raro (aterrissagem > 0,78 e inclinação lateral sustentada por 0,25 s). Volta de teste completa sem capotamentos.
 - [x] B8: laço oeste ~6 u mais largo (lago, lamaçal e rampa acompanharam)
 - [x] B9: musgo dos túneis mais escuro
@@ -351,7 +351,7 @@ Esforço: P = pequeno · M = médio · G = grande.
 - [x] Lanches na mesa (Food Kit): donut, cupcake, cookie, picolé, refrigerante e batata frita. Dá para empurrar e pegar, e eles quebram com batidas.
 - [x] Ilha dos Brinquedos (Minigolf Kit): moinho com pás que giram conforme o vento, castelo e bandeira. Ursinho na cama do Ravi (Furniture Kit).
 - [x] Ciclo dia/noite: Automático (8 min), Dia ou Noite, em Opções. Interpola céu, névoa, luz ambiente e sol; à noite acendem os postes do quarto e do rally e a tela do monitor brilha mais.
-- [ ] Chuva de brinquedo + trovão
+- [x] Chuva de brinquedo + trovão (quintal): gotas instanciadas, respingos, céu fechado, barulho de chuva sintetizado, relâmpago e trovão à noite, terra mais lisa nas curvas; Ajustes › Clima; conquista "Banho de chuva"
 - [x] Rastro de pneu na terra e na lama do rally (marcas instanciadas, 700 no anel)
 - [x] Névoa leve na cena e nos shaders próprios (grama, folhas, água, lama, cachoeira)
 
