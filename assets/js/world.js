@@ -3299,6 +3299,38 @@
     // Ilha da Carreira: os 6 marcos em roda, de frente para fora (antes ficavam espalhados nos portais da pista)
     const CAREER_ISLAND = { x: 178, z: 2, r: 20 };
     const RALLY_START_ISLAND = { x: 198, z: -42, r: 10 }; // quintal: único miolo livre grande o bastante perto da pista
+    function addCareerSign(m, a, h) {
+      const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+      const x = c.getContext('2d');
+      x.fillStyle = '#fffdf4'; x.fillRect(0, 0, 512, 256);
+      x.fillStyle = m.color; x.fillRect(0, 0, 512, 54);
+      x.fillStyle = '#fff'; x.font = 'bold 30px Nunito, sans-serif'; x.fillText(`PORTAL ${m.portal}`, 20, 38);
+      x.font = '52px sans-serif'; x.fillText(m.emoji, 430, 46);
+      x.fillStyle = '#2e2a3a'; x.font = 'bold 50px Nunito, sans-serif'; x.fillText(m.company, 20, 120);
+      x.font = 'bold 26px Nunito, sans-serif'; x.fillStyle = '#5b566a'; x.fillText(m.title, 20, 160);
+      x.font = '24px Nunito, sans-serif'; x.fillText(m.period.split(' · ')[0], 20, 205);
+      x.strokeStyle = m.color; x.lineWidth = 8; x.strokeRect(4, 4, 504, 248);
+      const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+      const g = new THREE.Group();
+      const board = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 3.6), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, side: THREE.DoubleSide }));
+      board.position.y = 4.2; board.rotation.x = -0.18;
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.6, 8), new THREE.MeshStandardMaterial({ color: 0x2b2e35 }));
+      post.position.y = 1.3;
+      g.add(board, post);
+      const sa = a + 0.34, R = 16.4;
+      g.position.set(CAREER_ISLAND.x + Math.sin(sa) * R, FLOOR_SURFACE_Y + 0.5, CAREER_ISLAND.z + Math.cos(sa) * R);
+      g.rotation.y = sa;
+      g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      scene.add(g);
+      // Brilho na cor do marco: some de dia, acende à noite
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: softGlowTexture, color: new THREE.Color(m.color), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      glow.position.set(CAREER_ISLAND.x + Math.sin(a) * 12, FLOOR_SURFACE_Y + h + 1.5, CAREER_ISLAND.z + Math.cos(a) * 12);
+      glow.scale.setScalar(9);
+      const pool = new THREE.Mesh(new THREE.CircleGeometry(6, 24), new THREE.MeshBasicMaterial({ map: softGlowTexture, color: new THREE.Color(m.color), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      pool.rotation.x = -Math.PI / 2; pool.position.set(glow.position.x, FLOOR_SURFACE_Y + 0.62, glow.position.z);
+      scene.add(glow, pool);
+      nightGlows.push({ mat: glow.material, day: 0, night: 0.75 }, { mat: pool.material, day: 0, night: 0.4 });
+    }
     !IS_QUINTAL && (function buildCareerObjects() {
       const mat = (color, opts = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.45, flatShading: false }, opts));
       const surfaceY = (lvl) => (lvl === 'desk' ? 0.14 : FLOOR_SURFACE_Y);
@@ -3523,6 +3555,7 @@
         built.g.rotation.y = spot.rotY;
         built.g.name = `Marco ${m.portal}: ${m.company}`;
         built.g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+        setTimeout(() => addCareerSign(m, a, built.h || 10), 0); // placa com empresa e período + brilho à noite
         scene.add(built.g);
         registerOccluderTree(built.g);
         const obs = Object.assign({ x: ox, z: oz, r: built.col.r || Math.max(built.col.box.hx, built.col.box.hz), name: `${m.title.toUpperCase()} · ${m.company.toUpperCase()}`, isStatic: true, level: spot.level, h: built.h }, built.col.box ? { box: built.col.box, boxRot: spot.rotY } : {});
@@ -7327,7 +7360,7 @@
       const blocked = (x, z, pad) => {
         if (rallyNearest(x, z).dist < RALLY_SIDE + 3 + pad) return true;
         if (Math.hypot(x - 185, z - 64) < 15 + pad || Math.hypot(x - 152, z - 70) < 14 + pad || Math.hypot(x - 133, z - 47) < 14 + pad ||
-          Math.hypot(x - RALLY_START_ISLAND.x, z - RALLY_START_ISLAND.z) < RALLY_START_ISLAND.r + 2 + pad) return true; // ilhas (Baja, Fogueira, 86, Largada)
+          Math.hypot(x - RALLY_START_ISLAND.x, z - RALLY_START_ISLAND.z) < RALLY_START_ISLAND.r + 2 + pad || Math.hypot(x - 140, z + 62) < 12 + pad) return true; // ilhas (Baja, Fogueira, 86, Largada) e balanço
         if (Math.hypot(x - MOUNTAIN.x, z - MOUNTAIN.z) < MOUNTAIN.r + pad) return true;   // montanha (decorada à parte)
         if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 3 + pad) return true;            // lago do miolo
         if (RALLY_CROSSINGS.some((c) => Math.hypot(x - c.x, z - c.z) < 14 + pad)) return true;
@@ -7447,6 +7480,21 @@
         if (opts.onLoad) opts.onLoad(m);
         return m;
       }).catch((e) => console.warn('[glb]', url, e));
+    }
+    // Move o modelo para que o centro da base (vértices de baixo) fique em (x, z)
+    function anchorModelBase(m, x, z) {
+      m.updateMatrixWorld(true);
+      const bb = new THREE.Box3().setFromObject(m), H = bb.max.y - bb.min.y, v = new THREE.Vector3();
+      let sx = 0, sz = 0, n = 0;
+      m.traverse((o) => {
+        if (!o.isMesh) return;
+        const pos = o.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+          if (v.y < bb.min.y + H * 0.12) { sx += v.x; sz += v.z; n++; }
+        }
+      });
+      if (n) { m.position.x += x - sx / n; m.position.z += z - sz / n; }
     }
     function placeKenney(pack, name, opts) {
       if ((opts.x >= QUINTAL_MIN_X) !== IS_QUINTAL) return Promise.resolve(null);
@@ -7573,8 +7621,8 @@
           { label: '🏆 Ver recordes', run: () => openMenu('circuit') }
         ]
       });
-      placeKenney('racing-kit', 'flagCheckers', { x: spot.x - 4, z: spot.z + 3, y: FLOOR_SURFACE_Y + 0.5, scale: 7 });
-      placeKenney('racing-kit', 'flagCheckers', { x: spot.x + 4, z: spot.z + 3, y: FLOOR_SURFACE_Y + 0.5, scale: 7, rotY: Math.PI });
+      [[-5, 0.4], [5, Math.PI - 0.4]].forEach(([dx, r]) => placeKenney('racing-kit', 'flagCheckers', { x: spot.x + dx, z: spot.z + 4, y: FLOOR_SURFACE_Y + 0.5, scale: 7, rotY: r,
+        onLoad: (m) => anchorModelBase(m, spot.x + dx, spot.z + 4) }));
       return isl;
     })();
     const campfireIsland = IS_QUINTAL && createIsland({
@@ -15063,7 +15111,7 @@
       const free = (x, z, r) => x > 127 && x < 336 && z > -76 && z < 96 &&
         rallyNearest(x, z).dist > RALLY_SIDE + r + 2 && mountainH(x, z) < 0.05 &&
         Math.hypot(x - 185, z - 64) > 16 + r && Math.hypot(x - 152, z - 70) > 15 + r &&
-        Math.hypot(x - POND.x, z - POND.z) > POND.r + 3 + r && Math.hypot(x - 122, z - 20) > 14 && Math.hypot(x - 133, z - 47) > 15 + r && Math.hypot(x - RALLY_START_ISLAND.x, z - RALLY_START_ISLAND.z) > 13 + r &&
+        Math.hypot(x - POND.x, z - POND.z) > POND.r + 3 + r && Math.hypot(x - 122, z - 20) > 14 && Math.hypot(x - 133, z - 47) > 15 + r && Math.hypot(x - RALLY_START_ISLAND.x, z - RALLY_START_ISLAND.z) > 13 + r && Math.hypot(x - 140, z + 62) > 12 + r &&
         used.every((u) => Math.hypot(x - u[0], z - u[1]) > u[2] + r);
       const scatter = (names, count, height, r, collide) => {
         const spots = names.map(() => []);
@@ -15081,6 +15129,7 @@
       scatter(['Flower_1_Clump', 'Flower_3_Clump', 'Flower_4_Clump'], 45, 1.6, 0.9, 0);
       // Ilha do 86: Toyota AE86 ("Toyota AE86" por IvOfficial, poly.pizza, CC-BY 3.0) + painel sobre Initial D + Shiba
       const AE86 = { x: 133, z: 47 };
+      const AE86_FRONT = -1; // sentido da frente do modelo ao longo do comprimento (conferido: a placa TOYOTA fica no lado oposto)
       createIsland({
         id: 'ae86', name: 'Ilha do 86 · Hachi-Roku', label: 'Ilha do 86', x: AE86.x, z: AE86.z, r: 12, point: [142, 38],
         text: 'O Toyota AE86 Sprinter Trueno, apelidado de Hachi-Roku ("oito-seis" em japonês), é o carro de Takumi Fujiwara em Initial D, mangá de Shuichi Shigeno (1995) que virou anime. ' +
@@ -15095,6 +15144,29 @@
         const car = fitToSize(proto.clone(true), { length: 11 });
         car.position.set(AE86.x - 1, ISLAND_Y, AE86.z + 2); car.rotation.y = Math.PI * 0.08;
         scene.add(car);
+        car.updateMatrixWorld(true);
+        // Rodas (nós Wheel1..4): giram no eixo lateral do carro (z local do nó "Car"; o comprimento é o y)
+        const wheels = []; car.traverse((o) => { if (/^Wheel\d/.test(o.name)) wheels.push(o); });
+        // Faróis (frente) e lanternas (traseira), só acendem à noite
+        const bb = new THREE.Box3().setFromObject(car), ctr = new THREE.Vector3(); bb.getCenter(ctr);
+        // Comprimento do carro = direção entre o eixo das rodas 1/3 e o das rodas 2/4
+        const axle = (names) => { const c = new THREE.Vector3(); wheels.filter((w) => names.includes(w.name)).forEach((w) => c.add(w.getWorldPosition(new THREE.Vector3()))); return c.multiplyScalar(0.5); };
+        const fwd = axle(['Wheel2', 'Wheel4']).sub(axle(['Wheel1', 'Wheel3'])).setY(0).normalize().multiplyScalar(AE86_FRONT);
+        const side = new THREE.Vector3(fwd.z, 0, -fwd.x);
+        const half = 5.3, lampY = ISLAND_Y + 1.25;
+        const lamp = (color, scale, opacity) => {
+          const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softGlowTexture, color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+          sp.scale.setScalar(scale); scene.add(sp); nightGlows.push({ mat: sp.material, day: 0, night: opacity }); return sp;
+        };
+        [-1, 1].forEach((k) => {
+          lamp(0xfff2c0, 3.2, 0.95).position.copy(ctr).addScaledVector(fwd, half).addScaledVector(side, k * 1.7).setY(lampY);
+          lamp(0xff3030, 1.8, 0.8).position.copy(ctr).addScaledVector(fwd, -(half + 0.4)).addScaledVector(side, k * 1.8).setY(lampY + 0.4);
+        });
+        const beam = new THREE.Mesh(new THREE.CircleGeometry(5, 24), new THREE.MeshBasicMaterial({ map: softGlowTexture, color: 0xfff2c0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+        beam.rotation.x = -Math.PI / 2; beam.scale.set(1, 1.6, 1);
+        beam.position.copy(ctr).addScaledVector(fwd, half + 5).setY(ISLAND_Y + 0.12);
+        scene.add(beam); nightGlows.push({ mat: beam.material, day: 0, night: 0.45 });
+        ae86Rig = { wheels, x: AE86.x - 1, z: AE86.z + 2, spin: 0 };
         obstacles.push({ x: AE86.x - 1, z: AE86.z + 2, r: 6, box: { hx: 2.6, hz: 5.6 }, boxRot: car.rotation.y, h: 4 + ISLAND_TOP, isStatic: true, level: 'floor', name: 'TOYOTA AE86' });
       }).catch((e) => console.warn('[ae86]', e));
       // Painel informativo com arte própria (estrada de montanha à noite, curvas em "U" e o 86 panda)
@@ -15137,6 +15209,25 @@
     // Bichos passeiam perto de "casa", fogem do carrinho; pombos levantam voo. Hidrante enche o tanque.
     // ============================================================================
     const critters = [];
+    let ae86Rig = null, swingRig = null;
+    const _wheelQ = new THREE.Quaternion(), _wheelAxis = new THREE.Vector3(0, 0, 1); // eixo lateral (z local do nó "Car")
+    // Rodas do AE86 giram quando o carrinho passa rápido por perto; balanço segue o vento
+    function updateYardToys(dt, time) {
+      if (ae86Rig) {
+        const d = Math.hypot(vehicle.position.x - ae86Rig.x, vehicle.position.z - ae86Rig.z);
+        const target = d < 18 ? Math.min(1, Math.abs(carSpeed) / baseMaxSpeed) * 9 : 0;
+        ae86Rig.spin += (target - ae86Rig.spin) * Math.min(1, dt * 2);
+        if (Math.abs(ae86Rig.spin) > 0.01) {
+          _wheelQ.setFromAxisAngle(_wheelAxis, ae86Rig.spin * dt);
+          ae86Rig.wheels.forEach((w) => w.quaternion.premultiply(_wheelQ));
+        }
+      }
+      if (swingRig) {
+        const gust = (windState.strength || 0.5) + (windState.gustBoost || 0);
+        swingRig.uniforms.uSwingTime.value = time;
+        swingRig.uniforms.uSwingAmp.value += ((0.1 + gust * 0.22) - swingRig.uniforms.uSwingAmp.value) * Math.min(1, dt);
+      }
+    }
     // Modelos animados (com esqueleto) precisam de uma cópia própria: carrega o arquivo de novo (o navegador já tem em cache)
     function loadAnimated(url) {
       return new Promise((resolve, reject) => gltfLoader.load(url, (g) => {
@@ -15260,7 +15351,32 @@
         clips: { idle: /^idle$/, walk: /^idle$/, eat: /^eat$/ } });
       // Balanço do quintal ("Swing set", Poly by Google, CC-BY)
       placeGLB('./models/polypizza/swing-set.glb', { scene: QQ, x: 140, z: -62, rotY: 0.3, height: 16,
-        collider: { r: 9, box: { hx: 9, hz: 4 }, boxRot: 0.3, h: 16 }, name: 'BALANÇO' });
+        collider: { r: 9, box: { hx: 9, hz: 4 }, boxRot: 0.3, h: 16 }, name: 'BALANÇO', onLoad: (m) => {
+          // Malha única: tudo que fica no miolo da trave (correntes + assentos) gira em torno da trave
+          m.traverse((o) => {
+            if (!o.isMesh) return;
+            o.geometry.computeBoundingBox();
+            const b = o.geometry.boundingBox;
+            const uniforms = { uSwingTime: { value: 0 }, uSwingAmp: { value: 0.15 } };
+            const mat = o.material.clone();
+            mat.onBeforeCompile = (sh) => {
+              Object.assign(sh.uniforms, uniforms);
+              sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uSwingTime; uniform float uSwingAmp;')
+                .replace('#include <begin_vertex>', `#include <begin_vertex>
+                  float zc = ${((b.min.z + b.max.z) / 2).toFixed(3)}, hl = ${((b.max.z - b.min.z) / 2).toFixed(3)};
+                  float topY = ${(b.max.y - (b.max.y - b.min.y) * 0.06).toFixed(3)}, xc = ${((b.min.x + b.max.x) / 2).toFixed(3)};
+                  float inner = 1.0 - step(hl * 0.62, abs(transformed.z - zc));
+                  float below = step(transformed.y, topY);
+                  float seat = sign(transformed.z - zc);
+                  float ang = sin(uSwingTime * 1.7 + seat * 1.3) * uSwingAmp * inner * below;
+                  float dy = transformed.y - topY, dx = transformed.x - xc;
+                  transformed.x = xc + dx * cos(ang) - dy * sin(ang);
+                  transformed.y = topY + dx * sin(ang) + dy * cos(ang);`);
+            };
+            o.material = mat;
+            swingRig = { uniforms };
+          });
+        } });
       // Brinquedos grandes no quarto: caminhão de bombeiro (Ivan Klus, CC-BY) e viatura de polícia (Quaternius, CC0)
       placeGLB('./models/polypizza/fire-truck.glb', { scene: 'quarto', x: 160, z: -22, rotY: 0.5, length: 16,
         collider: { r: 8, box: { hx: 3.4, hz: 8 }, boxRot: 0.5, h: 8 }, name: 'CAMINHÃO DE BOMBEIRO' });
@@ -15526,6 +15642,7 @@
       updateShadowFollow();
       updateDayCycle(dt);
       updateCritters(Math.min(dt, 0.1));
+      updateYardToys(Math.min(dt, 0.1), elapsedTime);
       updateAmbientAudio();
       updateWorldEffects(elapsedTime, dt);
       updateGateGlow(elapsedTime);
