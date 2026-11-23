@@ -345,7 +345,9 @@ Esforço: P = pequeno · M = médio · G = grande.
   - Ilha da Fogueira com barraca, lenha, tocos, placa e flores;
   - vitórias-régias de verdade no lago do miolo e canoa no lago do quarto;
   - tocos e cogumelos na floresta do rally.
-- [ ] Integrar Toy Car, Furniture, Food e Minigolf Kit (já baixados em `Downloads\kenney`)
+- [x] Moedas colecionáveis (Toy Car Kit). São 40 moedas em posições fixas entre sessões: 10 na mesa e 30 entre o quarto e o rally, inclusive na ponte e no cume. Bronze vale 1, prata 2 e ouro 5. A coleta fica salva no aparelho e alimenta a conquista nova **Cofrinho do Ravi**; o visual são 3 InstancedMesh.
+- [x] Lanches na mesa (Food Kit): donut, cupcake, cookie, picolé, refrigerante e batata frita. Dá para empurrar e pegar, e eles quebram com batidas.
+- [x] Ilha dos Brinquedos (Minigolf Kit): moinho com pás que giram conforme o vento, castelo e bandeira. Ursinho na cama do Ravi (Furniture Kit).
 - [ ] Ciclo dia/noite com luzes noturnas
 - [ ] Chuva de brinquedo + trovão
 - [ ] Rastro de pneu na lama, na terra e na areia
