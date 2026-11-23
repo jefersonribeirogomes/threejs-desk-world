@@ -650,6 +650,7 @@
     .about-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
     .records { display: grid; gap: 8px; margin: 4px 0 16px; }
     .records .rec { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #fff; border-radius: 10px; border: 2px dashed #2e2a3a22; color: #2e2a3a; font: 700 14px/1.2 Nunito, sans-serif; }
+    .records .rec-list { font-weight: 600; font-size: 13px; }
     .records .rec b { margin-left: auto; font-size: 16px; color: #d62839; font-variant-numeric: tabular-nums; }
     /* Telas menores: abas viram uma faixa de adesivos embaixo do caderno */
     @media only screen and (max-width: 1100px), (max-height: 560px) and (orientation: landscape) {
@@ -1219,7 +1220,7 @@
     <div class="modal circuit-end" id="circuit-end-modal" data-name="circuit-end">
       <div class="content">
         <button class="close js-close" id="circuit-end-close" type="button" aria-label="Fechar"><img class="icon is-default" src="./assets/ui/close.svg" alt=""></button>
-        <div class="title" style="text-align:center">Volta completa!</div>
+        <div class="title" id="circuit-end-title" style="text-align:center">Volta completa!</div>
         <div class="your-time">Seu tempo<br><span class="value" id="circuit-end-time">00:00:000</span></div>
         <p class="not-top-10 text">Você não entrou no top 10 desta vez. Tente de novo!</p>
         <div class="horizontal-group">

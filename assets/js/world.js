@@ -10366,11 +10366,10 @@
           const ms = Math.round(performance.now() - L.startMs);
           const isBest = !L.best || ms < L.best;
           if (isBest) { L.best = ms; try { localStorage.setItem('rallyBestMs', String(ms)); } catch (e) { /* sem storage */ } }
-          notify({ type: isBest ? 'success' : 'info', title: isBest ? 'Novo recorde no Rally!' : 'Volta no Rally', description: `${(ms / 1000).toFixed(2)} s${L.best && !isBest ? ` · recorde ${(L.best / 1000).toFixed(2)} s` : ''}`, duration: 4000 });
-          sfx('finish', { vol: 0.7, vary: 0 });
-          if (isBest) confettiBurst(vehicle.position.x, vehicle.position.y + 3, vehicle.position.z, 60);
+          ghostFinish('rally', ms);
           cancelRallyRace();
-          setStatusBanner('🏁 Volta completa! Para correr de novo, vá à Ilha de Largada do Rally.', '#7ee787');
+          if (isBest) confettiBurst(vehicle.position.x, vehicle.position.y + 3, vehicle.position.z, 60);
+          openLapEnd('rally', ms);
         }
       }
       L.lastT = t;
@@ -11392,7 +11391,8 @@
         ['🏎️', 'Rally do Baja (melhor volta)', rallyLap.best ? fmtMs(rallyLap.best) : '—'],
         ['🎳', 'Boliche (maior placar)', bowlingBest ? String(bowlingBest) : '—']
       ];
-      document.getElementById('race-records').innerHTML = rows.map(([e, l, v]) => `<div class="rec"><span>${e}</span><span>${l}</span><b>${v.includes('NaN') || v.includes('Infinity') ? '—' : v}</b></div>`).join('');
+      document.getElementById('race-records').innerHTML = rows.map(([e, l, v]) => `<div class="rec"><span>${e}</span><span>${l}</span><b>${v.includes('NaN') || v.includes('Infinity') ? '—' : v}</b></div>`).join('') +
+        (rallyBoard.length ? `<div class="rec rec-list"><span>🏎️</span><span>Top do Rally: ${rallyBoard.slice(0, 5).map((r, i) => `${i + 1}º ${String(r.name).replace(/[^A-Z0-9]/g, '')} ${fmtMs(r.time)}`).join(' · ')}</span></div>` : '');
     }
     // Ajustes novos: sensibilidade da direção, tamanho do analógico e modo canhoto (salvos no aparelho)
     let steerSens = 1; // multiplicador do esterço (usado no passo da física)
@@ -12905,6 +12905,7 @@
       rallyLap.state = 'countdown';
       runCountdown(() => {
         rallyLap.state = 'racing'; rallyLap.startMs = performance.now(); rallyLap.half = false; rallyLap.lastT = 0.012;
+        ghostStart('rally'); ghost.i = 0;
         offTrack.rally = 0;
         htmlEl.classList.add('is-racing');
         raceHudCpEl.textContent = 'Rally · rumo à metade';
@@ -12913,6 +12914,7 @@
     }
     function cancelRallyRace(silent) {
       if (rallyLap.state === 'idle') return;
+      if (ghost.mode === 'rally') ghostStop(); // cancelada (ou já gravada em ghostFinish)
       rallyLap.state = 'idle';
       if (raceState !== 'racing') htmlEl.classList.remove('is-racing');
       if (!silent) raceCountdownEl.textContent = '';
@@ -12927,7 +12929,65 @@
       const p = vehicle.position;
       return Math.hypot(p.x - gate.x, p.z - gate.z) < TRACK_WIDTH * 0.8 && Math.abs(p.y - gate.y) < 4;
     }
+    // ---------- Fantasma da melhor volta: grava a volta (10x/s) e, na próxima corrida, corre junto translúcido ----------
+    const GHOST_KEY = (mode) => 'ghostLap_' + mode + '_v1';
+    const ghost = { mode: null, rec: null, tick: 0, data: null, obj: null, startMs: 0 };
+    const ghostMat = new THREE.MeshBasicMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.32, depthWrite: false });
+    function loadGhost(mode) { try { const g = JSON.parse(localStorage.getItem(GHOST_KEY(mode)) || 'null'); return g && g.s && g.s.length > 8 ? g : null; } catch (e) { return null; } }
+    function buildGhostObject(type) {
+      const g = new THREE.Group();
+      const parts = type === 'baja' ? [bajaBodyGroup] : [carBodyGroup].concat(wheels);
+      parts.forEach((p) => { const c = p.clone(true); c.visible = true; g.add(c); });
+      g.traverse((o) => { if (o.isMesh) { o.material = ghostMat; o.castShadow = false; o.receiveShadow = false; } if (o.isLight || o.isSprite || o.isPoints) o.visible = false; });
+      g.visible = false;
+      scene.add(g);
+      return g;
+    }
+    function ghostStart(mode) {
+      ghostStop();
+      ghost.mode = mode; ghost.rec = []; ghost.tick = 0; ghost.startMs = performance.now();
+      ghost.data = loadGhost(mode);
+      if (ghost.data) {
+        ghost.obj = buildGhostObject(mode === 'rally' ? 'baja' : 'truck');
+        notify({ type: 'info', title: '👻 Fantasma na pista', description: `Seu melhor tempo: ${formatRaceTime(ghost.data.ms)}. Tente vencer o fantasma!`, duration: 3000 });
+      }
+    }
+    function ghostStop() {
+      if (ghost.obj) { scene.remove(ghost.obj); ghost.obj = null; }
+      ghost.mode = null; ghost.rec = null; ghost.data = null;
+    }
+    function ghostTick() {
+      if (!ghost.mode) return;
+      const t = performance.now() - ghost.startMs;
+      if ((ghost.tick++ % 6) === 0 && ghost.rec.length < 3000) {
+        const p = vehicle.position;
+        ghost.rec.push([Math.round(t), +p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2), +carAngle.toFixed(3)]);
+      }
+      if (ghost.obj && ghost.data) {
+        const S = ghost.data.s;
+        let i = ghost.i || 0;
+        while (i < S.length - 2 && S[i + 1][0] < t) i++;
+        ghost.i = i;
+        const a = S[i], b = S[Math.min(i + 1, S.length - 1)];
+        if (t > S[S.length - 1][0]) { ghost.obj.visible = false; return; }
+        const k = b[0] > a[0] ? Math.min(1, Math.max(0, (t - a[0]) / (b[0] - a[0]))) : 0;
+        let da = b[4] - a[4]; da = Math.atan2(Math.sin(da), Math.cos(da));
+        ghost.obj.position.set(a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k);
+        ghost.obj.rotation.y = a[4] + da * k;
+        ghost.obj.visible = true;
+      }
+    }
+    // Ao terminar: se foi o melhor tempo deste aparelho, essa volta vira o novo fantasma
+    function ghostFinish(mode, ms) {
+      if (ghost.mode !== mode || !ghost.rec) { ghostStop(); return; }
+      const prev = loadGhost(mode);
+      if (!prev || ms < prev.ms) {
+        try { localStorage.setItem(GHOST_KEY(mode), JSON.stringify({ ms: Math.round(ms), s: ghost.rec })); } catch (e) { /* sem espaço */ }
+      }
+      ghostStop();
+    }
     function beginRace() {
+      ghostStart('circuit'); ghost.i = 0;
       raceState = 'racing';
       raceStartMs = performance.now();
       raceNextGate = 1;
@@ -12937,6 +12997,7 @@
       logInteractionEvent('🏁 Volta iniciada no Circuito do Ravi!');
     }
     function endRace(silent) {
+      if (ghost.mode === 'circuit') ghostStop();
       countdownTimers.forEach(clearTimeout);
       countdownTimers = [];
       raceCountdownEl.textContent = '';
@@ -12944,20 +13005,33 @@
       htmlEl.classList.remove('is-racing');
       if (!silent) notify({ type: 'info', title: 'Corrida encerrada', duration: 2200 });
     }
-    function finishLap() {
-      lastLapMs = performance.now() - raceStartMs;
+    // ---------- Ranking local do rally (top 10, mesmas iniciais de 3 letras do circuito) ----------
+    const RALLY_BOARD_KEY = 'rallyBoard_v1';
+    let rallyBoard = (() => { try { return JSON.parse(localStorage.getItem(RALLY_BOARD_KEY) || '[]').filter((e) => e && e.time > 0); } catch (e) { return []; } })();
+    let lapEndMode = 'circuit';
+    // Janela de fim de volta compartilhada: circuito (ranking global/local) e rally (ranking local)
+    function openLapEnd(mode, ms) {
+      lapEndMode = mode;
+      lastLapMs = ms;
       lastLapSaved = false;
-      raceState = 'idle';
-      raceStartArmed = false;
-      htmlEl.classList.remove('is-racing');
-      const qualifies = leaderboard.length < 10 || lastLapMs < leaderboard[leaderboard.length - 1].time;
-      circuitEndTimeEl.textContent = formatRaceTime(lastLapMs);
+      const board = mode === 'rally' ? rallyBoard : leaderboard;
+      const qualifies = board.length < 10 || ms < board[board.length - 1].time;
+      document.getElementById('circuit-end-title').textContent = mode === 'rally' ? 'Volta do Rally completa!' : 'Volta completa!';
+      circuitEndTimeEl.textContent = formatRaceTime(ms);
       circuitEndModalEl.classList.toggle('is-top-10', qualifies);
       circuitNameForm.classList.remove('is-valide');
-      circuitNameInput.value = '';
+      circuitNameInput.value = playerTag || '';
       openModalPanel('circuit-end');
       sfx('finish', { vol: 0.7, vary: 0 });
       if (qualifies) setTimeout(() => circuitNameInput.focus(), 350);
+    }
+    function finishLap() {
+      lastLapMs = performance.now() - raceStartMs;
+      raceState = 'idle';
+      raceStartArmed = false;
+      htmlEl.classList.remove('is-racing');
+      ghostFinish('circuit', lastLapMs);
+      openLapEnd('circuit', lastLapMs);
       confettiBurst(vehicle.position.x, vehicle.position.y + 2, vehicle.position.z, 60);
       unlockAchievement('racer');
       if (lastLapMs < 75000) unlockAchievement('speedster');
@@ -12967,6 +13041,7 @@
     function updateRace() {
       const start = raceGates[0];
       updateRallyRace();
+      ghostTick();
       // Passagem livre: os portais não abrem mais nada e a largada não convida. A corrida só começa
       // pela Ilha de Largada (opção "Correr"); os marcos de carreira ficam na Ilha da Carreira.
       if (raceState !== 'racing') return;
@@ -13094,7 +13169,7 @@
     document.getElementById('race-invite-close').addEventListener('click', closeModals);
     document.getElementById('race-btn-start').addEventListener('click', startRaceCountdown);
     document.getElementById('race-btn-end').addEventListener('click', () => { endRace(); closeMenu(); });
-    document.getElementById('circuit-end-again').addEventListener('click', startRaceCountdown);
+    document.getElementById('circuit-end-again').addEventListener('click', () => (lapEndMode === 'rally' ? startRallyRace() : startRaceCountdown()));
     document.getElementById('circuit-end-close').addEventListener('click', closeModals);
     circuitNameInput.addEventListener('input', () => {
       circuitNameInput.value = circuitNameInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
@@ -13104,6 +13179,18 @@
       e.preventDefault();
       if (lastLapSaved || circuitNameInput.value.length !== 3) return;
       const entry = { name: circuitNameInput.value, time: Math.round(lastLapMs), date: Date.now() };
+      if (lapEndMode === 'rally') {
+        rallyBoard.push(entry);
+        rallyBoard.sort((a, b) => a.time - b.time);
+        rallyBoard = rallyBoard.slice(0, 10);
+        try { localStorage.setItem(RALLY_BOARD_KEY, JSON.stringify(rallyBoard)); } catch (err) { /* ignora */ }
+        lastLapSaved = true;
+        setPlayerTag(entry.name);
+        closeModals();
+        openMenu('circuit');
+        notify({ type: 'success', title: 'Recorde do Rally salvo!', description: `${entry.name} · ${formatRaceTime(entry.time)}` });
+        return;
+      }
       leaderboard.push(entry);
       leaderboard.sort((a, b) => a.time - b.time);
       leaderboard = leaderboard.slice(0, 10);

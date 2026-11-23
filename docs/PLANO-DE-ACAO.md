@@ -332,7 +332,7 @@ Esforço: P = pequeno · M = médio · G = grande.
 - [x] Bug: teleporte não zerava o cronômetro do rally (dava recorde falso). Corrigido; volta real medida: 37,5 s.
 - [ ] Paleta em textura e folhagem SDF
 - [x] Névoa (o bloom depende da atualização do Three.js: os arquivos de pós-processamento não estão no projeto)
-- [ ] Prévias do menu com capturas do Desk World (substituir as imagens do mundo do Bruno)
+- [x] Prévias do menu com capturas do Desk World (Caderno do Ravi, fotos polaroide da cena)
 - [ ] Refinamentos de modelos da seção 4 (prioridade: Baja, ponte, cachoeira, cama)
 
 ### Fase 3: som e atmosfera (2 semanas)
@@ -364,9 +364,10 @@ Esforço: P = pequeno · M = médio · G = grande.
 
 ### Fase 4: recursos novos (contínuo)
 - [x] Destravar (tecla U ou Opções: volta à posição segura de ~2 s atrás) e Respawn (ponto de viagem mais próximo)
-- [ ] Modal de fim de volta para o rally (ranking próprio)
+- [x] Modal de fim de volta para o rally (ranking próprio, top 10 local) — 23/11/2026
 - [ ] Recados do Ravi (Whispers próprio)
-- [ ] Ventania, fantasma da melhor volta, modo foto
+- [ ] Ventania, modo foto
+- [x] Fantasma da melhor volta (circuito e rally) — 23/11/2026
 - [ ] Migração em etapas para módulos + atualização do Three
 
 ---
