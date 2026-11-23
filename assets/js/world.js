@@ -1309,47 +1309,31 @@
     const RAMP_LEN = 57.53;
     const RAMP_ANGLE = Math.atan2(35.85, 45); // 0.673 rad (38.5°)
 
-    // 1. RAMPA DE DESCIDA (Mesa -> Quarto) posicionada em z = 18
-    const rampLip = new THREE.Mesh(new THREE.BoxGeometry(10, 0.25, 16), rampMat);
-    rampLip.position.set(-DESK_HALF_W + 5, 0.12, 18);
+    // Rampa ÚNICA de papelão (antes eram duas): 36 de largura (z 10..46), com a descida (z 18) e a
+    // subida (z 38) lado a lado — 4 faixas de cada lado, separadas por uma faixa amarela pintada no meio
+    const RAMP_Z = 28, RAMP_WIDE = 36;
+    const rampLip = new THREE.Mesh(new THREE.BoxGeometry(10, 0.25, RAMP_WIDE), rampMat);
+    rampLip.position.set(-DESK_HALF_W + 5, 0.12, RAMP_Z);
     rampLip.receiveShadow = true;
     rampGroup.add(rampLip);
-
-    const rampMesh = new THREE.Mesh(new THREE.BoxGeometry(RAMP_LEN, 0.35, 16), rampMat);
+    const rampMesh = new THREE.Mesh(new THREE.BoxGeometry(RAMP_LEN, 0.35, RAMP_WIDE), rampMat);
     rampMesh.rotation.z = RAMP_ANGLE;
-    rampMesh.position.set(-112.5, -17.925, 18);
+    rampMesh.position.set(-112.5, -17.925, RAMP_Z);
     rampMesh.castShadow = true;
     rampMesh.receiveShadow = true;
     rampGroup.add(rampMesh);
-
-    // Abas laterais de papelão da rampa de descida
-    [-7.8, 7.8].forEach((rz) => {
+    const returnMesh = rampMesh; // compatibilidade com quem referenciava a rampa de subida
+    [-(RAMP_WIDE / 2 - 0.2), RAMP_WIDE / 2 - 0.2].forEach((rz) => {
       const rail = new THREE.Mesh(new THREE.BoxGeometry(RAMP_LEN, 1.8, 0.35), rampMat);
       rail.rotation.z = RAMP_ANGLE;
-      rail.position.set(-112.5, -17.2, 18 + rz);
+      rail.position.set(-112.5, -17.2, RAMP_Z + rz);
       rampGroup.add(rail);
     });
-
-    // 2. RAMPA DE SUBIDA / RETORNO (Quarto -> Mesa) posicionada paralelamente em z = 38
-    const returnLip = new THREE.Mesh(new THREE.BoxGeometry(10, 0.25, 16), returnRampMat);
-    returnLip.position.set(-DESK_HALF_W + 5, 0.12, 38);
-    returnLip.receiveShadow = true;
-    rampGroup.add(returnLip);
-
-    const returnMesh = new THREE.Mesh(new THREE.BoxGeometry(RAMP_LEN, 0.35, 16), returnRampMat);
-    returnMesh.rotation.z = RAMP_ANGLE;
-    returnMesh.position.set(-112.5, -17.925, 38);
-    returnMesh.castShadow = true;
-    returnMesh.receiveShadow = true;
-    rampGroup.add(returnMesh);
-
-    // Abas laterais de papelão da rampa de subida
-    [-7.8, 7.8].forEach((rz) => {
-      const rail = new THREE.Mesh(new THREE.BoxGeometry(RAMP_LEN, 1.8, 0.35), returnRampMat);
-      rail.rotation.z = RAMP_ANGLE;
-      rail.position.set(-112.5, -17.2, 38 + rz);
-      rampGroup.add(rail);
-    });
+    // Canteiro central pintado (amarelo) entre a descida e a subida
+    const median = new THREE.Mesh(new THREE.BoxGeometry(RAMP_LEN, 0.06, 1.2), new THREE.MeshStandardMaterial({ color: 0xffc94d, roughness: 0.6 }));
+    median.rotation.z = RAMP_ANGLE;
+    median.position.set(-112.5 - 0.2 * Math.sin(RAMP_ANGLE), -17.925 + 0.2 * Math.cos(RAMP_ANGLE), RAMP_Z);
+    rampGroup.add(median);
 
     deskWorld.add(rampGroup); // << ADICIONA AS RAMPAS À CENA!
 
@@ -2841,7 +2825,7 @@
     // CIRCUITO DO RAVI — PISTA TÉCNICA ORIGINAL (chicanes, grampos e "S" em sequência)
     // Mesa → rampa de papelão → circuito embaixo da mesa → rampa de retorno → mesa
     // ============================================================================
-    const TRACK_WIDTH = 9.2;
+    const TRACK_WIDTH = 14.4; // 4 faixas de 3,6
     // [x, z, nível]  d = mesa · r = rampa · f = chão do quarto (sentido da volta)
     const TRACK_POINTS = [
       [-79, 0, 'd'], [-77, 12, 'd'], [-83, 18, 'd'], [-88, 18, 'd'],
@@ -2876,7 +2860,7 @@
         // Já passou da borda da mesa: segue o topo da rampa
         if (x < -90) return THREE.MathUtils.clamp(RAMP_TOP_Y0 + (x - RAMP_TOP_X0) * RAMP_TOP_SLOPE + 0.04, -35.78, 0.29);
         // Em cima da aba de papelão (x -90..-80) a pista sobe para não ficar escondida embaixo dela
-        const onLip = x < -79.6 && ((z > 9.8 && z < 26.2) || (z > 29.8 && z < 46.2));
+        const onLip = x < -79.6 && z > 9.8 && z < 46.2; // aba da rampa única
         return onLip ? 0.27 : 0.165;
       }
       if (level === 'floor') return -35.815;
@@ -2944,8 +2928,9 @@
       ctx.fillStyle = '#f4f4ef';
       ctx.fillRect(16, 0, 3, 256);
       ctx.fillRect(109, 0, 3, 256);
+      // 3 divisórias tracejadas = 4 faixas
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.fillRect(62, 0, 4, 120);
+      [41, 63, 85].forEach((x) => ctx.fillRect(x - 1.5, 0, 3, 110));
       const tex = new THREE.CanvasTexture(c);
       tex.wrapS = THREE.ClampToEdgeWrapping;
       tex.wrapT = THREE.RepeatWrapping;
@@ -3126,6 +3111,37 @@
       shortcutRibbon.renderOrder = 2;
     })();
 
+    // Semáforo de largada: caixa preta com 4 luzes (vermelhas uma a uma na contagem, todas verdes no "Já!")
+    const startLights = [];
+    function makeStartLights(parent, y, z, scale = 1) {
+      const g = new THREE.Group();
+      const box = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.9, 1.1), new THREE.MeshStandardMaterial({ color: 0x15161b, roughness: 0.5 }));
+      g.add(box);
+      const pods = [];
+      for (let i = 0; i < 4; i++) {
+        const m = new THREE.MeshStandardMaterial({ color: 0x3a0d0d, emissive: 0x000000, roughness: 0.3 });
+        [-1, 1].forEach((face) => {
+          const pod = new THREE.Mesh(new THREE.SphereGeometry(0.58, 18, 12), m);
+          pod.position.set(-2.25 + i * 1.5, 0, face * 0.5);
+          g.add(pod);
+        });
+        pods.push(m);
+      }
+      g.position.set(0, y, z); g.scale.setScalar(scale);
+      parent.add(g);
+      startLights.push({ pods });
+      return g;
+    }
+    function setStartLights(red, go) {
+      startLights.forEach((L) => L.pods.forEach((m, i) => {
+        const on = go || i < red;
+        const c = go ? 0x2bff6a : 0xff2a2a;
+        m.color.setHex(on ? c : 0x3a0d0d); m.emissive.setHex(on ? c : 0x000000); m.emissiveIntensity = on ? 1.8 : 0;
+      }));
+    }
+    // Plano deitado na pista, atravessando-a (largura no eixo lateral): yaw = direção da pista
+    function layAcrossTrack(mesh, yaw) { mesh.rotation.order = 'YXZ'; mesh.rotation.set(-Math.PI / 2, yaw, 0); }
+
     // Faixa quadriculada de largada
     const START_SAMPLE = nearestTrackSample(-10, 46, 'desk');
     (function createStartLine() {
@@ -3138,14 +3154,41 @@
       }
       const f = trackFrameAt(START_SAMPLE);
       const plane = new THREE.Mesh(
-        new THREE.PlaneGeometry(TRACK_WIDTH * 0.78, 1.6),
+        new THREE.PlaneGeometry(TRACK_WIDTH - 1.2, 1.6),
         new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })
       );
-      plane.rotation.x = -Math.PI / 2;
-      plane.rotation.z = Math.atan2(f.tx, f.tz) + Math.PI / 2;
+      layAcrossTrack(plane, Math.atan2(f.tx, f.tz)); // antes ficava girada 90° (ao longo da pista)
       plane.position.set(f.s.x, f.s.y + TRACK_RAISE + 0.012, f.s.z);
       plane.receiveShadow = true;
       scene.add(plane);
+    })();
+
+    // Grid de largada: 10 posições (2 colunas desencontradas) atrás da linha, com número pintado
+    function trackSampleBack(k0, dist) {
+      const N = trackSamples.length;
+      let k = k0, acc = 0;
+      while (acc < dist) { const a = trackSamples[((k % N) + N) % N], b = trackSamples[(((k - 1) % N) + N) % N]; acc += Math.hypot(a.x - b.x, a.z - b.z); k--; }
+      return ((k % N) + N) % N;
+    }
+    function gridSlot(n) {
+      const row = Math.floor(n / 2), col = n % 2;
+      const f = trackFrameAt(trackSampleBack(START_SAMPLE, 12 + row * 7 + col * 3.5));
+      const lat = col ? -3.6 : 3.6;
+      return { x: f.s.x + f.nx * lat, z: f.s.z + f.nz * lat, y: f.s.y, yaw: Math.atan2(f.tx, f.tz) };
+    }
+    (function createStartGrid() {
+      for (let n = 0; n < 10; n++) {
+        const c = document.createElement('canvas'); c.width = 128; c.height = 160;
+        const x = c.getContext('2d');
+        x.strokeStyle = '#f4f4ef'; x.lineWidth = 10;
+        x.beginPath(); x.moveTo(10, 150); x.lineTo(10, 12); x.lineTo(118, 12); x.lineTo(118, 150); x.stroke(); // "U" aberto para trás
+        x.fillStyle = '#f4f4ef'; x.font = 'bold 64px Nunito, sans-serif'; x.textAlign = 'center'; x.fillText(String(n + 1), 64, 100);
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 3.8), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
+        const g = gridSlot(n);
+        layAcrossTrack(mesh, g.yaw + Math.PI); // número legível para quem pilota; "U" aberto para trás
+        mesh.position.set(g.x, g.y + TRACK_RAISE + 0.014, g.z);
+        scene.add(mesh);
+      }
     })();
 
     // Textos 3D com a fonte de mundo do DS (Pally) em superfície ameixa
@@ -3201,13 +3244,15 @@
         new THREE.MeshBasicMaterial({ map: createDsLabelTexture(label, { trigger: true, width: 512, height: 110 }), side: THREE.DoubleSide })
       );
       banner.position.y = 8.2;
+      banner.rotation.y = Math.PI; // texto legível para quem chega (antes aparecia espelhado)
       group.add(banner);
       scene.add(group);
       const gate = { k, x: f.s.x, y: f.s.y, z: f.s.z, level: f.s.level, group, postMat, isStart };
       raceGates.push(gate);
       return gate;
     }
-    createRaceGate(-10, 46, 'desk', 'LARGADA', true);
+    const startGate = createRaceGate(-10, 46, 'desk', 'LARGADA', true);
+    makeStartLights(startGate.group, 5.6, 0, 1.15); // abaixo da faixa LARGADA
     createRaceGate(66, 0, 'desk', 'PORTAL 1');
     createRaceGate(-40, -42, 'desk', 'PORTAL 2');
     createRaceGate(-155, -8, 'floor', 'PORTAL 3');
@@ -6002,7 +6047,7 @@
       const chkTex = new THREE.CanvasTexture(chk); chkTex.magFilter = THREE.NearestFilter;
       const line = new THREE.Mesh(new THREE.PlaneGeometry(C_.trackW, 1.6), new THREE.MeshBasicMaterial({ map: chkTex }));
       const la = careerAngle(0) - 0.32;
-      line.rotation.set(-Math.PI / 2, 0, la + Math.PI / 2);
+      layAcrossTrack(line, Math.atan2(Math.cos(la), -Math.sin(la)));
       line.position.set(C_.x + Math.sin(la) * C_.track, Y + 0.08, C_.z + Math.cos(la) * C_.track);
       scene.add(line);
       // Ilhotas: um disco mais alto com borda na cor da empresa, flores e grama baixa
@@ -6033,7 +6078,7 @@
 
     // Placas e posições evitam o circuito do chão e os móveis
     const fireIsland = createIsland({
-      id: 'fire', name: 'Posto do Bombeiro', x: -120, z: 78, r: 12, point: [-111, 70],
+      id: 'fire', name: 'Posto do Bombeiro', x: -120, z: 80, r: 12, point: [-111, 72],
       text: 'Aqui o caminhãozinho do Ravi descansa, enche o tanque e se prepara para a próxima missão. Todo bombeiro precisa de um posto!',
       action: 'Encher o tanque'
     });
@@ -6714,8 +6759,7 @@
         const cx = chk.getContext('2d');
         for (let i = 0; i < 16; i++) for (let j = 0; j < 2; j++) { cx.fillStyle = (i + j) % 2 ? '#111' : '#fff'; cx.fillRect(i * 16, j * 16, 16, 16); }
         const line = new THREE.Mesh(new THREE.PlaneGeometry(RALLY_W, 1.4), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(chk), roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 }));
-        line.rotation.x = -Math.PI / 2;
-        line.rotation.z = Math.atan2(s.tx, s.tz) + Math.PI / 2;
+        layAcrossTrack(line, Math.atan2(s.tx, s.tz));
         line.position.set(s.x, Y0 + 0.1, s.z);
         bedroomWorld.add(line);
         const postMat = new THREE.MeshStandardMaterial({ color: 0x2f55c8, roughness: 0.4, metalness: 0.4 });
@@ -6732,9 +6776,19 @@
         b.fillStyle = '#ffb703'; b.font = 'bold 82px "Amatic SC", sans-serif'; b.textAlign = 'center'; b.textBaseline = 'middle';
         b.fillText('RALLY BAJA · PIRATAS DO VALE', 512, 82);
         const banner = new THREE.Mesh(new THREE.PlaneGeometry(RALLY_W + 3, 2.2), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(bc), roughness: 0.6, side: THREE.DoubleSide }));
-        banner.position.set(s.x, Y0 + 7, s.z);
-        banner.rotation.y = Math.atan2(s.tx, s.tz);
-        // (a faixa antiga saiu: o pórtico da Kenney com luzes faz o papel de largada)
+        // Pórtico próprio: pernas, travessa, faixa e semáforo — alinhado à pista (o da Kenney ficava torto)
+        const gantry = new THREE.Group();
+        gantry.position.set(s.x, Y0, s.z);
+        gantry.rotation.y = Math.atan2(s.tx, s.tz);
+        [-1, 1].forEach((side) => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 9.2, 10), postMat);
+          leg.position.set(side * (RALLY_SIDE + 1.4), 4.6, 0); leg.castShadow = true; gantry.add(leg);
+        });
+        const beam = new THREE.Mesh(new THREE.BoxGeometry((RALLY_SIDE + 1.4) * 2 + 0.8, 0.5, 0.5), postMat);
+        beam.position.y = 9.1; gantry.add(beam);
+        banner.position.set(0, 7.6, 0); gantry.add(banner);
+        makeStartLights(gantry, 5.4, 0, 1.1);
+        bedroomWorld.add(gantry);
       }
 
       // 6. Pneus de proteção: pilhas soltas e PESADAS (o carrinho só consegue tirar do lugar com turbo/nitro)
@@ -7555,10 +7609,10 @@
       // 1. Pórtico de largada com luzes (no lugar das colunas azuis)
       {
         const s = rallySampleAt(0);
-        placeKenney(K, 'overheadLights', { x: s.x, z: s.z, rotY: yawOf(s) + Math.PI / 2, scale: 11 });
+        // (pórtico agora é próprio, ver "Largada" acima); bandeiras encaixadas pelo pé
         [-1, 1].forEach((side) => {
-          const p = at(0.004, side * (RALLY_SIDE + 2.2));
-          placeKenney(K, 'flagCheckers', { x: p.x, z: p.z, rotY: yawOf(p.s), scale: 7 });
+          const p = at(0.006, side * (RALLY_SIDE + 3.2));
+          placeKenney(K, 'flagCheckers', { x: p.x, z: p.z, rotY: yawOf(p.s), scale: 7, onLoad: (m) => anchorModelBase(m, p.x, p.z) });
         });
       }
       // 2. Arquibancadas cobertas olhando para a pista (lado com espaço livre)
@@ -7584,7 +7638,7 @@
       for (let t = 0.02; t < 1; t += 0.07) {
         const p = at(t, -(RALLY_SIDE + 4.5));
         if (!clear(p.x, p.z, 3.6)) continue;
-        placeKenney(K, 'lightPostLarge', { x: p.x, z: p.z, rotY: yawOf(p.s) + Math.PI / 2, scale: 10,
+        placeKenney(K, 'lightPostLarge', { x: p.x, z: p.z, rotY: yawOf(p.s) - Math.PI / 2, scale: 10,
           onLoad: (m) => {
             // A origem do modelo da Kenney não fica no pé do poste: acha o pé (vértices de baixo) e a luminária
             // (vértices de cima), encaixa o pé no ponto pedido e afasta o poste até a luminária ficar na beira da pista
@@ -7603,12 +7657,20 @@
             if (!lo.n || !hi.n) return;
             lo.x /= lo.n; lo.z /= lo.n; hi.x /= hi.n; hi.z /= hi.n;
             const nx = p.x - p.s.x, nz = p.z - p.s.z, nl = Math.hypot(nx, nz) || 1; // direção "para fora" da pista
+            let ax = hi.x - lo.x, az = hi.z - lo.z; // braço: do pé até a luminária
+            if (ax * nx + az * nz > 0) { // braço apontando para fora: gira o poste 180° em volta do pé
+              m.rotation.y += Math.PI; ax = -ax; az = -az;
+              const cx = lo.x, cz = lo.z, ox = m.position.x - cx, oz = m.position.z - cz;
+              m.position.x = cx - ox; m.position.z = cz - oz;
+            }
+            // Pé fora da pista; a luminária pende sobre a beira (um pouco para dentro do asfalto)
             let bx = p.x, bz = p.z;
-            const headDist = rallyNearest(bx + (hi.x - lo.x), bz + (hi.z - lo.z)).dist;
-            if (headDist < RALLY_SIDE + 1) { const push = RALLY_SIDE + 1 - headDist; bx += (nx / nl) * push; bz += (nz / nl) * push; }
+            const headDist = rallyNearest(bx + ax, bz + az).dist, baseDist = rallyNearest(bx, bz).dist;
+            const pull = Math.max(0, Math.min(headDist - (RALLY_SIDE - 1.2), baseDist - (RALLY_SIDE + 1.6)));
+            bx -= (nx / nl) * pull; bz -= (nz / nl) * pull;
             m.position.x += bx - lo.x; m.position.z += bz - lo.z;
             obstacles.push({ x: bx, z: bz, r: 0.8, h: 8, isStatic: true, level: 'floor', name: 'POSTE DE LUZ' });
-            const hx = bx + (hi.x - lo.x), hz = bz + (hi.z - lo.z);
+            const hx = bx + ax, hz = bz + az;
             const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: softGlowTexture, color: 0xffe2a8, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
             glow.position.set(hx, bb.max.y - 0.6, hz); glow.scale.setScalar(6);
             const pool = new THREE.Mesh(new THREE.CircleGeometry(7, 20), new THREE.MeshBasicMaterial({ map: softGlowTexture, color: 0xffe2a8, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -9487,7 +9549,7 @@
       progressAchievement('crates', 1);
     }
     [[-160, -30], [-118, -48], [30, -50], [66, -30], [-60, 44], [-160, 20]].forEach(([x, z]) => createSurpriseCrate(x, z, FLOOR_SURFACE_Y));
-    [[-84, 30], [80, -30], [-30, 52]].forEach(([x, z]) => createSurpriseCrate(x, z, 0, 2.4));
+    [[84, 30], [80, -30], [82, -48]].forEach(([x, z]) => createSurpriseCrate(x, z, 0, 2.4)); // fora da pista de 4 faixas
 
     // Muros de tijolinhos (cada tijolo é um objeto que cai e desliza)
     const brickMat = new THREE.MeshStandardMaterial({ color: 0xb5523b, roughness: 0.85 });
@@ -9519,13 +9581,13 @@
     }
     createBrickWall(-100, -24, FLOOR_SURFACE_Y, 0.2);
     createBrickWall(22, 42, FLOOR_SURFACE_Y, -0.3, 5, 3);
-    createBrickWall(52, 52.2, 0, 0, 3, 2);
+    createBrickWall(82, 44, 0, Math.PI / 2, 3, 2); // canto da mesa, fora da pista larga
 
     // Cones marcando os ápices das chicanes (mesa e chão)
-    [[-40, 51.5], [-20, 51.8], [0, 51.5], [20, 51.8], [74, 22], [74, -20]].forEach(([x, z], i) => {
+    [[75, 22], [75, -20]].forEach(([x, z], i) => { // (os da borda da mesa saíram: a pista de 4 faixas vai até a beira)
       placeModel(i % 2 ? 'traffic_cone_02' : 'traffic_cone_01', { x, z, scale: 0.75, name: 'Cone da Pista' });
     });
-    [[18, 18.5], [0, 39.5], [-18, 18.5], [-36, 39.5], [-54, 20.5], [-150, -42], [68, -13]].forEach(([x, z], i) => {
+    [[18, 15.5], [0, 42.5], [-18, 15.5], [-36, 42.5], [-54, 17.5], [-150, -44], [70, -13]].forEach(([x, z], i) => { // ápices fora das 4 faixas
       placeModel(i % 2 ? 'traffic_cone_02' : 'traffic_cone_01', { x, z, floor: true, name: 'Cone da Pista' });
     });
 
@@ -12888,10 +12950,12 @@
           void raceCountdownEl.offsetWidth;
           raceCountdownEl.classList.add('is-pop');
           if (!sfx(i < 3 ? 'countTick' : 'countGo', { vol: 0.6, vary: 0 })) { playTone(i < 3 ? 440 : 880, 0, i < 3 ? 0.18 : 0.4, 'square', 0.06); }
+          setStartLights(i + 1, i === 3);
           if (i === 3) onGo();
         }, i * 900));
       });
       countdownTimers.push(setTimeout(() => { raceCountdownEl.textContent = ''; }, 3 * 900 + 900));
+      countdownTimers.push(setTimeout(() => setStartLights(0, false), 3 * 900 + 2600));
     }
     // ---------- Rally do Baja: mesma regra (só cronometra depois de "Correr" na Ilha de Largada do Rally) ----------
     function startRallyRace() {
@@ -12900,11 +12964,13 @@
       if (modalsOpen) closeModals();
       countdownTimers.forEach(clearTimeout); countdownTimers = [];
       cancelRallyRace(true);
-      if (currentVehicleType !== 'baja') switchVehicleModel('baja'); else teleportVehicle(rallyStartLocation());
+      if (currentVehicleType !== 'baja') switchVehicleModel('baja');
+      const gt = 1 - 13 / (RALLY_N * RALLY_STEP), gs = rallySampleAt(gt); // 13 unidades antes da linha
+      teleportVehicle({ x: gs.x, z: gs.z, angle: Math.atan2(gs.tx, gs.tz), floor: true, silent: true });
       setCameraMode('close');
       rallyLap.state = 'countdown';
       runCountdown(() => {
-        rallyLap.state = 'racing'; rallyLap.startMs = performance.now(); rallyLap.half = false; rallyLap.lastT = 0.012;
+        rallyLap.state = 'racing'; rallyLap.startMs = performance.now(); rallyLap.half = false; rallyLap.lastT = 0.98;
         ghostStart('rally'); ghost.i = 0;
         offTrack.rally = 0;
         htmlEl.classList.add('is-racing');
@@ -13067,8 +13133,8 @@
 
     // Leva o carrinho para o grid de largada e faz a contagem 3-2-1
     function placeOnStartGrid() {
-      const f = trackFrameAt(START_SAMPLE - 12);
-      teleportVehicle({ name: 'Largada', x: f.s.x, z: f.s.z, angle: Math.atan2(f.tx, f.tz), silent: true });
+      const g = gridSlot(0);
+      teleportVehicle({ name: 'Largada', x: g.x, z: g.z, angle: g.yaw, silent: true });
     }
     function startRaceCountdown() {
       if (introActive || IS_QUINTAL) return;
@@ -13816,8 +13882,7 @@
     // Faixas das rampas de papelão (tampo de 16 de largura: z 10..26 e 30..46)
     function rampZoneAt(x, z) {
       if (x > -DESK_HALF_W + 2.0 || x < -138) return null;
-      if (z >= 9.6 && z <= 26.4) return 'down';
-      if (z >= 29.6 && z <= 46.4) return 'up';
+      if (z >= 9.6 && z <= 46.4) return z < 28 ? 'down' : 'up'; // rampa única: o lado só indica o sentido
       return null;
     }
     function rampHeightAt(x) {
@@ -14221,7 +14286,7 @@
       if (carOnRamp && curX < -DESK_HALF_W - 0.5 && curX > -133.5) {
         const zone = rampZoneAt(curX, curZ);
         if (zone) {
-          const zMin = zone === 'down' ? 10.8 : 30.8, zMax = zone === 'down' ? 25.2 : 45.2;
+          const zMin = 10.4, zMax = 45.6; // abas da rampa única
           if (nextZ < zMin || nextZ > zMax) { nextZ = clamp(nextZ, zMin, zMax); carSpeed *= 0.94; }
         }
       }
@@ -14877,7 +14942,7 @@
           obs.level = levelOfY(h);
           // Componente da gravidade ao longo da rampa (esfera rolando: ~5/7 de g·sen·cos)
           obs.vx -= GRAVITY * 0.34;
-          const zMin = (rampZoneObs === 'down' ? 10.8 : 30.8) + obs.r, zMax = (rampZoneObs === 'down' ? 25.2 : 45.2) - obs.r;
+          const zMin = 10.4 + obs.r, zMax = 45.6 - obs.r; // abas da rampa única
           if (obs.z < zMin) { obs.z = zMin; obs.vz = Math.abs(obs.vz) * 0.5; }
           if (obs.z > zMax) { obs.z = zMax; obs.vz = -Math.abs(obs.vz) * 0.5; }
         } else if (obs.ball && !obs.isFalling && obs.x >= -DESK_HALF_W && obs.x < -DESK_HALF_W + 2.5 && rampZoneObs) {
@@ -15828,6 +15893,9 @@
         lookTarget = new THREE.Vector3(vp.x, vp.y + 1.2, vp.z);
         const ahead = camMode === 'fps' ? 10 : 3.2;
         closeLookAhead.set(Math.sin(closeCamAngle) * ahead, camMode === 'fps' ? 1.4 : 0.2, Math.cos(closeCamAngle) * ahead);
+        // Contagem da largada: olha mais longe e mais alto para o semáforo do pórtico aparecer no quadro
+        const counting = (typeof raceState !== 'undefined' && raceState === 'countdown') || (typeof rallyLap !== 'undefined' && rallyLap.state === 'countdown');
+        if (counting && camMode === 'close') closeLookAhead.set(Math.sin(closeCamAngle) * 10, 4.2, Math.cos(closeCamAngle) * 10);
       } else if (camMode === 'room') {
         camOffset = new THREE.Vector3(88 * zoomFactor, 74 * zoomFactor, 118 * zoomFactor);
         lookTarget = new THREE.Vector3(0, -18, 15);

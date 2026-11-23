@@ -24,7 +24,7 @@ Controle (DualSense/Xbox): L2 acelera, R2 ré, analógico esquerdo dirige, ○ b
 
 ## 🏁 Circuito, ilhas e itens interativos
 
-- Pista original que contorna a mesa, desce a rampa de papelão, cruza o quarto embaixo da mesa e sobe de volta, com 6 portais. A passagem pelos portais é livre (sem popups).
+- Pista original com **4 faixas** que contorna a mesa, desce a **rampa única de papelão** (descida e subida lado a lado), cruza o quarto embaixo da mesa e sobe de volta, com 6 portais. A passagem pelos portais é livre (sem popups). Grid de largada para 10 carrinhos e semáforo no pórtico (acende na contagem 3-2-1).
 - **Corridas só pela Ilha de Largada** (quarto) e pela **Largada do Rally** (quintal): o cronômetro só começa depois de escolher *Correr*. Ficar mais de 5 s fora da pista cancela a corrida.
 - **Ilha da Carreira** (lado leste do quarto): uma super ilha com pista circular exclusiva passando por 6 ilhotas, uma para cada fase da carreira (objeto, placa e mural). O ranking global do circuito aparece na tela do notebook da mesa.
 - Ilhas no quarto (Posto do Bombeiro, Espacial, Música, Brinquedos e Lago) com grama, folhagem e água em shader.
