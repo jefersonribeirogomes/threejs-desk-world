@@ -11988,7 +11988,7 @@
     const keys = { forward: false, backward: false, left: false, right: false, spray: false, boost: false };
     function releaseAllKeys() {
       Object.keys(keys).forEach(k => { keys[k] = false; });
-      document.querySelectorAll('.touch-dpad .pressed, .touch-buttons .is-pressed').forEach(b => b.classList.remove('pressed', 'is-pressed'));
+      document.querySelectorAll('.touch-pad .pressed, .touch-buttons .is-pressed').forEach(b => b.classList.remove('pressed', 'is-pressed'));
     }
     window.addEventListener('blur', releaseAllKeys);
 
@@ -12079,7 +12079,7 @@
       btn.addEventListener('pointerleave', end);
       btn.addEventListener('pointercancel', end);
     }
-    [['t-up', 'forward'], ['t-down', 'backward'], ['t-left', 'left'], ['t-right', 'right']].forEach(([id, k]) => {
+    [['t-up', 'forward'], ['t-down', 'backward']].forEach(([id, k]) => {
       bindTouchButton(id, () => { if (!inputBlocked()) keys[k] = true; }, () => { keys[k] = false; });
     });
     bindTouchButton('t-water', () => { if (!inputBlocked()) { keys.spray = true; spawnWaterJet(); } }, () => { keys.spray = false; });
@@ -12088,6 +12088,51 @@
     bindTouchButton('t-grab', () => toggleGrabItem());
     bindTouchButton('t-interact', () => interactWithNearest());
     document.getElementById('t-up').addEventListener('pointerdown', () => tapAccelerator());
+
+    // Analógico virtual (estilo DualSense): nasce onde o polegar toca na metade esquerda da tela.
+    // X = direção proporcional; para cima acelera, para baixo dá ré (dá para dirigir só com ele, ou junto com o R2)
+    const touchStick = { x: 0, y: 0, id: null, ox: 0, oy: 0 };
+    (function setupTouchStick() {
+      const zone = document.getElementById('t-stick-zone'), stick = document.getElementById('t-stick'), knob = document.getElementById('t-knob');
+      if (!zone || !stick) return;
+      const R = 52; // curso máximo do pino (px)
+      const place = (cx, cy) => {
+        stick.style.transform = '';
+        const r = stick.getBoundingClientRect();
+        stick.style.transform = `translate(${cx - (r.left + r.width / 2)}px, ${cy - (r.top + r.height / 2)}px)`;
+      };
+      const move = (e) => {
+        let dx = e.clientX - touchStick.ox, dy = e.clientY - touchStick.oy;
+        const d = Math.hypot(dx, dy);
+        if (d > R) { dx *= R / d; dy *= R / d; }
+        knob.style.transform = `translate(${dx}px, ${dy}px)`;
+        touchStick.x = dx / R; touchStick.y = dy / R;
+      };
+      const end = (e) => {
+        if (touchStick.id === null || (e && e.pointerId !== undefined && e.pointerId !== touchStick.id)) return;
+        touchStick.id = null; touchStick.x = touchStick.y = 0;
+        knob.style.transform = ''; stick.style.transform = '';
+        stick.classList.remove('is-active', 'is-floating');
+      };
+      zone.addEventListener('pointerdown', (e) => {
+        if (touchStick.id !== null || inputBlocked()) return;
+        e.preventDefault();
+        touchStick.id = e.pointerId; touchStick.ox = e.clientX; touchStick.oy = e.clientY;
+        try { zone.setPointerCapture(e.pointerId); } catch (err) { /* sem captura */ }
+        stick.classList.add('is-active', 'is-floating');
+        place(e.clientX, e.clientY);
+        move(e);
+      });
+      zone.addEventListener('pointermove', (e) => { if (e.pointerId === touchStick.id) { e.preventDefault(); move(e); } });
+      ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((t) => zone.addEventListener(t, end));
+      window.addEventListener('blur', () => end(null));
+    })();
+    // Leitura do analógico com zona morta e curva suave (precisão no centro, esterço total na ponta)
+    function touchStickAxes() {
+      const dz = (v, z) => { const a = Math.abs(v); return a < z ? 0 : Math.sign(v) * Math.pow((a - z) / (1 - z), 1.25); };
+      const sx = dz(touchStick.x, 0.12), sy = dz(touchStick.y, 0.22);
+      return { steer: -sx, throttle: Math.max(0, -sy), reverse: Math.max(0, sy - 0.25) / 0.75 };
+    }
 
     // ============================================================================
     // PONTOS INTERATIVOS: ILHAS DO QUARTO + ITENS CENTRAIS DA MESA (RÁDIO E NOTEBOOK)
@@ -13687,9 +13732,10 @@
 
       // Entradas combinadas: teclado/touch (digital) + gamepad (analógico)
       const blocked = inputBlocked();
-      const throttle = blocked ? 0 : Math.max(keys.forward ? 1 : 0, padInput.throttle);
-      const reverse = blocked ? 0 : Math.max(keys.backward ? 1 : 0, padInput.reverse);
-      const steer = blocked ? 0 : clamp((keys.left ? 1 : 0) - (keys.right ? 1 : 0) + padInput.steer, -1, 1);
+      const ts = touchStickAxes();
+      const throttle = blocked ? 0 : Math.max(keys.forward ? 1 : 0, padInput.throttle, ts.throttle);
+      const reverse = blocked ? 0 : Math.max(keys.backward ? 1 : 0, padInput.reverse, ts.reverse);
+      const steer = blocked ? 0 : clamp((keys.left ? 1 : 0) - (keys.right ? 1 : 0) + padInput.steer + ts.steer, -1, 1);
       const boosting = !blocked && (keys.boost || padInput.boost);
       const braking = !blocked && padInput.brake;
       const kF = throttle > 0.05, kB = reverse > 0.05;
@@ -13753,10 +13799,17 @@
         carSpeed *= 0.997; // arrasto do ar: sem tração no ar
       }
 
-      if (Math.abs(carSpeed) > 0.004) {
-        const dir = carSpeed > 0 ? 1 : -1;
-        const rate = carAirborne ? turnSpeed * 0.35 : turnSpeed;
+      // Direção: em velocidade alta o raio de curva crescia demais ("não vira").
+      // Agora o esterço ganha força com a velocidade e, ao esterçar forte em alta, o carrinho alivia um pouco
+      // sozinho (ajuda a fazer a curva sem soltar o acelerador). Parado, esterçar + acelerar já sai girando.
+      const spAbs = Math.abs(carSpeed);
+      if (spAbs > 0.004 || (Math.abs(steer) > 0.05 && (kF || kB) && !carAirborne)) {
+        const dir = carSpeed < -0.004 || (spAbs <= 0.004 && kB && !kF) ? -1 : 1;
+        const spK = Math.min(spAbs / baseMaxSpeed, 1.8);
+        const grip = 0.75 + 0.25 * Math.min(1, spK * 3); // bem devagar gira um pouco menos (sem pião no lugar)
+        const rate = carAirborne ? turnSpeed * 0.35 : turnSpeed * grip * (1 + 0.32 * spK);
         carAngle += rate * dir * steer;
+        if (!carAirborne && Math.abs(steer) > 0.45 && spK > 0.7) carSpeed *= 1 - 0.006 * Math.abs(steer);
       }
 
       const curX = vehicle.position.x, curZ = vehicle.position.z, curY = vehicle.position.y;

@@ -331,7 +331,7 @@
     .radio-player .radio-frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
     .radio-player .radio-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
     .radio-player .radio-link { display: inline-block; margin-top: 8px; font-size: .7rem; font-weight: 700; color: var(--ds-peach); position: relative; z-index: 1; }
-    html.is-mode-touch .radio-player { bottom: 130px; }
+    html.is-mode-touch .radio-player { bottom: auto; top: 12px; left: auto; right: 64px; width: 260px; } /* não briga com o analógico */
 
     /* HUD do circuito (timer Nunito 900 · 30px do DS) */
     .race-hud {
@@ -497,7 +497,7 @@
     html.is-mode-touch .touch-buttons { display: block !important; }
     .touch-steer, .touch-pad { position: fixed; bottom: 14px; z-index: 7; display: none; }
     html.is-mode-touch .touch-steer, html.is-mode-touch .touch-pad { display: flex; }
-    .touch-steer { left: 18px; gap: 14px; }
+    .touch-steer { left: 22px; bottom: 26px; gap: 14px; pointer-events: none; }
     .touch-pad { right: 16px; align-items: flex-end; gap: 14px; }
     .pad-btn, .pad-trigger {
       position: relative; color: #fff; background: var(--ds-surface);
@@ -505,7 +505,26 @@
       touch-action: none; -webkit-user-select: none; user-select: none;
     }
     .pad-btn::after, .pad-trigger::after { content: ""; position: absolute; inset: 3px; border: 1px solid #fff; opacity: .35; pointer-events: none; border-radius: inherit; }
-    .touch-steer .pad-btn { width: 78px; height: 78px; border-radius: 50%; font-size: 30px; }
+    /* Analógico virtual (L3 do DualSense) */
+    .touch-stick-zone { position: fixed; left: 0; bottom: 0; width: 46vw; height: 72vh; z-index: 6; display: none; touch-action: none; }
+    html.is-mode-touch .touch-stick-zone { display: block; }
+    .touch-stick { position: relative; width: 136px; height: 136px; pointer-events: none; transition: transform .12s ease-out; }
+    .touch-stick.is-floating { transition: none; }
+    .stick-ring { position: absolute; inset: 0; border-radius: 50%;
+      background: radial-gradient(circle, rgba(20,22,30,.55) 0 58%, rgba(240,240,248,.85) 59% 62%, rgba(20,22,30,.5) 63%);
+      box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.25); }
+    .stick-knob { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%;
+      background: radial-gradient(circle at 50% 45%, #3a3d48 0 34%, #23252d 35% 46%, #3a3d48 47% 70%, #15161b 71%);
+      box-shadow: 0 4px 10px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.18); }
+    .touch-stick.is-active .stick-ring { box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,90,140,.9); }
+    .stick-label { position: absolute; left: 50%; bottom: -18px; transform: translateX(-50%); white-space: nowrap; color: #fff; font-size: 10px; font-weight: 700; opacity: .8; text-shadow: 0 1px 2px #000; }
+    .touch-stick.is-active .stick-label { opacity: 0; }
+    /* Botões no estilo DualSense: corpo escuro, símbolos coloridos; gatilhos claros */
+    html.is-mode-touch .face-btn { background: radial-gradient(circle at 50% 35%, #3a3d48, #1b1c22); box-shadow: 0 4px 10px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.15); }
+    html.is-mode-touch .face-btn.pressed { background: var(--ds-trigger); }
+    html.is-mode-touch .pad-trigger { background: linear-gradient(180deg, #f4f4f8, #c9cad3); color: #1b1c22; box-shadow: 0 4px 10px rgba(0,0,0,.4); }
+    html.is-mode-touch .pad-trigger::after { border-color: #1b1c22; }
+    html.is-mode-touch .pad-trigger.pressed { background: var(--ds-trigger); color: #fff; }
     .pad-btn.pressed, .pad-trigger.pressed { background: var(--ds-trigger); }
     .touch-pad .triggers { display: flex; gap: 10px; align-items: flex-end; }
     .pad-trigger { width: 64px; height: 92px; border-radius: 14px 14px 22px 22px; }
@@ -523,7 +542,7 @@
     .face-btn.cross:not(.is-visible) { opacity: .4; }
     .face-btn.square.is-holding { background: var(--ds-trigger); }
     @media only screen and (height <= 420px) {
-      .touch-steer .pad-btn { width: 64px; height: 64px; }
+      .touch-stick { width: 116px; height: 116px; }
       .touch-pad .face { transform: scale(.85); transform-origin: bottom right; }
       .pad-trigger { height: 78px; } .pad-trigger.is-gas { height: 92px; }
     }
@@ -811,7 +830,8 @@
                   <div class="tabs-content-item" data-tabs-name="touch">
                     <div class="list">
                       <table><tbody>
-                        <tr><td><span class="key">Direcional</span></td><td>Dirigir</td></tr>
+                        <tr><td><span class="key">Analógico</span></td><td>Toque e arraste na metade esquerda: lados viram, para cima acelera, para baixo dá ré</td></tr>
+                        <tr><td><span class="key">R2 / L2</span></td><td>Acelerar / ré (dá para usar junto com o analógico; R2 duas vezes = turbo)</td></tr>
                         <tr><td><span class="key">Água</span></td><td>Jato d'água</td></tr>
                         <tr><td><span class="key">Pular</span></td><td>Pular</td></tr>
                         <tr><td><span class="key">Pegar</span></td><td>Pegar / soltar objeto</td></tr>
@@ -1026,9 +1046,15 @@
   <!-- ===== CONTROLES TOUCH ===== -->
   <!-- Celular: direção à esquerda; gatilhos e botões de controle à direita -->
   <div class="touch-buttons is-active" id="touch-buttons"><div class="overlay is-visible"></div></div>
+  <!-- Analógico virtual estilo DualSense: toque em qualquer ponto da metade esquerda e arraste
+       (lados = direção, para cima = acelera, para baixo = ré) -->
+  <div class="touch-stick-zone" id="t-stick-zone" aria-label="Analógico: arraste para dirigir"></div>
   <div class="touch-steer" id="touch-dpad">
-    <button class="pad-btn" id="t-left" type="button" aria-label="Virar à esquerda">◀</button>
-    <button class="pad-btn" id="t-right" type="button" aria-label="Virar à direita">▶</button>
+    <div class="touch-stick" id="t-stick" aria-hidden="true">
+      <div class="stick-ring"></div>
+      <div class="stick-knob" id="t-knob"></div>
+      <small class="stick-label">L3 · arraste para dirigir</small>
+    </div>
   </div>
   <div class="touch-pad" id="touch-pad">
     <div class="triggers">
