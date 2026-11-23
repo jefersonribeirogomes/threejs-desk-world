@@ -311,7 +311,9 @@ Esforço: P = pequeno · M = médio · G = grande.
 - [x] B11: pool instanciado para `spawnFx` (1 chamada de desenho; também corrige o tamanho da partícula, que era ignorado)
 - [x] Grama em lote por região: de 117 para 23 malhas
 - [x] Sombra só para peças com raio de 0,8 ou mais (o carrinho sempre faz sombra)
-- [ ] Cache de materiais + `InstancedMesh` dos objetos repetidos do rally
+- [x] Objetos repetidos do rally (barris, fardos, caixotes) viraram 1 malha cada, com cor por vértice; total de malhas da cena caiu de 2.814 para 2.620.
+- [x] Área de sombra de ±85 para ±60 em volta do carrinho: o passe de sombra tinha 387 chamadas, e a largada foi de 933 para 814 chamadas. A sombra também ficou mais nítida.
+- [ ] Cache de materiais (1.731 duplicados) e malhas com vários materiais (o passe principal ainda tem cerca de 575 chamadas)
 - [ ] Medidor de performance em `localhost` (já existe `window.__step(n)` para testes de física)
 - [x] Extra: link do projeto do Thiago corrigido (piratasdovalepcp.netlify.app) e posto de recarga na Ilha do Baja
 - [x] Kenney Racing Kit no rally: pórtico de largada com luzes, bandeiras quadriculadas, 2 arquibancadas cobertas, 6 torres de banner, 16 postes de luz (prontos para o modo noite), 3 tendas de box, torre de cronometragem e outdoor com arte própria. Créditos em `models/kenney/CREDITS.md`.
