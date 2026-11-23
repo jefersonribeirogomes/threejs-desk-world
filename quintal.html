@@ -386,6 +386,11 @@
     .intro .ring .progress { stroke: var(--ds-reveal); stroke-linecap: round; transition: stroke-dashoffset .25s; }
     .intro .title { font-size: 3rem; line-height: 1; margin: 0; }
     .intro .title .accent { color: var(--ds-peach); }
+    /* Troca de cenário pela porta: só o anel de carregamento e o aviso, sem boas-vindas nem botão */
+    html.is-arriving .intro .title, html.is-arriving .intro .intro-welcome, html.is-arriving .intro #intro-start,
+    html.is-arriving .intro .intro-account, html.is-arriving .intro .intro-photo { display: none !important; }
+    html.is-arriving .intro { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+    html.is-arriving .intro .text { grid-column: auto; text-align: center; font-size: 1.2rem; }
     .intro .text { max-width: 420px; margin: 0; color: var(--ds-text-soft); }
     .intro .button { min-width: 180px; }
     .intro .button.is-disabled { opacity: .45; }
@@ -716,6 +721,14 @@
   <div class="fonts-loader" aria-hidden="true"><span class="nunito">a</span><span class="amatic-sc">a</span><span class="pally">a</span></div>
 
   <!-- ===== INTRO / CARREGAMENTO ===== -->
+  <script>
+    // Chegou por uma porta (troca de cenário)? Então pula a tela de boas-vindas: só carrega e entra
+    try {
+      var arrive = JSON.parse(sessionStorage.getItem('deskWorldArrive') || 'null');
+      sessionStorage.removeItem('deskWorldArrive');
+      if (arrive && Date.now() - arrive.t < 120000) { window.DESK_ARRIVE = arrive; document.documentElement.classList.add('is-arriving'); }
+    } catch (e) { /* sem sessionStorage: segue com a tela inicial */ }
+  </script>
   <div class="intro" id="intro">
     <div class="ring-wrap">
       <!-- Foto do Jeferson no centro do círculo de carregamento (some sozinha se o arquivo não existir) -->

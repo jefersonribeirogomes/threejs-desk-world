@@ -7360,7 +7360,7 @@
       const blocked = (x, z, pad) => {
         if (rallyNearest(x, z).dist < RALLY_SIDE + 3 + pad) return true;
         if (Math.hypot(x - 185, z - 64) < 15 + pad || Math.hypot(x - 152, z - 70) < 14 + pad || Math.hypot(x - 133, z - 47) < 14 + pad ||
-          Math.hypot(x - RALLY_START_ISLAND.x, z - RALLY_START_ISLAND.z) < RALLY_START_ISLAND.r + 2 + pad || Math.hypot(x - 140, z + 62) < 12 + pad) return true; // ilhas (Baja, Fogueira, 86, Largada) e balanço
+          Math.hypot(x - RALLY_START_ISLAND.x, z - RALLY_START_ISLAND.z) < RALLY_START_ISLAND.r + 2 + pad || Math.hypot(x - 140, z + 62) < 12 + pad || Math.hypot(x - 126, z - 20) < 14 + pad) return true; // ilhas, balanço e porta da casa
         if (Math.hypot(x - MOUNTAIN.x, z - MOUNTAIN.z) < MOUNTAIN.r + pad) return true;   // montanha (decorada à parte)
         if (Math.hypot(x - POND.x, z - POND.z) < POND.r + 3 + pad) return true;            // lago do miolo
         if (RALLY_CROSSINGS.some((c) => Math.hypot(x - c.x, z - c.z) < 14 + pad)) return true;
@@ -11649,23 +11649,34 @@
     const introTextEl = document.getElementById('intro-text');
     const introStartEl = document.getElementById('intro-start');
     let introReady = false;
+    const ARRIVE = window.DESK_ARRIVE || null; // veio pela porta de outro cenário
+    if (ARRIVE) introTextEl.textContent = IS_QUINTAL ? 'Saindo para o quintal…' : 'Entrando no quarto…';
     function setIntroReady() {
       if (introReady) return;
       introReady = true;
       introProgressEl.style.strokeDashoffset = '0';
+      if (ARRIVE) { setTimeout(startExperience, 50); return; } // entra direto, sem o botão Começar
       introTextEl.textContent = 'Tudo pronto! Dirija com WASD ou pelo direcional na tela.';
       introStartEl.classList.remove('is-disabled');
     }
     THREE.DefaultLoadingManager.onProgress = (url, loaded, total) => {
       introProgressEl.style.strokeDashoffset = String(314.16 * (1 - loaded / Math.max(1, total)));
-      introTextEl.textContent = `Carregando modelos 3D… ${loaded}/${total}`;
+      introTextEl.textContent = ARRIVE ? `${IS_QUINTAL ? 'Saindo para o quintal' : 'Entrando no quarto'}… ${loaded}/${total}` : `Carregando modelos 3D… ${loaded}/${total}`;
     };
     THREE.DefaultLoadingManager.onLoad = setIntroReady;
     setTimeout(setIntroReady, 9000); // nunca prende o jogador se algum arquivo falhar
 
     function startExperience() {
-      if (IS_QUINTAL) setTimeout(() => { if (currentVehicleType !== 'baja') switchVehicleModel('baja'); else teleportVehicle(rallyStartLocation()); }, 60);
       if (!introActive || !introReady) return;
+      if (ARRIVE) {
+        // Aparece do lado de dentro da porta por onde chegou, de frente para o cenário
+        const door = DOORS.find((d) => d.href && d.href.indexOf(ARRIVE.from === 'quintal' ? 'quintal' : 'index') === 0);
+        if (door) {
+          const dirX = Math.sign(door.tx - door.x), dirZ = Math.sign(door.tz - door.z); // de dentro da porta para o cenário
+          const x = door.tx + dirX * 8, z = door.tz + dirZ * 8;
+          setTimeout(() => { teleportVehicle({ x, z, angle: Math.atan2(dirX, dirZ), floor: true, silent: true }); door.inside = false; }, 60);
+        }
+      } else if (IS_QUINTAL) setTimeout(() => { if (currentVehicleType !== 'baja') switchVehicleModel('baja'); else teleportVehicle(rallyStartLocation()); }, 60);
       introActive = false;
       introEl.classList.add('is-hidden');
       htmlEl.classList.add('is-started');
@@ -11674,9 +11685,10 @@
       pruneTinyShadowCasters();
       setTimeout(pruneTinyShadowCasters, 4000);
       spawnRevealWave(vehicle.position.x, vehicle.position.y, vehicle.position.z);
-      getAudio(); // o áudio só pode iniciar após um gesto do usuário
+      if (!ARRIVE) getAudio(); // o áudio só pode iniciar após um gesto do usuário
+      else ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => window.addEventListener(ev, () => getAudio(), { once: true, passive: true }));
       // Celular: tela cheia + travar na horizontal (Android/Chrome; no iOS fica o aviso "deite o celular")
-      if (htmlEl.classList.contains('is-mode-touch')) {
+      if (htmlEl.classList.contains('is-mode-touch') && !ARRIVE) {
         const el = document.documentElement;
         const fs = el.requestFullscreen || el.webkitRequestFullscreen;
         if (fs) {
@@ -11684,6 +11696,11 @@
             if (screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape');
           }).catch(() => {});
         }
+      }
+      if (ARRIVE) {
+        logInteractionEvent(IS_QUINTAL ? '🌳 Chegou ao quintal pela porta da casa' : '🏠 Voltou para o quarto pela porta');
+        notify({ type: 'info', title: IS_QUINTAL ? 'Quintal 🌳' : 'Quarto 🛏️', description: IS_QUINTAL ? 'O rally do Baja 13 começa na Largada do Rally.' : 'A mesa, as ilhas e a Ilha da Carreira estão aqui.', duration: 3500 });
+        return;
       }
       logInteractionEvent('🚒 Carrinho do Ravi pronto na mesa!');
       notify({ type: 'info', title: 'Bem-vindo à mesa!', description: 'Abra o menu (☰) ou o mapa para explorar', duration: 4500 });
@@ -15006,7 +15023,12 @@
       sfx('uiOpen', { vol: 0.45 });
       openModalPanel('door');
     }
-    doorGoBtn.addEventListener('click', () => { if (doorTargetHref) { saveAchievements(); location.href = doorTargetHref; } });
+    doorGoBtn.addEventListener('click', () => {
+      if (!doorTargetHref) return;
+      saveAchievements();
+      try { sessionStorage.setItem('deskWorldArrive', JSON.stringify({ from: SCENE, t: Date.now() })); } catch (e) { /* sem storage: mostra a intro */ }
+      location.href = doorTargetHref;
+    });
     doorStayBtn.addEventListener('click', () => closeModals());
     document.querySelector('#modal-door .close').addEventListener('click', () => closeModals());
     const DOORS = [];
