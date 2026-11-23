@@ -7347,6 +7347,65 @@
       }
       return kenneyCache.get(key);
     }
+    // GLBs de outras bibliotecas (Quaternius, KayKit, poly.pizza): carrega uma vez e reaproveita
+    const glbCache = new Map();
+    function loadGLB(url) {
+      if (!glbCache.has(url)) {
+        glbCache.set(url, new Promise((resolve, reject) => {
+          const tryLoad = (attempt) => gltfLoader.load(url, (g) => {
+            g.scene.traverse((o) => {
+              if (!o.isMesh) return;
+              o.castShadow = true; o.receiveShadow = true;
+              (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { m.metalness = 0; m.roughness = Math.max(m.roughness, 0.7); });
+            });
+            resolve(g.scene);
+          }, undefined, (e) => (attempt < 2 ? setTimeout(() => tryLoad(attempt + 1), 400) : reject(e)));
+          tryLoad(0);
+        }));
+      }
+      return glbCache.get(url);
+    }
+    // Embrulha o modelo num grupo com pivô na base/centro e escala para a medida pedida (height ou length)
+    function fitToSize(obj, size) {
+      const box = new THREE.Box3().setFromObject(obj), d = new THREE.Vector3(), c = new THREE.Vector3();
+      box.getSize(d); box.getCenter(c);
+      const s = size.height ? size.height / d.y : size.length / Math.max(d.x, d.z);
+      obj.position.set(-c.x * s, -box.min.y * s, -c.z * s); obj.scale.multiplyScalar(s);
+      const g = new THREE.Group(); g.add(obj);
+      return g;
+    }
+    // Várias cópias de um GLB como InstancedMesh (uma chamada de desenho por malha). spots: [x, z, rotY, altura]
+    function placeInstanced(url, spots, parent) {
+      return loadGLB(url).then((proto) => {
+        const unit = fitToSize(proto.clone(true), { height: 1 });
+        unit.updateMatrixWorld(true);
+        const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), pos = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+        unit.traverse((o) => {
+          if (!o.isMesh) return;
+          const im = new THREE.InstancedMesh(o.geometry, o.material, spots.length);
+          spots.forEach(([x, z, r, h], i) => {
+            m4.compose(pos.set(x, FLOOR_SURFACE_Y, z), q.setFromAxisAngle(up, r), sc.setScalar(h)).multiply(o.matrixWorld);
+            im.setMatrixAt(i, m4);
+          });
+          im.castShadow = true; im.receiveShadow = true;
+          im.frustumCulled = false; // r128 testa só a esfera da malha original, não das instâncias
+          (parent || scene).add(im);
+        });
+      }).catch((e) => console.warn('[glb]', url, e));
+    }
+    // Um GLB avulso no cenário, com medida em unidades do mundo (height ou length) e colisor opcional
+    function placeGLB(url, opts) {
+      if (opts.scene && opts.scene !== SCENE) return Promise.resolve(null); // o quarto também ocupa x > 118: o cenário vem explícito
+      return loadGLB(url).then((proto) => {
+        const m = fitToSize(proto.clone(true), opts.height ? { height: opts.height } : { length: opts.length });
+        m.position.set(opts.x, opts.y !== undefined ? opts.y : FLOOR_SURFACE_Y, opts.z);
+        m.rotation.set(opts.rotX || 0, opts.rotY || 0, 0);
+        (opts.parent || scene).add(m);
+        if (opts.collider) obstacles.push(Object.assign({ x: opts.x, z: opts.z, isStatic: true, level: 'floor', name: opts.name || 'OBJETO' }, opts.collider));
+        if (opts.onLoad) opts.onLoad(m);
+        return m;
+      }).catch((e) => console.warn('[glb]', url, e));
+    }
     function placeKenney(pack, name, opts) {
       if ((opts.x >= QUINTAL_MIN_X) !== IS_QUINTAL) return Promise.resolve(null);
       return loadKenney(pack, name).then((proto) => {
@@ -7901,6 +7960,51 @@
       onLoad: (m) => { m.traverse((o) => { if (o.name === 'blades') windmillBlades = o; }); } });
     placeKenney('minigolf-kit', 'castle', { x: -42.5, z: 86.5, y: ISLAND_Y, rotY: -0.5, scale: 6, collider: { r: 3.6, box: { hx: 3, hz: 3 }, boxRot: -0.5, h: 4, name: 'CASTELINHO' } });
     placeKenney('minigolf-kit', 'flag-large-red', { x: -63, z: 74, y: ISLAND_Y, rotY: 0.3, scale: 6 });
+    // Cantinho gamer e tralhas do KayKit (Kay Lousberg, CC0) na parte leste do quarto
+    {
+      const KK = (n) => './models/kaykit/' + n + '.glb', Q = 'quarto';
+      placeGLB(KK('gamer_chair_A'), { scene: Q, x: 180, z: -58, rotY: 0, height: 15, collider: { r: 5, h: 15 }, name: 'CADEIRA GAMER' });
+      placeGLB(KK('handheld_console'), { scene: Q, x: 192, z: -48, rotY: -0.6, length: 4.5 });
+      // Desenhos "de criança" no lugar da imagem de exemplo dos quadros
+      const drawing = (w, h, paint) => {
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const x = c.getContext('2d');
+        x.fillStyle = '#fffaf0'; x.fillRect(0, 0, w, h);
+        x.lineWidth = 6; x.lineCap = x.lineJoin = 'round';
+        paint(x, w, h);
+        const t = new THREE.CanvasTexture(c); t.flipY = false; t.encoding = THREE.sRGBEncoding;
+        return t;
+      };
+      const setPicture = (tex) => (m) => m.traverse((o) => {
+        if (o.isMesh && o.material && o.material.name === 'placeholder') o.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 });
+      });
+      const truckArt = drawing(512, 340, (x, w, h) => {
+        x.fillStyle = '#7ec8ff'; x.fillRect(0, 0, w, 210);
+        x.fillStyle = '#6cc04a'; x.fillRect(0, 210, w, h - 210);
+        x.fillStyle = '#ffd23f'; x.beginPath(); x.arc(440, 70, 38, 0, 7); x.fill();
+        x.strokeStyle = '#ffd23f'; for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; x.beginPath(); x.moveTo(440 + Math.cos(a) * 48, 70 + Math.sin(a) * 48); x.lineTo(440 + Math.cos(a) * 66, 70 + Math.sin(a) * 66); x.stroke(); }
+        x.fillStyle = '#e63946'; x.strokeStyle = '#7a1b22'; x.fillRect(90, 150, 260, 80); x.strokeRect(90, 150, 260, 80);
+        x.fillRect(300, 115, 80, 115); x.strokeRect(300, 115, 80, 115);
+        x.fillStyle = '#bfe6ff'; x.fillRect(318, 130, 46, 38);
+        x.strokeStyle = '#9aa0a6'; x.beginPath(); x.moveTo(100, 140); x.lineTo(290, 105); x.stroke();
+        for (let i = 0; i < 6; i++) { x.beginPath(); x.moveTo(110 + i * 32, 137 - i * 6); x.lineTo(118 + i * 32, 118 - i * 6); x.stroke(); }
+        x.fillStyle = '#222'; [140, 320].forEach((cx) => { x.beginPath(); x.arc(cx, 235, 26, 0, 7); x.fill(); });
+        x.fillStyle = '#2a7de1'; x.font = 'bold 34px Comic Sans MS, cursive'; x.fillText('RAVI', 30, 310);
+      });
+      const bajaArt = drawing(256, 320, (x, w, h) => {
+        x.fillStyle = '#c97b45'; x.fillRect(0, 200, w, h - 200);
+        x.strokeStyle = '#3b6fd8'; x.strokeRect(60, 110, 140, 80); x.beginPath(); x.moveTo(60, 110); x.lineTo(110, 70); x.lineTo(200, 110); x.stroke();
+        x.fillStyle = '#222'; [75, 190].forEach((cx) => { x.beginPath(); x.arc(cx, 200, 30, 0, 7); x.fill(); });
+        x.fillStyle = '#ffd23f'; x.font = 'bold 54px Comic Sans MS, cursive'; x.fillText('13', 100, 170);
+        x.fillStyle = '#7a3d12'; x.font = 'bold 26px Comic Sans MS, cursive'; x.fillText('BAJA', 90, 290);
+      });
+      placeGLB(KK('frame_A_large'), { scene: Q, x: 168, y: -10, z: -72.6, length: 22, onLoad: setPicture(truckArt) });
+      placeGLB(KK('frame_B'), { scene: Q, x: 200, y: -12, z: -72.6, length: 10, onLoad: setPicture(bajaArt) });
+      placeGLB(KK('guitarcase'), { scene: Q, x: 236, z: -55, rotY: -Math.PI / 2, rotX: -0.12, height: 16, collider: { r: 3, h: 16 }, name: 'CASE DE VIOLÃO' });
+      placeGLB(KK('sled'), { scene: Q, x: 205, z: 72, rotY: 0.6, length: 14, collider: { r: 5, box: { hx: 3.5, hz: 7 }, boxRot: 0.6, h: 4 }, name: 'TRENÓ' });
+      placeGLB(KK('bicycle_helmet'), { scene: Q, x: 172, z: 66, rotY: 2.2, height: 6, collider: { r: 3.5, h: 6 }, name: 'CAPACETE' });
+      placeGLB(KK('pickle_jar'), { scene: Q, x: 222, z: -12, rotY: 0.4, height: 6, collider: { r: 2.2, h: 6 }, name: 'POTE DE PICLES' });
+    }
     placeKenney('furniture-kit', 'bear', { x: 114, z: -1, y: FLOOR_SURFACE_Y + 11, rotY: -Math.PI / 2, scale: 9 });
     function updateKenneyToys(time) {
       if (windmillBlades) windmillBlades.rotation.z = time * (0.8 + windState.strength * 1.6);
@@ -8325,7 +8429,7 @@
     // Janela com céu, nuvens e cortinas (parede direita)
     (function createWindow() {
       const g = new THREE.Group();
-      g.position.set(122.9, -4, 15);
+      g.position.set(237.9, -4, -30); // na parede leste (antes ficava solta no meio do quarto expandido)
       g.rotation.y = -Math.PI / 2;
       const sky = document.createElement('canvas');
       sky.width = 256; sky.height = 192;
@@ -8363,9 +8467,10 @@
       rod.rotation.z = Math.PI / 2;
       rod.position.set(0, 13.5, 1.4);
       g.add(glass, rod);
+      g.userData.quarto = true;
       scene.add(g);
       const sunLight = new THREE.PointLight(0xfff1d0, 0.5, 70, 2);
-      sunLight.position.set(110, -2, 15);
+      sunLight.position.set(225, -2, -30);
       scene.add(sunLight);
     })();
 
@@ -14652,9 +14757,9 @@
       scene.add(ground);
       // Fachada dos fundos da casa (parede oeste) com janelas
       const house = new THREE.Mesh(new THREE.BoxGeometry(6, 60, 200), new THREE.MeshStandardMaterial({ color: 0xf2e6cf, roughness: 0.85 }));
-      house.position.set(115, FLOOR_SURFACE_Y + 30, 10); house.receiveShadow = true; scene.add(house);
+      house.position.set(115, FLOOR_SURFACE_Y + 30, 10); house.receiveShadow = true; house.userData.quintal = true; scene.add(house);
       const roof = new THREE.Mesh(new THREE.BoxGeometry(14, 3, 204), new THREE.MeshStandardMaterial({ color: 0xb5503a, roughness: 0.8 }));
-      roof.position.set(116, FLOOR_SURFACE_Y + 61, 10); scene.add(roof);
+      roof.position.set(116, FLOOR_SURFACE_Y + 61, 10); roof.userData.quintal = true; scene.add(roof);
       [-60, -25, 60].forEach((wz) => {
         const win = new THREE.Mesh(new THREE.PlaneGeometry(14, 12), new THREE.MeshStandardMaterial({ color: 0xbfe6ff, roughness: 0.1, metalness: 0.2, emissive: 0x335577, emissiveIntensity: 0.2 }));
         win.position.set(118.1, FLOOR_SURFACE_Y + 24, wz); win.rotation.y = Math.PI / 2; scene.add(win);
@@ -14680,6 +14785,35 @@
           scene.add(im);
         });
       });
+      // Natureza do Quaternius (CC0): árvores, arbustos e flores espalhados longe da pista, instanciados por modelo
+      const rnd = (() => { let s = 913; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
+      const used = [];
+      const free = (x, z, r) => x > 127 && x < 336 && z > -76 && z < 96 &&
+        rallyNearest(x, z).dist > RALLY_SIDE + r + 2 && mountainH(x, z) < 0.05 &&
+        Math.hypot(x - 185, z - 64) > 16 + r && Math.hypot(x - 152, z - 70) > 15 + r &&
+        Math.hypot(x - POND.x, z - POND.z) > POND.r + 3 + r && Math.hypot(x - 122, z - 20) > 14 && Math.hypot(x - 134, z - 46) > 9 &&
+        used.every((u) => Math.hypot(x - u[0], z - u[1]) > u[2] + r);
+      const scatter = (names, count, height, r, collide) => {
+        const spots = names.map(() => []);
+        for (let tries = 0, n = 0; n < count && tries < count * 60; tries++) {
+          const x = 127 + rnd() * 209, z = -76 + rnd() * 172;
+          if (!free(x, z, r)) continue;
+          used.push([x, z, r]); spots[n % names.length].push([x, z, rnd() * Math.PI * 2, height * (0.8 + rnd() * 0.45)]); n++;
+          if (collide) obstacles.push({ x, z, r: collide, h: height, isStatic: true, level: 'floor', name: 'ÁRVORE' });
+        }
+        names.forEach((nm, i) => spots[i].length && placeInstanced('./models/quaternius/' + nm + '.glb', spots[i]));
+      };
+      scatter(['MapleTree_1', 'MapleTree_2', 'MapleTree_3'], 9, 20, 6, 1.4);
+      scatter(['BirchTree_1', 'BirchTree_2', 'DeadTree_1'], 8, 18, 3.5, 0.9);
+      scatter(['Bush', 'Bush_Flowers', 'Bush_Large_Flowers', 'Bush_Small_Flowers'], 26, 3.6, 2.2, 0);
+      scatter(['Flower_1_Clump', 'Flower_3_Clump', 'Flower_4_Clump'], 45, 1.6, 0.9, 0);
+      // Toyota AE86 estacionado ao lado da casa ("Toyota AE86" por IvOfficial, poly.pizza, CC-BY 3.0)
+      loadGLB('./models/polypizza/toyota-ae86.glb').then((proto) => {
+        const car = fitToSize(proto.clone(true), { length: 11 });
+        car.position.set(134, FLOOR_SURFACE_Y, 46); car.rotation.y = Math.PI * 0.08;
+        scene.add(car);
+        obstacles.push({ x: 134, z: 46, r: 6, box: { hx: 2.6, hz: 5.6 }, boxRot: car.rotation.y, h: 4, isStatic: true, level: 'floor', name: 'TOYOTA AE86' });
+      }).catch((e) => console.warn('[ae86]', e));
     }
     // Retira do quintal tudo o que pertence ao quarto (o motor é o mesmo; aqui ele só não desenha nem simula)
     function cullOtherScene() {
@@ -14689,7 +14823,8 @@
       const box = new THREE.Box3();
       [scene, bedroomWorld].forEach((parent) => {
         [...parent.children].forEach((o) => {
-          if (keep.has(o) || o === deskWorld || o === bedroomWorld || o.isInstancedMesh || o.frustumCulled === false) return;
+          if (o.userData.quarto) { parent.remove(o); return; } // marcado como só do quarto
+          if (keep.has(o) || o.userData.quintal || o === deskWorld || o === bedroomWorld || o.isInstancedMesh || o.frustumCulled === false) return;
           if (o.isLight) { if (o.position.x < QUINTAL_MIN_X) parent.remove(o); return; }
           box.setFromObject(o);
           if (box.isEmpty()) return;

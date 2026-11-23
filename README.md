@@ -63,6 +63,11 @@ As duas páginas usam o mesmo motor (`assets/js/world.js`); cada uma define `win
 
 - **Inspiração:** [Bruno Simon](https://bruno-simon.com/): o portfólio interativo em 3D dele inspirou este mundo e o design system da interface.
 - **Modelos e referências:** [Kenney](https://kenney.nl/): pacotes de modelos 3D e sons em domínio público (CC0), referência e primeira opção para os assets do projeto.
+- **Natureza do quintal:** [Quaternius](https://quaternius.com/), Ultimate Stylized Nature (CC0).
+- **Props do quarto:** [Kay Lousberg / KayKit](https://kaylousberg.itch.io/), Mixed Bag 2 (CC0).
+- **Carro estacionado no quintal:** "[Toyota AE86](https://poly.pizza/m/ZEFWmOPSgh)" por [IvOfficial](https://poly.pizza/u/IvOfficial), licenciado em [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) (via Poly Pizza; textura e formato originais).
+
+Lista completa de modelos e onde aparecem: [`models/CREDITS.md`](models/CREDITS.md) e [`models/kenney/CREDITS.md`](models/kenney/CREDITS.md).
 
 ## 🚀 Como rodar localmente
 
