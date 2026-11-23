@@ -11123,6 +11123,10 @@
       menuPreviews.forEach(el => el.classList.toggle('is-visible', el.dataset.name === name));
       menuContents.forEach(el => el.classList.toggle('is-visible', el.dataset.name === name));
       if (name === 'achievements') renderAchievements();
+      if (name === 'home') renderGarage();
+      if (name === 'worlds') renderWorlds();
+      if (name === 'circuit') renderRecords();
+      sfx('uiMove', { vol: 0.3 });
     }
     menuNavItems.forEach(el => el.addEventListener('click', () => selectMenuSection(el.dataset.name)));
 
@@ -11141,7 +11145,18 @@
     }
     function refreshMenuPreviews() {
       const car = vehicle.position;
-      const views = {
+      const views = IS_QUINTAL ? {
+        home: [new THREE.Vector3(car.x + 9, car.y + 6, car.z + 11), new THREE.Vector3(car.x, car.y + 1, car.z)],
+        worlds: [new THREE.Vector3(230, 90, -110), new THREE.Vector3(230, -36, 10)],
+        circuit: [new THREE.Vector3(200, -14, -40), new THREE.Vector3(240, -34, 0)],
+        achievements: [new THREE.Vector3(160, -24, -25), new THREE.Vector3(145, -34, -55)],
+        about: [new THREE.Vector3(152, -26, 32), new THREE.Vector3(134, -34, 46)],
+        controls: [new THREE.Vector3(car.x + 6, car.y + 4.5, car.z + 8), new THREE.Vector3(car.x, car.y + 1.2, car.z)],
+        options: [new THREE.Vector3(300, 40, 90), new THREE.Vector3(230, -36, 0)],
+        behindTheScene: [new THREE.Vector3(170, -20, 60), new THREE.Vector3(152, -34, 70)]
+      } : {
+        worlds: [new THREE.Vector3(200, -8, -10), new THREE.Vector3(237, -26, 30)],
+        about: [new THREE.Vector3(14, 16, 26), new THREE.Vector3(2, 8, -12)],
         home: [new THREE.Vector3(48, 40, 70), new THREE.Vector3(0, 0, 6)],
         options: [new THREE.Vector3(88, 56, 133), new THREE.Vector3(0, -18, 15)],
         controls: [new THREE.Vector3(car.x + 6, car.y + 4.5, car.z + 8), new THREE.Vector3(car.x, car.y + 1.2, car.z)],
@@ -11160,7 +11175,7 @@
       if (introActive || isModalOpen) return;
       if (modalsOpen) closeModals();
       releaseAllKeys();
-      if (section) selectMenuSection(section);
+      selectMenuSection(section || currentMenuSection);
       refreshMenuPreviews();
       if (currentMenuSection === 'achievements') renderAchievements();
       menuOpen = true;
@@ -11182,6 +11197,63 @@
     document.getElementById('menu-close').addEventListener('click', closeMenu);
     document.getElementById('menu-btn-play').addEventListener('click', closeMenu);
     document.getElementById('menu-btn-map').addEventListener('click', () => openMap());
+
+    // ---------- Caderno do Ravi: Garagem, Mundos, Corridas e Ajustes novos ----------
+    const fmtMs = (ms) => { const m = Math.floor(ms / 60000), s = Math.floor(ms / 1000) % 60, c = Math.floor(ms % 1000); return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}:${String(c).padStart(3, '0')}`; };
+    function renderGarage() {
+      document.querySelectorAll('.garage-card').forEach((b) => {
+        b.classList.toggle('is-active', b.dataset.vehicle === currentVehicleType);
+        b.classList.toggle('is-disabled', b.dataset.vehicle === 'baja' && !IS_QUINTAL);
+      });
+      document.getElementById('garage-hint').textContent = IS_QUINTAL ? 'Os dois veículos podem andar no quintal. Só o Baja encara a lama e os obstáculos do rally.'
+        : 'O Baja 13 mora no quintal: vá em Mundos ou passe pela porta da parede leste do quarto.';
+    }
+    document.querySelectorAll('.garage-card').forEach((b) => b.addEventListener('click', () => {
+      const v = b.dataset.vehicle;
+      if (v === 'baja' && !IS_QUINTAL) { selectMenuSection('worlds'); sfx('uiError', { vol: 0.4 }); return; }
+      closeMenu();
+      if (v !== currentVehicleType) switchVehicleModel(v);
+    }));
+    document.getElementById('menu-btn-paint').addEventListener('click', () => { closeMenu(); openPaintShop(); });
+    function renderWorlds() {
+      const got = (from, to) => { let n = 0, t = 0; coins.forEach((c) => { if (c.id >= from && c.id < to) { t++; if (coinCollected.has(c.id)) n++; } }); return `🪙 ${n} / ${t} moedas`; };
+      document.getElementById('world-stat-quarto').textContent = got(0, 22);
+      document.getElementById('world-stat-quintal').textContent = got(22, COIN_COUNT);
+      document.querySelectorAll('.world-card[data-world]').forEach((a) => a.classList.toggle('is-here', a.dataset.world === SCENE));
+    }
+    document.querySelectorAll('.world-card[data-world]').forEach((a) => a.addEventListener('click', (e) => {
+      if (a.dataset.world === SCENE) { e.preventDefault(); closeMenu(); }
+    }));
+    function renderRecords() {
+      const rows = [
+        ['🏁', 'Circuito do Ravi (melhor volta)', leaderboard.length ? fmtMs(Math.min(...leaderboard.map((r) => r.time))) : '—'],
+        ['🏎️', 'Rally do Baja (melhor volta)', rallyLap.best ? fmtMs(rallyLap.best) : '—'],
+        ['🎳', 'Boliche (maior placar)', bowlingBest ? String(bowlingBest) : '—']
+      ];
+      document.getElementById('race-records').innerHTML = rows.map(([e, l, v]) => `<div class="rec"><span>${e}</span><span>${l}</span><b>${v.includes('NaN') || v.includes('Infinity') ? '—' : v}</b></div>`).join('');
+    }
+    // Ajustes novos: sensibilidade da direção, tamanho do analógico e modo canhoto (salvos no aparelho)
+    let steerSens = 1; // multiplicador do esterço (usado no passo da física)
+    const STEER_LEVELS = [['Suave', 0.8], ['Normal', 1], ['Rápida', 1.2]];
+    const STICK_LEVELS = [['Pequeno', 'stick-s'], ['Médio', ''], ['Grande', 'stick-l']];
+    const prefGet = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } };
+    const prefSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sem storage */ } };
+    let steerLevel = Math.min(2, Math.max(0, parseInt(prefGet('steerLevel', '1'), 10) || 0));
+    let stickLevel = Math.min(2, Math.max(0, parseInt(prefGet('stickLevel', '1'), 10) || 0));
+    let leftHanded = prefGet('leftHanded', '0') === '1';
+    function applyControlPrefs() {
+      steerSens = STEER_LEVELS[steerLevel][1];
+      htmlEl.classList.remove('stick-s', 'stick-l');
+      if (STICK_LEVELS[stickLevel][1]) htmlEl.classList.add(STICK_LEVELS[stickLevel][1]);
+      htmlEl.classList.toggle('is-lefty', leftHanded);
+      document.querySelector('#opt-steer span').textContent = STEER_LEVELS[steerLevel][0];
+      document.querySelector('#opt-stick span').textContent = STICK_LEVELS[stickLevel][0];
+      document.querySelector('#opt-hand span').textContent = leftHanded ? 'Canhoto' : 'Destro';
+    }
+    document.getElementById('opt-steer').addEventListener('click', () => { steerLevel = (steerLevel + 1) % 3; prefSet('steerLevel', steerLevel); applyControlPrefs(); });
+    document.getElementById('opt-stick').addEventListener('click', () => { stickLevel = (stickLevel + 1) % 3; prefSet('stickLevel', stickLevel); applyControlPrefs(); });
+    document.getElementById('opt-hand').addEventListener('click', () => { leftHanded = !leftHanded; prefSet('leftHanded', leftHanded ? '1' : '0'); applyControlPrefs(); });
+    applyControlPrefs();
 
     // Abas de controles (.tabs)
     document.querySelectorAll('#controls-tabs .tab').forEach((tab) => {
@@ -12096,7 +12168,7 @@
     (function setupTouchStick() {
       const zone = document.getElementById('t-stick-zone'), stick = document.getElementById('t-stick'), knob = document.getElementById('t-knob');
       if (!zone || !stick) return;
-      const R = 52; // curso máximo do pino (px)
+      const stickR = () => (htmlEl.classList.contains('stick-l') ? 64 : htmlEl.classList.contains('stick-s') ? 42 : 52); // curso máximo do pino (px)
       const place = (cx, cy) => {
         stick.style.transform = '';
         const r = stick.getBoundingClientRect();
@@ -12105,6 +12177,7 @@
       const move = (e) => {
         let dx = e.clientX - touchStick.ox, dy = e.clientY - touchStick.oy;
         const d = Math.hypot(dx, dy);
+        const R = stickR();
         if (d > R) { dx *= R / d; dy *= R / d; }
         knob.style.transform = `translate(${dx}px, ${dy}px)`;
         touchStick.x = dx / R; touchStick.y = dy / R;
@@ -13808,7 +13881,7 @@
         const dir = carSpeed < -0.004 || (spAbs <= 0.004 && kB && !kF) ? -1 : 1;
         const spK = Math.min(spAbs / baseMaxSpeed, 1.8);
         const grip = 0.75 + 0.25 * Math.min(1, spK * 3); // bem devagar gira um pouco menos (sem pião no lugar)
-        const rate = carAirborne ? turnSpeed * 0.35 : turnSpeed * grip * (1 + 0.32 * spK);
+        const rate = (carAirborne ? turnSpeed * 0.35 : turnSpeed * grip * (1 + 0.32 * spK)) * steerSens;
         carAngle += rate * dir * steer;
         if (!carAirborne && Math.abs(steer) > 0.45 && spK > 0.7) carSpeed *= 1 - 0.006 * Math.abs(steer);
       }

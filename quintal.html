@@ -550,6 +550,130 @@
       .hud-water { top: 10px; left: 10px; padding: 6px 12px 10px; }
       .hud-water .title { font-size: 1.4rem; }
     }
+
+    /* ==========================================================================
+       MENU "CADERNO DO RAVI": folha pautada com espiral, abas de post-it e foto polaroide
+       ========================================================================== */
+    .menu.notebook { --nb-ink: #2e2a3a; --nb-red: #d62839; --nb-orange: #e76f00; --nb-blue: #2a6fdb; background: rgba(20, 16, 26, .55); }
+    .menu.notebook .inner { width: min(980px, 100% - 300px); height: min(620px, 100% - 90px); }
+    .menu.notebook .container {
+      border-radius: 6px 16px 16px 6px; padding-left: 38px; color: var(--nb-ink);
+      background-color: #fffdf4;
+      background-image: linear-gradient(90deg, transparent 84px, #f4a3a3 84px 86px, transparent 86px),
+        repeating-linear-gradient(180deg, transparent 0 31px, #d3e3f6 31px 32px);
+      box-shadow: 0 22px 50px rgba(0,0,0,.5), inset 0 0 0 1px #e9e1c8;
+    }
+    .menu.notebook .container::before { /* espiral */
+      content: ""; position: absolute; left: 8px; top: 16px; bottom: 16px; width: 26px; z-index: 2; pointer-events: none;
+      background: radial-gradient(circle at 13px 13px, #3b3a44 0 5px, #9a9aa6 6px 7px, transparent 8px) 0 0 / 26px 32px repeat-y;
+    }
+    .menu.notebook .previews { width: 38%; background: transparent; padding: 0; }
+    .menu.notebook .previews:after { display: none; }
+    .menu.notebook .previews .preview { inset: 30px 18px 40px 22px; width: auto; height: auto; background: #fff; box-shadow: 0 8px 18px rgba(0,0,0,.22); transform: rotate(-2.4deg); }
+    .menu.notebook .previews .preview::before { /* fita adesiva */
+      content: ""; position: absolute; top: -12px; left: 50%; width: 96px; height: 26px; transform: translateX(-50%) rotate(3deg); z-index: 2;
+      background: repeating-linear-gradient(45deg, rgba(255,214,102,.85) 0 8px, rgba(255,196,64,.85) 8px 16px); box-shadow: 0 1px 2px rgba(0,0,0,.15);
+    }
+    .menu.notebook .previews .background { top: 12px; left: 12px; width: calc(100% - 24px); height: calc(100% - 70px); }
+    .menu.notebook .previews .preview .caption {
+      left: 0; right: 0; bottom: 10px; text-align: center; background: none; color: var(--nb-ink);
+      font-family: 'Amatic SC', cursive; font-size: 2.1rem; font-weight: 700;
+    }
+    .menu.notebook .contents { width: 62%; background: transparent; }
+    .menu.notebook .contents .content { background: transparent; }
+    .menu.notebook .contents .content-inner { width: auto; padding: 22px 46px 40px 30px; }
+    .menu.notebook .contents .title { font-family: 'Amatic SC', cursive; font-weight: 700; color: var(--nb-red); font-size: 3.2rem; line-height: 1; transform: rotate(-1deg); }
+    .menu.notebook .contents h2.title { font-size: 2.2rem; color: var(--nb-orange); }
+    .menu.notebook .contents .section-title { font-family: 'Amatic SC', cursive; font-weight: 700; color: var(--nb-orange); font-size: 2rem; }
+    .menu.notebook .contents .text, .menu.notebook table.options td, .menu.notebook .contents .controls-content .list td { color: var(--nb-ink); }
+    .menu.notebook .contents .text strong, .menu.notebook .contents .home-content .text strong { color: var(--nb-red); }
+    .menu.notebook .contents a:not(.button):not(.world-card) { color: var(--nb-blue); }
+    .menu.notebook .contents .kicker { margin-top: -6px; font-weight: 800; letter-spacing: .04em; opacity: .55; }
+    .menu.notebook .contents .log-list li { color: #5b566a; border-bottom-color: #2e2a3a1f; }
+    .menu.notebook .contents .log-list li:first-child { color: var(--nb-ink); font-weight: 700; }
+    .menu.notebook .contents .achievements-content .global-progress, .menu.notebook .contents .leaderboard-scope, .menu.notebook .contents .no-score { color: var(--nb-ink); }
+    .menu.notebook .contents .achievements-content .items > * { transform: rotate(var(--tilt, 0deg)); }
+    .menu.notebook .contents .achievements-content .items > *:nth-child(3n) { --tilt: -1.2deg; }
+    .menu.notebook .contents .achievements-content .items > *:nth-child(3n+1) { --tilt: .9deg; }
+    /* Botões do DS viram etiquetas de caneta no papel */
+    .menu.notebook .contents .button { color: var(--nb-ink); border: 2px solid var(--nb-ink); background: #fff; font-weight: 800; box-shadow: 2px 3px 0 #2e2a3a33; }
+    html:not(.is-mode-touch) .menu.notebook .contents .button:not(.is-disabled):hover { color: #fff; border: 2px solid var(--nb-red); background: var(--nb-red); }
+    .menu.notebook .contents .button.is-active { color: #fff; background: var(--nb-ink); }
+    .menu.notebook .contents .button .icon path { fill: currentColor; }
+    .menu.notebook .contents .button .tooltip { color: #fff; }
+    .menu.notebook .contents .achievements-content .achievement .title { color: var(--nb-orange); }
+    .menu.notebook .contents .achievements-content .achievement .description .progress { color: #8a8496; }
+    .menu.notebook .contents .achievements-content .achievement.is-achieved .title,
+    .menu.notebook .contents .achievements-content .achievement.is-achieved .description .progress { color: #2a9d3f; }
+    .menu.notebook .contents .achievements-content .achievement .bar { background: #2e2a3a1a; }
+    .menu.notebook .contents .achievements-content .global-progress .ratio { color: var(--nb-red); }
+    .menu.notebook .tabs .tabs-navigation .tab .icon-container { opacity: .45; filter: invert(1) brightness(.25); }
+    .menu.notebook .tabs .tabs-navigation .tab.is-active .icon-container { opacity: 1; }
+    .menu.notebook .tabs .tabs-navigation .tab .label { color: var(--nb-ink); }
+    /* Abas de post-it saindo da borda direita do caderno */
+    .menu.notebook .navigation { left: 100%; right: auto; bottom: auto; top: 18px; flex-direction: column; gap: 6px; }
+    .menu.notebook .navigation .item {
+      width: 132px; height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 10px;
+      border-radius: 0 10px 10px 0; color: #2e2a3a; font: 800 15px/1 Nunito, sans-serif; text-align: left;
+      background: var(--tab, #ffd166); box-shadow: 0 3px 6px rgba(0,0,0,.25); transform: translateX(-8px); transition: transform .15s;
+    }
+    .menu.notebook .navigation .item .tab-emoji { font-size: 20px; }
+    html:not(.is-mode-touch) .menu.notebook .navigation .item:hover, .menu.notebook .navigation .item.gp-focus { transform: translateX(0); }
+    .menu.notebook .navigation .item.is-active { transform: translateX(6px); box-shadow: 0 4px 10px rgba(0,0,0,.35), inset 4px 0 0 rgba(0,0,0,.12); }
+    .menu.notebook .navigation .tab-home { --tab: #ff8a80; } .menu.notebook .navigation .tab-worlds { --tab: #a5d6a7; }
+    .menu.notebook .navigation .tab-circuit { --tab: #ffd166; } .menu.notebook .navigation .tab-achievements { --tab: #ffe082; }
+    .menu.notebook .navigation .tab-about { --tab: #90caf9; } .menu.notebook .navigation .tab-controls { --tab: #ce93d8; }
+    .menu.notebook .navigation .tab-options { --tab: #cfd8dc; } .menu.notebook .navigation .tab-behindTheScene { --tab: #ffcc80; }
+    /* Garagem e Mundos */
+    .garage-vehicles, .world-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 6px 0 10px; }
+    .garage-card, .world-card {
+      display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: 12px; text-align: left; cursor: pointer;
+      background: #fff; color: #2e2a3a; text-decoration: none; border: 2px dashed #2e2a3a33; box-shadow: 0 3px 8px rgba(0,0,0,.12);
+      font: 600 13px/1.3 Nunito, sans-serif; transition: transform .15s, border-color .15s;
+    }
+    .garage-card b, .world-card b { font-size: 16px; }
+    .garage-card small, .world-card small { opacity: .75; }
+    .garage-emoji, .world-emoji { font-size: 30px; }
+    html:not(.is-mode-touch) .garage-card:hover, html:not(.is-mode-touch) .world-card:not(.is-locked):hover { transform: translateY(-3px) rotate(-1deg); }
+    .garage-card.is-active, .world-card.is-here { border: 2px solid var(--nb-red, #d62839); background: #fff4f2; }
+    .garage-card.is-disabled { opacity: .55; }
+    .world-card.is-locked { cursor: default; opacity: .6; background: repeating-linear-gradient(45deg, #fff 0 12px, #fff3cd 12px 24px); }
+    .world-stat { font-weight: 800; color: #e76f00; }
+    .world-here { display: none; font-weight: 800; color: #d62839; text-transform: uppercase; font-size: 11px; letter-spacing: .06em; }
+    .world-card.is-here .world-here { display: block; }
+    .garage-hint { min-height: 1.2em; }
+    .about-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
+    .records { display: grid; gap: 8px; margin: 4px 0 16px; }
+    .records .rec { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #fff; border-radius: 10px; border: 2px dashed #2e2a3a22; color: #2e2a3a; font: 700 14px/1.2 Nunito, sans-serif; }
+    .records .rec b { margin-left: auto; font-size: 16px; color: #d62839; font-variant-numeric: tabular-nums; }
+    /* Telas menores: abas viram uma faixa de adesivos embaixo do caderno */
+    @media only screen and (max-width: 1100px), (max-height: 560px) and (orientation: landscape) {
+      .menu.notebook .inner { width: min(900px, 100% - 24px); height: calc(100% - 110px); top: -20px; }
+      .menu.notebook .navigation { left: 0; right: 0; top: calc(100% + 8px); flex-direction: row; gap: 4px; overflow-x: auto; justify-content: center; }
+      .menu.notebook .navigation .item { width: auto; min-width: 52px; height: 46px; border-radius: 0 0 10px 10px; flex-direction: column; justify-content: center; gap: 0; padding: 2px 8px; transform: translateY(-6px); }
+      .menu.notebook .navigation .item.is-active { transform: translateY(2px); }
+      .menu.notebook .navigation .item .tab-label { font-size: 10px; }
+      .menu.notebook .previews .preview { inset: 24px 12px 30px 14px; }
+      .menu.notebook .close { bottom: auto; top: 8px; right: 8px; z-index: 3; }
+    }
+    @media only screen and (max-height: 560px) and (orientation: landscape) {
+      .menu.notebook .inner { height: calc(100% - 72px); top: -26px; }
+      .menu.notebook .navigation .item { height: 40px; }
+      .menu.notebook .navigation .item .tab-emoji { font-size: 16px; }
+      .menu.notebook .contents { width: 100%; }
+      .menu.notebook .contents .title { font-size: 2.4rem; }
+    }
+    @media only screen and (orientation: portrait) {
+      .menu.notebook .container { padding-left: 30px; }
+      .menu.notebook .previews { width: auto; height: 30%; }
+      .menu.notebook .contents { width: auto; height: 70%; }
+    }
+    /* Ajustes do touch: tamanho do analógico e modo canhoto */
+    html.stick-s .touch-stick { width: 112px; height: 112px; } html.stick-l .touch-stick { width: 164px; height: 164px; }
+    html.stick-s .stick-knob { width: 54px; height: 54px; margin: -27px 0 0 -27px; } html.stick-l .stick-knob { width: 76px; height: 76px; margin: -38px 0 0 -38px; }
+    html.is-lefty .touch-stick-zone { left: auto; right: 0; }
+    html.is-lefty .touch-steer { left: auto; right: 26px; }
+    html.is-lefty .touch-pad { right: auto; left: 16px; flex-direction: row-reverse; }
   </style>
   <!-- Nuvem opcional (login Google + ranking global). Sem configuração, tudo funciona só no aparelho. -->
   <script src="./firebase-config.js"></script>
@@ -692,40 +816,50 @@
   </div>
 
   <!-- ===== MENU SPLIT-PANE ===== -->
-  <div class="menu js-menu" id="menu" aria-hidden="true">
+  <div class="menu notebook js-menu" id="menu" aria-hidden="true">
     <div class="inner">
       <button class="close js-close" id="menu-close" type="button" aria-label="Fechar menu">
         <div class="button-inner"><div class="icon-container"><img class="icon is-default" src="./assets/ui/close.svg" alt=""></div></div>
       </button>
       <div class="navigation js-navigation" id="menu-navigation">
-        <button class="item is-active" data-name="home" type="button" aria-label="Início"><div class="button-inner"><div class="icon-container"><img src="./assets/ui/home.svg" alt=""></div></div></button>
-        <button class="item" data-name="options" type="button" aria-label="Opções"><div class="button-inner"><div class="icon-container"><img src="./assets/ui/gear.svg" alt=""></div></div></button>
-        <button class="item" data-name="controls" type="button" aria-label="Controles"><div class="button-inner"><div class="icon-container"><img class="is-wide" src="./assets/ui/controls/gamepad.svg" alt=""></div></div></button>
-        <button class="item" data-name="circuit" type="button" aria-label="Circuito"><div class="button-inner"><div class="icon-container"><img src="./assets/ui/wheel.svg" alt=""></div></div></button>
-        <button class="item" data-name="achievements" type="button" aria-label="Conquistas"><div class="button-inner"><div class="icon-container"><img src="./assets/ui/medal.svg" alt=""></div></div></button>
-        <button class="item" data-name="behindTheScene" type="button" aria-label="Log de eventos"><div class="button-inner"><div class="icon-container"><img src="./assets/ui/question.svg" alt=""></div></div></button>
+        <button class="item tab-home is-active" data-name="home" type="button" aria-label="Garagem"><span class="tab-emoji" aria-hidden="true">🚒</span><span class="tab-label">Garagem</span></button>
+        <button class="item tab-worlds" data-name="worlds" type="button" aria-label="Mundos"><span class="tab-emoji" aria-hidden="true">🗺️</span><span class="tab-label">Mundos</span></button>
+        <button class="item tab-circuit" data-name="circuit" type="button" aria-label="Corridas"><span class="tab-emoji" aria-hidden="true">🏁</span><span class="tab-label">Corridas</span></button>
+        <button class="item tab-achievements" data-name="achievements" type="button" aria-label="Álbum"><span class="tab-emoji" aria-hidden="true">⭐</span><span class="tab-label">Álbum</span></button>
+        <button class="item tab-about" data-name="about" type="button" aria-label="Sobre"><span class="tab-emoji" aria-hidden="true">👨‍💻</span><span class="tab-label">Sobre</span></button>
+        <button class="item tab-controls" data-name="controls" type="button" aria-label="Controles"><span class="tab-emoji" aria-hidden="true">🎮</span><span class="tab-label">Controles</span></button>
+        <button class="item tab-options" data-name="options" type="button" aria-label="Ajustes"><span class="tab-emoji" aria-hidden="true">⚙️</span><span class="tab-label">Ajustes</span></button>
+        <button class="item tab-behindTheScene" data-name="behindTheScene" type="button" aria-label="Diário"><span class="tab-emoji" aria-hidden="true">📓</span><span class="tab-label">Diário</span></button>
       </div>
       <div class="container">
         <div class="previews" id="menu-previews">
-          <div class="preview is-visible" data-name="home"><img class="background" alt="" draggable="false"><div class="caption">A mesa do Ravi</div></div>
-          <div class="preview" data-name="options"><img class="background" alt="" draggable="false"><div class="caption">Opções</div></div>
-          <div class="preview" data-name="controls"><img class="background" alt="" draggable="false"><div class="caption">Controles</div></div>
-          <div class="preview" data-name="circuit"><img class="background" alt="" draggable="false"><div class="caption">Circuito do Ravi</div></div>
-          <div class="preview" data-name="achievements"><img class="background" alt="" draggable="false"><div class="caption">Conquistas</div></div>
-          <div class="preview" data-name="behindTheScene"><img class="background" alt="" draggable="false"><div class="caption">Bastidores</div></div>
+          <div class="preview is-visible" data-name="home"><img class="background" alt="" draggable="false"><div class="caption">Garagem do Ravi</div></div>
+          <div class="preview" data-name="worlds"><img class="background" alt="" draggable="false"><div class="caption">Os mundos da casa</div></div>
+          <div class="preview" data-name="circuit"><img class="background" alt="" draggable="false"><div class="caption">Dia de corrida!</div></div>
+          <div class="preview" data-name="achievements"><img class="background" alt="" draggable="false"><div class="caption">Álbum de figurinhas</div></div>
+          <div class="preview" data-name="about"><img class="background" alt="" draggable="false"><div class="caption">Quem fez isso aqui?</div></div>
+          <div class="preview" data-name="controls"><img class="background" alt="" draggable="false"><div class="caption">Mãos no volante</div></div>
+          <div class="preview" data-name="options"><img class="background" alt="" draggable="false"><div class="caption">Ajustes</div></div>
+          <div class="preview" data-name="behindTheScene"><img class="background" alt="" draggable="false"><div class="caption">Diário de bordo</div></div>
         </div>
         <div class="contents" id="menu-contents">
           <!-- HOME -->
           <div class="content home-content is-visible" data-name="home">
             <div class="content-inner">
-              <div class="title">//Fire Engine// Desk World</div>
-              <p class="text">Dirija o caminhãozinho de bombeiro do <strong>Ravi</strong> por uma mesa de desenvolvedor gigante e pelo quarto.</p>
-              <p class="text">Derrube o <strong>copo d'água</strong> para encher o tanque, <strong>regue as plantas</strong>, desenhe a <strong>pista secreta</strong> com o lápis e apague o <strong>incêndio do monitor</strong> se alguém digitar demais no teclado!</p>
-              <p class="text">Use a <strong>rampa de papelão</strong> para descer até o quarto — ou simplesmente pule da mesa.</p>
+              <div class="title">Garagem</div>
+              <p class="text kicker">//Fire Engine// Desk World</p>
+              <p class="text">Dirija pela casa do <strong>Ravi</strong>: a mesa gigante, o quarto e o quintal. Derrube o <strong>copo d'água</strong> para encher o tanque, <strong>regue as plantas</strong>, desenhe a <strong>pista secreta</strong> e apague o <strong>incêndio do monitor</strong>!</p>
               <div class="horizontal-group" style="justify-content:flex-start">
-                <button class="button" id="menu-btn-play" type="button">Jogar</button>
-                <button class="button" id="menu-btn-map" type="button">Abrir mapa</button>
+                <button class="button" id="menu-btn-play" type="button">▶ Continuar</button>
+                <button class="button" id="menu-btn-map" type="button">🗺️ Mapa</button>
+                <button class="button" id="menu-btn-paint" type="button">🎨 Pinturas</button>
               </div>
+              <div class="section-title">Veículo</div>
+              <div class="garage-vehicles">
+                <button class="garage-card" data-vehicle="truck" type="button"><span class="garage-emoji">🚒</span><b>Caminhãozinho</b><small>Mangueira, sirene e pulo</small></button>
+                <button class="garage-card" data-vehicle="baja" type="button"><span class="garage-emoji">🏎️</span><b>Baja 13</b><small>Lama, morro e cambalhota</small></button>
+              </div>
+              <p class="text garage-hint" id="garage-hint"></p>
               <!-- Conta (opcional): guarda recordes e conquistas na nuvem -->
               <div class="account-box" id="account-box">
                 <div class="section-title">Sua conta</div>
@@ -740,10 +874,38 @@
               </div>
             </div>
           </div>
+          <!-- MUNDOS -->
+          <div class="content worlds-content" data-name="worlds">
+            <div class="content-inner">
+              <div class="title">Mundos</div>
+              <p class="text">Cada cômodo da casa é um mundo. Passe pelas portas com o carrinho ou viaje direto daqui.</p>
+              <div class="world-cards">
+                <a class="world-card" data-world="quarto" href="index.html"><span class="world-emoji">🛏️</span><b>Quarto</b><small>Mesa gigante, circuito com 6 portais, ilhas e o gato na cama</small><span class="world-stat" id="world-stat-quarto"></span><span class="world-here">você está aqui</span></a>
+                <a class="world-card" data-world="quintal" href="quintal.html"><span class="world-emoji">🌳</span><b>Quintal</b><small>Rally do Baja 13, cachoeira, fogueira, bichos e balanço</small><span class="world-stat" id="world-stat-quintal"></span><span class="world-here">você está aqui</span></a>
+                <div class="world-card is-locked"><span class="world-emoji">🛋️</span><b>Sala</b><small>Em reforma 🚧 volte mais tarde!</small></div>
+              </div>
+            </div>
+          </div>
+          <!-- SOBRE O JEFERSON -->
+          <div class="content about-content" data-name="about">
+            <div class="content-inner">
+              <div class="title">Sobre o Jeferson</div>
+              <p class="text">Este mundo é o meu <strong>currículo interativo</strong>: um pouco do meu dia a dia na visão do pequeno Ravi.</p>
+              <p class="text">A trajetória profissional está no circuito da mesa: siga do <strong>portal 1 ao portal 6</strong>. Informações sobre mim ficam perto do computador... mas cuidado para não hackear demais!</p>
+              <div class="about-links">
+                <a class="button" href="https://www.linkedin.com/in/jefersonribeirogomes/" target="_blank" rel="noopener">💼 LinkedIn</a>
+                <a class="button" href="https://www.salesforce.com/trailblazer/profile" target="_blank" rel="noopener">☁️ Trailhead</a>
+                <a class="button" href="https://www.youtube.com/@jefersonrgomes_oficial" target="_blank" rel="noopener">🎵 Canal no YouTube Music</a>
+                <a class="button" href="https://piratasdovalepcp.netlify.app" target="_blank" rel="noopener">🏴‍☠️ Piratas do Vale (Baja 13)</a>
+              </div>
+              <div class="section-title">Inspiração</div>
+              <p class="text">Feito em Three.js, inspirado no portfólio de <a href="https://bruno-simon.com/" target="_blank" rel="noopener">Bruno Simon</a>.</p>
+            </div>
+          </div>
           <!-- OPÇÕES -->
           <div class="content options-content" data-name="options">
             <div class="content-inner">
-              <div class="title">Opções</div>
+              <div class="title">Ajustes</div>
               <table class="options">
                 <tbody>
                   <tr>
@@ -762,6 +924,18 @@
                     <td>Carrinho</td>
                     <td class="button-row"><button class="button is-small has-tooltip" id="opt-unstuck" type="button"><div class="tooltip">Volta para a última posição segura [U]</div><span>Destravar</span></button>
                       <button class="button is-small has-tooltip" id="opt-respawn" type="button"><div class="tooltip">Leva ao ponto de viagem mais próximo</div><span>Respawn</span></button></td>
+                  </tr>
+                  <tr>
+                    <td>Direção</td>
+                    <td><button class="button is-small has-tooltip" id="opt-steer" type="button"><div class="tooltip">Quanto o carrinho vira: Suave · Normal · Rápida</div><span>Normal</span></button></td>
+                  </tr>
+                  <tr>
+                    <td>Analógico</td>
+                    <td><button class="button is-small has-tooltip" id="opt-stick" type="button"><div class="tooltip">Tamanho do analógico no celular</div><span>Médio</span></button></td>
+                  </tr>
+                  <tr>
+                    <td>Mão</td>
+                    <td><button class="button is-small has-tooltip" id="opt-hand" type="button"><div class="tooltip">Canhoto: analógico na direita e botões na esquerda</div><span>Destro</span></button></td>
                   </tr>
                   <tr>
                     <td>Dia e noite</td>
@@ -866,7 +1040,9 @@
           <!-- CIRCUITO -->
           <div class="content circuit-content" data-name="circuit">
             <div class="content-inner">
-              <div class="title">Circuito</div>
+              <div class="title">Corridas</div>
+              <div class="records" id="race-records"></div>
+              <div class="section-title">Circuito do Ravi</div>
               <p class="text">Uma volta completa passa pela <strong>mesa</strong>, desce a <strong>rampa de papelão</strong>, cruza o circuito <strong>embaixo da mesa</strong> e sobe de volta pela outra rampa. Passe pelos 6 portais na ordem!</p>
               <div class="leaderboard-container" id="leaderboard-container">
                 <p class="leaderboard-scope" id="leaderboard-scope"></p>
@@ -888,7 +1064,7 @@
           <!-- CONQUISTAS -->
           <div class="content achievements-content" data-name="achievements">
             <div class="content-inner">
-              <div class="title">Conquistas</div>
+              <div class="title">Álbum de figurinhas</div>
               <div class="global-progress" id="ach-global">
                 <span class="ratio"><span id="ach-current">0</span> / <span id="ach-total">0</span></span>
                 <span class="ratio-label">desbloqueadas</span>
@@ -904,7 +1080,7 @@
           <!-- BASTIDORES / LOG -->
           <div class="content behindTheScene-content" data-name="behindTheScene">
             <div class="content-inner">
-              <div class="title">Bastidores</div>
+              <div class="title">Diário de bordo</div>
               <p class="text">Cada interação do carrinho fica registrada aqui, da mais recente para a mais antiga.</p>
               <ul class="log-list" id="event-log-list">
                 <li>Carrinho do Ravi pronto na mesa!</li>

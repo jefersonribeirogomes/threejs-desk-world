@@ -31,7 +31,20 @@ Controle (DualSense/Xbox): L2 acelera, R2 ré, analógico esquerdo dirige, ○ b
 
 ## 🎨 Design system
 
-A interface usa o design system de Bruno Simon (`assets/css/bruno-ds.css`, fontes em `assets/fonts`, ícones em `assets/ui`): intro com anel de carregamento, triggers de menu/mapa, menu split-pane (Início, Opções, Controles, Conquistas, Bastidores), toasts de notificação, conquistas com pinturas desbloqueáveis, tooltips e mapa com pins de viagem rápida.
+A interface parte do design system de Bruno Simon (`assets/css/bruno-ds.css`, fontes em `assets/fonts`, ícones em `assets/ui`): intro com anel de carregamento, triggers de menu/mapa, toasts, tooltips e mapa com pins de viagem rápida.
+
+O menu é o **Caderno do Ravi**: folha pautada com espiral, foto polaroide da cena e abas de post-it (no celular, uma faixa de adesivos embaixo):
+
+| Aba | O que tem |
+| --- | --- |
+| 🚒 Garagem | Continuar, mapa, pinturas e troca de veículo (caminhãozinho ou Baja 13) |
+| 🗺️ Mundos | Quarto, Quintal e Sala (em reforma), com as moedas de cada um |
+| 🏁 Corridas | Recordes do circuito, do rally e do boliche, ranking e largada |
+| ⭐ Álbum | Conquistas como figurinhas e as pinturas desbloqueadas |
+| 👨‍💻 Sobre | Currículo: LinkedIn, Trailhead, YouTube Music e Piratas do Vale |
+| 🎮 Controles | Teclado, celular (analógico) e controle |
+| ⚙️ Ajustes | Áudio, qualidade, direção (suave/normal/rápida), tamanho do analógico, modo canhoto, dia e noite, câmeras |
+| 📓 Diário | Registro de eventos e créditos |
 
 ## 🧱 Física
 
