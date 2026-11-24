@@ -3207,7 +3207,14 @@
       ctx.lineWidth = 3;
       ctx.strokeRect(9, 9, w - 18, h - 18);
       ctx.fillStyle = opts.color || '#ffffff';
-      ctx.font = `500 ${Math.round(h * 0.5)}px Pally-Medium, Nunito, sans-serif`;
+      let fontSize = Math.round(h * 0.5);
+      ctx.font = `500 ${fontSize}px Pally-Medium, Nunito, sans-serif`;
+      const maxW = w - 40;
+      const textW = ctx.measureText(text).width;
+      if (textW > maxW) {
+        fontSize = Math.floor(fontSize * (maxW / textW));
+        ctx.font = `500 ${fontSize}px Pally-Medium, Nunito, sans-serif`;
+      }
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, w / 2, h / 2 + h * 0.03);
@@ -6777,7 +6784,13 @@
         for (let i = 0; i < 64; i++) { b.fillStyle = i % 2 ? '#fff' : '#111'; b.fillRect(i * 16, 0, 16, 16); b.fillStyle = i % 2 ? '#111' : '#fff'; b.fillRect(i * 16, 144, 16, 16); }
         b.fillStyle = '#ffb703'; b.font = 'bold 82px "Amatic SC", sans-serif'; b.textAlign = 'center'; b.textBaseline = 'middle';
         b.fillText('RALLY BAJA · PIRATAS DO VALE', 512, 82);
-        const banner = new THREE.Mesh(new THREE.PlaneGeometry(RALLY_W + 3, 2.2), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(bc), roughness: 0.6, side: THREE.DoubleSide }));
+        const bannerTex = new THREE.CanvasTexture(bc);
+        const bannerMat = new THREE.MeshStandardMaterial({ map: bannerTex, roughness: 0.6 });
+        const bannerFront = new THREE.Mesh(new THREE.PlaneGeometry(RALLY_W + 3, 2.2), bannerMat);
+        bannerFront.position.set(0, 7.6, -0.05);
+        bannerFront.rotation.y = Math.PI; // voltado para os carros na largada
+        const bannerBack = new THREE.Mesh(new THREE.PlaneGeometry(RALLY_W + 3, 2.2), bannerMat);
+        bannerBack.position.set(0, 7.6, 0.05); // voltado para o sentido oposto
         // Pórtico próprio: pernas, travessa, faixa e semáforo — alinhado à pista (o da Kenney ficava torto)
         const gantry = new THREE.Group();
         gantry.position.set(s.x, Y0, s.z);
@@ -6788,7 +6801,7 @@
         });
         const beam = new THREE.Mesh(new THREE.BoxGeometry((RALLY_SIDE + 1.4) * 2 + 0.8, 0.5, 0.5), postMat);
         beam.position.y = 9.1; gantry.add(beam);
-        banner.position.set(0, 7.6, 0); gantry.add(banner);
+        gantry.add(bannerFront, bannerBack);
         makeStartLights(gantry, 5.4, 0, 1.1);
         bedroomWorld.add(gantry);
       }
@@ -8929,9 +8942,11 @@
     placeModel('painting_frame_01', { x: -66, z: -72.9, y: 4, physics: false, name: 'Quadro' });
 
     // Quadro da família na parede do fundo: moldura de madeira clara com a foto em assets/quadro-familia.jpg
+    let familyFrameGroup = null;
     (function familyFrame() {
       const SIZE = 13, BAR = 0.8, X = -36, Y = 10.5, Z = -72.6; // acima do tampo da mesa, abaixo do teto
       const g = new THREE.Group();
+      familyFrameGroup = g;
       g.position.set(X, Y, Z);
       g.name = 'Quadro da Família';
       const woodMat = new THREE.MeshStandardMaterial({ color: 0x7a4f26, roughness: 0.75 });
@@ -12820,11 +12835,34 @@
     deskInteractives.concat(careerInteractives, islands, [bowlingInteractive]).forEach((it) => {
       if (it.pointMeshes && it.pointMeshes.diamond) registerPointerTarget(it, it.pointMeshes.diamond, 2.6);
     });
+    // Modelos 3D interativos da mesa (hover com squash/stretch GSAP e clique abre o modal)
+    const radioInteractive = deskInteractives.find(it => it.id === 'radio');
+    if (radioInteractive && typeof radioGroup !== 'undefined') {
+      radioInteractive.object = radioGroup;
+      registerPointerTarget(radioInteractive, radioGroup, 5.5, radioGroup);
+    }
+    const laptopInteractive = deskInteractives.find(it => it.id === 'laptop');
+    if (laptopInteractive && typeof laptopGroup !== 'undefined') {
+      laptopInteractive.object = laptopGroup;
+      registerPointerTarget(laptopInteractive, laptopGroup, 6.0, laptopGroup);
+      if (typeof monitorHeadGroup !== 'undefined') {
+        registerPointerTarget(laptopInteractive, monitorHeadGroup, 11.0, monitorHeadGroup);
+      }
+    }
+    const familyInteractive = deskInteractives.find(it => it.id === 'family');
+    if (familyInteractive && typeof familyFrameGroup !== 'undefined' && familyFrameGroup) {
+      familyInteractive.object = familyFrameGroup;
+      registerPointerTarget(familyInteractive, familyFrameGroup, 8.5, familyFrameGroup);
+    }
     function syncPointerHitboxes() {
       for (let i = 0; i < pointerHitboxes.length; i++) {
         const h = pointerHitboxes[i];
         h.userData.anchor.getWorldPosition(h.position);
-        if (h.userData.anchor === h.userData.item.object) h.position.y += 4; // centro do objeto, não a base
+        if (typeof radioGroup !== 'undefined' && h.userData.anchor === radioGroup) h.position.y += 2.8;
+        else if (typeof laptopGroup !== 'undefined' && h.userData.anchor === laptopGroup) h.position.y += 2.0;
+        else if (typeof monitorHeadGroup !== 'undefined' && h.userData.anchor === monitorHeadGroup) h.position.y += 4.5;
+        else if (typeof familyFrameGroup !== 'undefined' && h.userData.anchor === familyFrameGroup) { /* centrado */ }
+        else if (h.userData.anchor === h.userData.item.object) h.position.y += 4; // centro do objeto, não a base
         h.updateMatrixWorld();
       }
     }
